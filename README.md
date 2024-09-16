@@ -19,7 +19,7 @@ The processor can be programmed and taken from an Arduino UNO, programmed with a
 Operation is child's play. Insert the RAM, switch on the power and observe the LED. if it flashes green at the end, everything is ok, if it flashes red, something is broken. 
 
 Currently the software only works with 256k x 4 DRAM (e.g. TC514256-80) because I needed this for my card. However, the following DRAM components should also be testable (as soon as the software is able to do so): 4164 (64k x 1), 4416 (16k x 4), 4464 (64k x 4), 41256/57 (256k x 1). The prerequisite is that GND is on the last pin and VCC on the diagonally opposite pin as well as the IC size of 16, 18 or 20 pins. 
-As such, this Project will *not* be able to support the following RAM 2144 (Vcc on Pin 18), 6116 (24 Pin IC), 4116 (needs negativ Voltage).
+As such, this Project will *not* be able to support the following RAM Types 2144 (Vcc on Pin 18), 6116 (24 Pin IC), 4116 (needs negative Voltage).
 
 In order to keep build cost low, I just designed one PCB. If you want to use the ZIP Adapter you need to cut the PCB along the depicted *CUT-HERE* Area. Build cost with PCB actually less than 10U$ if you have the Material ready. If you need to order everything it is more likely to be 20-30U$.
 
