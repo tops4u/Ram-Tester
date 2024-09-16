@@ -20,4 +20,23 @@ Currently the software only works with 256k x 4 DRAM (e.g. TC514256-80) because 
 TBD
 
 ## Build
-TBD
+###BOM
+- 1x 16 MHz Quartz [AliExpress](https://aliexpress.com/item/1005006119798769.html)
+- 2x 10-20pf Disc Capacitor [AliExpress](https://aliexpress.com/item/1005003167676803.html)
+- 3x SMD 1206 1M Resistor
+- 1x SMD 1206 1k Resistor
+- 1x SMD 1206 100 Resistor
+- 1x SMD 1206 150 Resistor
+- 2x SMD 0805 100nF Capacitor 
+- 1x PinHeader / PowerPlug 2.54mm [AliExpress](https://aliexpress.com/item/1005003179482974.html)
+- 1x ZIF Socket / DIP Socket 28 Pin - Narrow [AliExpress](https://aliexpress.com/item/1005007205054381.html)
+- 1x ZIF Socket / DIP Socket 20 Pin [AliExpress](https://aliexpress.com/item/1005007205054381.html)
+- 1x BiColor LED 5mm (Red/Green) Common Center Cathode [AliExpress](https://aliexpress.com/item/1005006014283662.html)
+- 1x 3 way Dip-Switch [AliExpress](https://aliexpress.com/item/4001205849246.html)
+- 2x 10Pin Pin Header Female [AliExpress](https://aliexpress.com/item/32717301965.html)
+- 2x 10Pin Pin Header Male [AliExpress](https://aliexpress.com/item/1005005390193356.html)
+If you want to use ICSP:
+- 1x PinHeader 2x3 [AliExpress](https://aliexpress.com/item/4000303366348.html)
+If you want to use the ZIP Adapter
+- 2x 10Pin Pin Header Female [AliExpress](https://aliexpress.com/item/32717301965.html)
+- 2x 10Pin Pin Header Male [AliExpress](https://aliexpress.com/item/1005005390193356.html)
