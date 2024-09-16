@@ -2,7 +2,12 @@
 Ram Tester for vintage CBM Computer RAM Chips - **BETA** do not build/fork yet.
 
 ## Introduction
-This project was started because I had bought a Commodore A2630 card with 2MB Ram at a flea market and wanted to upgrade it with 2MB Ram. On the internet I found either very expensive offers or cheap ones from a Chinese dealer. I tried my luck, but of course the card refused to work with the additional RAM. So I wanted a tester for the required RAM. On the one hand, there were very simple projects, which probably didn't test very well, or semi-professional testers with >1000U$. 
+This project was started because I had bought a Commodore A2630 card with 2MB Ram at a flea market and wanted to upgrade it with 2MB Ram. On the internet I found either very expensive offers or cheap ones from a Chinese dealer. I tried my luck, but of course the card refused to work with the additional RAM. So I wanted a tester for the required RAM. On the one hand, there were very simple projects, which probably didn't test very well, or semi-professional testers with >1000U$. Meanwhile I was able to sort the defect RAM out by have a bootable Configuration and using Amiga Test Kit (ATK v1.22) to figure out which BIT are faulty and pinpoint possible candidates by checking the schematic. 
+
+This Project was/is motivated by 
+DRAMTESTER (https://github.com/zeus074/dramtester) 
+DRAMARDUINO (https://forum.defence-force.org/viewtopic.php?t=1699)
+-> No Code or Schematic was taken from any of those Projects.
 
 I decided to build a tester myself with the aim of being able to test some of the common DRAM chips of the CBM computers 1980-1990. 
 
@@ -14,7 +19,7 @@ Operation is child's play. Insert the RAM, switch on the power and observe the L
 
 Currently the software only works with 256k x 4 DRAM (e.g. TC514256-80) because I needed this for my card. However, the following DRAM components should also be testable (as soon as the software is able to do so): 4164 (64k x 1), 4416 (16k x 4), 4464 (64k x 4), 41256/57 (256k x 1). The prerequisite is that GND is on the last pin and VCC on the diagonally opposite pin as well as the IC size of 16, 18 or 20 pins. 
 
-In order to keep build cost low, I just designed one PCB. If you want to use the ZIP Adapter you need to cut the PCB along the depicted *CUT HERE* Area
+In order to keep build cost low, I just designed one PCB. If you want to use the ZIP Adapter you need to cut the PCB along the depicted *CUT-HERE* Area. Build cost with PCB actually less than 10U$ if you have the Material ready. If you need to order everything it is more likely to be 20-30U$.
 
 ![Ram-Tester PCB](https://github.com/tops4u/Ram-Tester/blob/main/RamTester.png?raw=true)
 Render from KiCad - The depicted DIP IC will just be sockets in reality. 
