@@ -1,6 +1,8 @@
 # Ram-Tester
 Ram Tester for vintage CBM Computer RAM Chips - **BETA** do not build/fork yet.
 
+I decided to build a tester myself with the aim of being able to test some of the common DRAM chips of the CBM computers 1980-1990. ee
+
 ## Introduction
 This project was started because I had bought a Commodore A2630 card with 2MB Ram at a flea market and wanted to upgrade it with 2MB Ram. On the internet I found either very expensive offers or cheap ones from a Chinese dealer. I tried my luck, but of course the card refused to work with the additional RAM. So I wanted a tester for the required RAM. On the one hand, there were very simple projects, which probably didn't test very well, or semi-professional testers with >1000U$. Meanwhile I was able to sort the defect RAM out by have a bootable Configuration and using Amiga Test Kit (ATK v1.22) to figure out which BIT are faulty and pinpoint possible candidates by checking the schematic. 
 
@@ -10,7 +12,12 @@ This Project was/is inspired by:
 
 -> No Code or Schematic was taken from any of those Projects.
 
-I decided to build a tester myself with the aim of being able to test some of the common DRAM chips of the CBM computers 1980-1990. The Target was to have a slim low-cost but yet fast RAM Check. Currently a 256k x 4 RAM Tests in about 2-3 Seconds with 4 different Test-Patterns. I don't need a fancy LCD for Feedback, since if a RAM is faulty, there is no added value in knowing which address is faulty, you'll probably throw away the Chip anyway. 
+So why yet another Project? 
+1. Hava a cheap and simple solution. No fancy LCD that does not give you real added value. If a chip is faulty you probably don't care at which address.
+2. Have a fast solution. Some other RAM Testers take more than 1 minute to just test a 64kb (8kB) Chip like the 4164. This project takes less than 3 secs for a 256x4 (128kB) Chip to test.
+3. Easy Setup with few components - ZIF Sockets if you need it often, otherwise probably normal DIP Sockets will be ok.
+4. Small Footprint PCB to save cost.
+5. Have a Tester that also supports larger RAM used in Amiga for example. 
 
 The project should also be able to be built by inexperienced people, which is why I decided on a solution with ATMEGA 328 processors - known from the Arduino UNO. But just having another Shield for Arduino seemed unpractical since you have some limitations by the Arduino itself.
 
@@ -32,24 +39,22 @@ TBD
 
 ## Build
 **BOM**
-- 1x 16 MHz Quartz [AliExpress](https://aliexpress.com/item/1005006119798769.html)
-- 2x 10-20pf Disc Capacitor [AliExpress](https://aliexpress.com/item/1005003167676803.html)
-- 3x SMD 1206 1M Resistor
-- 1x SMD 1206 1k Resistor
-- 1x SMD 1206 100 Resistor
-- 1x SMD 1206 150 Resistor
-- 2x SMD 0805 100nF Capacitor 
-- 1x PinHeader / PowerPlug 2.54mm [AliExpress](https://aliexpress.com/item/1005003179482974.html)
-- 1x ZIF Socket / DIP Socket 28 Pin - Narrow [AliExpress](https://aliexpress.com/item/1005007205054381.html)
-- 1x ZIF Socket / DIP Socket 20 Pin [AliExpress](https://aliexpress.com/item/1005007205054381.html)
-- 1x BiColor LED 5mm (Red/Green) Common Center Cathode [AliExpress](https://aliexpress.com/item/1005006014283662.html)
-- 1x 3 way Dip-Switch [AliExpress](https://aliexpress.com/item/4001205849246.html)
-- 2x 10Pin Pin Header Female [AliExpress](https://aliexpress.com/item/32717301965.html)
-- 2x 10Pin Pin Header Male [AliExpress](https://aliexpress.com/item/1005005390193356.html)
+- Y1 1x 16 MHz Quartz [AliExpress](https://aliexpress.com/item/1005006119798769.html)
+- C2/C3 2x 10-20pf Disc Capacitor [AliExpress](https://aliexpress.com/item/1005003167676803.html)
+- R3, R4, R5 3x SMD 1206 1M Resistor
+- R2 1x SMD 1206 1k Resistor
+- R1 1x SMD 1206 100 Resistor
+- R6 1x SMD 1206 150 Resistor
+- C1/C2 2x SMD 0805 100nF Capacitor 
+- J1 1x PinHeader / PowerPlug 2.54mm [AliExpress](https://aliexpress.com/item/1005003179482974.html)
+- U1 1x ZIF Socket / DIP Socket 28 Pin - Narrow [AliExpress](https://aliexpress.com/item/1005007205054381.html)
+- U2 1x ZIF Socket / DIP Socket 20 Pin [AliExpress](https://aliexpress.com/item/1005007205054381.html)
+- D1 1x BiColor LED 5mm (Red/Green) Common Center Cathode [AliExpress](https://aliexpress.com/item/1005006014283662.html)
+- SW1 1x 3 way Dip-Switch [AliExpress](https://aliexpress.com/item/4001205849246.html)
   
 If you want to use ICSP:
-- 1x PinHeader 2x3 [AliExpress](https://aliexpress.com/item/4000303366348.html)
+- ICSP 1x PinHeader 2x3 [AliExpress](https://aliexpress.com/item/4000303366348.html)
   
 If you want to use the ZIP Adapter
-- 2x 10Pin Pin Header Female [AliExpress](https://aliexpress.com/item/32717301965.html)
-- 2x 10Pin Pin Header Male [AliExpress](https://aliexpress.com/item/1005005390193356.html)
+- U3 2x 10Pin Pin Header Female [AliExpress](https://aliexpress.com/item/32717301965.html)
+- U4 2x 10Pin Pin Header Male [AliExpress](https://aliexpress.com/item/1005005390193356.html)
