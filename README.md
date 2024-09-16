@@ -10,17 +10,17 @@ This Project was/is inspired by:
 
 -> No Code or Schematic was taken from any of those Projects.
 
-I decided to build a tester myself with the aim of being able to test some of the common DRAM chips of the CBM computers 1980-1990. 
+I decided to build a tester myself with the aim of being able to test some of the common DRAM chips of the CBM computers 1980-1990. The Target was to have a slim low-cost but yet fast RAM Check. Currently a 256k x 4 RAM Tests in about 2-3 Seconds with 4 different Test-Patterns. I don't need a fancy LCD for Feedback, since if a RAM is faulty, there is no added value in knowing which address is faulty, you'll probably throw away the Chip anyway. 
 
-The project should also be able to be built by inexperienced people, which is why I decided on a solution with ATMEGA 328 processors - known from the Arduino UNO. 
+The project should also be able to be built by inexperienced people, which is why I decided on a solution with ATMEGA 328 processors - known from the Arduino UNO. But just having another Shield for Arduino seemed unpractical since you have some limitations by the Arduino itself.
 
-The processor can be programmed and taken from an [Arduino UNO](https://store.arduino.cc/products/arduino-uno-rev3), programmed with a programmer or programmed via the existing ICSP (e.g. AVRISP MKII). People who want to remove the processor for programming should find enough space on the PCB for a ZIF socket. 
+The processor can still be programmed and taken from an [Arduino UNO](https://store.arduino.cc/products/arduino-uno-rev3), programmed with a programmer or programmed via the existing ICSP (e.g. with an AVRISP MKII). People who want to remove the processor for programming should find enough space on the PCB to fit it with a ZIF socket. 
 
 Operation is child's play. Insert the RAM, switch on the power and observe the LED. if it flashes green at the end, everything is ok, if it flashes red, something is broken. 
 
 Currently the software only works with 256k x 4 DRAM (e.g. TC514256-80) because I needed this for my card. However, the following DRAM components should also be testable (as soon as the software is able to do so): **4164** (64k x 1), **4416** (16k x 4), **4464** (64k x 4), **41256/57** (256k x 1) and **514400** (1M x 4). The prerequisite is that GND is on the last pin and VCC on the diagonally opposite pin as well as the IC size of 16, 18 or 20 pins. 
 
-*->As such, this Project will **not** be able to support the following RAM Types **2144** (Vcc on Pin 18), **6116** (24 Pin IC), **4116** (needs negative Voltage).*
+*->As such, this Project will **not** be able to support the following RAM Types **2144** (Vcc on Pin 18), **6116** (24 Pin IC), **4116** (needs negative and 12V Voltage).*
 
 In order to keep build cost low, I just designed one PCB. If you want to use the ZIP Adapter you need to cut the PCB along the depicted *CUT-HERE* Area. Build cost with PCB actually less than 10U$ if you have the Material ready. If you need to order everything it is more likely to be 20-30U$.
 
