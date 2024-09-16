@@ -20,7 +20,7 @@ Currently the software only works with 256k x 4 DRAM (e.g. TC514256-80) because 
 TBD
 
 ## Build
-###BOM
+**BOM**
 - 1x 16 MHz Quartz [AliExpress](https://aliexpress.com/item/1005006119798769.html)
 - 2x 10-20pf Disc Capacitor [AliExpress](https://aliexpress.com/item/1005003167676803.html)
 - 3x SMD 1206 1M Resistor
