@@ -14,7 +14,7 @@ I decided to build a tester myself with the aim of being able to test some of th
 
 The project should also be able to be built by inexperienced people, which is why I decided on a solution with ATMEGA 328 processors - known from the Arduino UNO. 
 
-The processor can be programmed and taken from an Arduino UNO, programmed with a programmer or programmed via the existing ICSP. People who want to remove the processor for programming should find enough space on the PCB for a ZIF socket. 
+The processor can be programmed and taken from an [Arduino UNO](https://store.arduino.cc/products/arduino-uno-rev3), programmed with a programmer or programmed via the existing ICSP. People who want to remove the processor for programming should find enough space on the PCB for a ZIF socket. 
 
 Operation is child's play. Insert the RAM, switch on the power and observe the LED. if it flashes green at the end, everything is ok, if it flashes red, something is broken. 
 
