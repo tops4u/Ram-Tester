@@ -35,8 +35,10 @@ TBD
 - 1x 3 way Dip-Switch [AliExpress](https://aliexpress.com/item/4001205849246.html)
 - 2x 10Pin Pin Header Female [AliExpress](https://aliexpress.com/item/32717301965.html)
 - 2x 10Pin Pin Header Male [AliExpress](https://aliexpress.com/item/1005005390193356.html)
+  
 If you want to use ICSP:
 - 1x PinHeader 2x3 [AliExpress](https://aliexpress.com/item/4000303366348.html)
+  
 If you want to use the ZIP Adapter
 - 2x 10Pin Pin Header Female [AliExpress](https://aliexpress.com/item/32717301965.html)
 - 2x 10Pin Pin Header Male [AliExpress](https://aliexpress.com/item/1005005390193356.html)
