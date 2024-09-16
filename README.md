@@ -14,7 +14,10 @@ Operation is child's play. Insert the RAM, switch on the power and observe the L
 
 Currently the software only works with 256k x 4 DRAM (e.g. TC514256-80) because I needed this for my card. However, the following DRAM components should also be testable (as soon as the software is able to do so): 4164 (64k x 1), 4416 (16k x 4), 4464 (64k x 4), 41256/57 (256k x 1). The prerequisite is that GND is on the last pin and VCC on the diagonally opposite pin as well as the IC size of 16, 18 or 20 pins. 
 
+In order to keep build cost low, I just designed one PCB. If you want to use the ZIP Adapter you need to cut the PCB along the depicted *CUT HERE* Area
+
 ![Ram-Tester PCB](https://github.com/tops4u/Ram-Tester/blob/main/RamTester.png?raw=true)
+Render from KiCad - The depicted DIP IC will just be sockets in reality. 
 
 ## Operation
 TBD
