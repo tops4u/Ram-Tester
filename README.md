@@ -7,6 +7,7 @@ I decided to build a tester myself with the aim of being able to test some of th
 This project was started because I had bought a Commodore A2630 card with 2MB Ram at a flea market and wanted to upgrade it with 2MB Ram. On the internet I found either very expensive offers or cheap ones from Chinese dealers. I tried my luck, but of course the card refused to work with the additional RAM. So I wanted a tester for the required RAM. On the one hand, there were very simple projects, which probably didn't test very well, or semi-professional testers with >1000U$. Meanwhile I was able to sort the defect RAM out by have a bootable Configuration and using Amiga Test Kit (ATK v1.22) to figure out which BIT are faulty and pinpoint possible candidates by checking the schematic. 
 
 This Project was/is inspired by:
+- Project DRAM (https://github.com/ProjectDRAM/514256B)
 - DRAMTESTER (https://github.com/zeus074/dramtester) 
 - DRAMARDUINO (https://forum.defence-force.org/viewtopic.php?t=1699)
 
