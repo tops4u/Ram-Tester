@@ -41,14 +41,18 @@ TBD
 ## Build
 **BOM**
 - Y1 1x 16 MHz Quartz [AliExpress](https://aliexpress.com/item/1005006119798769.html)
-- C2/C3 2x 10-20pf Disc Capacitor [AliExpress](https://aliexpress.com/item/1005003167676803.html)
-- R3, R4, R5 3x SMD 1206 1M Resistor
-- R2 1x SMD 1206 1k Resistor
-- R1 1x SMD 1206 100 Resistor
-- R6 1x SMD 1206 150 Resistor
 - C1/C2 2x SMD 0805 100nF Capacitor 
+- C2/C3 2x 10-20pf Disc Capacitor [AliExpress](https://aliexpress.com/item/1005003167676803.html)
+- R3, R4, R5 3x SMD 0603 1M Resistor
+- R2 1x SMD 0603 1k Resistor
+- R1 1x SMD 0603 100R Resistor
+- R6 1x SMD 0603 150R Resistor
+- R7 1x SMD 0603 47R Resistor
+- R9-R10 SMD 0603 250R Resistor
+- RNx 4x SMD 0603 47R 4xArray
+- Q1, Q2, SMD IRL 6401 SOJ P-FET
 - J1 1x PinHeader / PowerPlug 2.54mm [AliExpress](https://aliexpress.com/item/1005003179482974.html)
-- U1 1x ZIF Socket / DIP Socket 28 Pin - Narrow [AliExpress](https://aliexpress.com/item/1005007205054381.html)
+- U1 DIP Socket 28 Pin - Narrow
 - U2 1x ZIF Socket / DIP Socket 20 Pin [AliExpress](https://aliexpress.com/item/1005007205054381.html)
 - D1 1x BiColor LED 5mm (Red/Green) Common Center Cathode [AliExpress](https://aliexpress.com/item/1005006014283662.html)
 - SW1 1x 3 way Dip-Switch [AliExpress](https://aliexpress.com/item/4001205849246.html)
