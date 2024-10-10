@@ -160,7 +160,7 @@ void test20Pin() {
       write20PinRow(row, pat, 2);
     }
   // If all went smooth we checked 128kB of RAM now. Let's see if this is a 1Mx4 Chip
-  /*if (Sense1Mx4 == true) {
+  if (Sense1Mx4 == true) {
     // Run the Tests for the larger Chip  again. The lower 512 Rows and Cols are rechecked, resulting in a 25% longer Test than really needed.
     // This could be optimized.
     for (uint8_t pat = 0; pat < 4; pat++) {        // Check all 4Bit Patterns
@@ -169,26 +169,24 @@ void test20Pin() {
       }
     }
     testOK();
-  } else {*/
-  // Indicate with Green-Red flashlight that the "small" Version has been checked ok
-  smallOK();
-  //  }
+  } else {
+    // Indicate with Green-Red flashlight that the "small" Version has been checked ok
+    smallOK();
+  }
 }
 
 // Prepare and execute ROW Access for 20 Pin Types
 void RASHandlingPin20(uint16_t row) {
-  PORTB |= (1 << PB1);    // Set RAS High - Inactive
-  msbHandlingPin20(row/256);  // Preset ROW Adress
+  PORTB |= (1 << PB1);          // Set RAS High - Inactive
+  msbHandlingPin20(row / 256);  // Preset ROW Adress
   PORTD = (uint8_t)(row & 0xFF);
-  NOP;
-  NOP;
   PORTB &= ~(1 << PB1);  // RAS Latch Strobe
 }
 
 // Prepare Controll Lines and perform Checks
 void write20PinRow(uint16_t row, uint8_t pattern, uint16_t width) {
   PORTB |= 0x0F;                          // Set all RAM Controll Lines to HIGH = Inactive
-  CASHandlingPin20(row, pattern,  width);  // Do the Test
+  CASHandlingPin20(row, pattern, width);  // Do the Test
   PORTB |= 0x0F;                          // Set all RAM Controll Lines to HIGH = Inactive
   // Enhanced PageMode Row Write & Read Done
 }
@@ -196,85 +194,75 @@ void write20PinRow(uint16_t row, uint8_t pattern, uint16_t width) {
 void msbHandlingPin20(uint16_t address) {
   PORTB &= ~0x10;
   if (address & 0x01)
-    PORTB |= 0x10;  // Set Bit 8 if required by the address  
+    PORTB |= 0x10;  // Set Bit 8 if required by the address
   PORTC &= ~0x10;
   if (address & 0x02)
     PORTC |= 0x10;
-  }
+}
 
 // Write and Read (&Check) Pattern from Cols
-void CASHandlingPin20( uint16_t row, uint8_t patNr, uint16_t colWidth) {
+void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
   for (uint8_t msb = 0; msb < colWidth; msb++) {
     // Prepare Write Cycle
     PORTC &= 0xF0;          // Set all Outputs to LOW
     DDRC |= 0x0F;           // Configure IOs for Output
     RASHandlingPin20(row);  // Set the Row
     msbHandlingPin20(msb);  // Set the MSB as needed
-    PORTB &= ~(1 << PB3);  // Set WE Low - Active
+    PORTB &= ~(1 << PB3);   // Set WE Low - Active
     PORTC |= (pattern4[patNr] & 0x0F);
     // Iterate over 255 Columns and write the Pattern
     for (uint16_t col = 0; col <= 255; col++) {
-      PORTD = (uint8_t) col;  // Set Col Adress
-      NOP;
-      NOP;
-      PORTB &= ~1;  // CAS Latch Strobe
-      NOP;
-      PORTB |= 1;  // CAS High - Cycle Time ~120ns
-      NOP;
+      PORTD = (uint8_t)col;  // Set Col Adress
+      PORTB &= ~1;           // CAS Latch Strobe
+      PORTB |= 1;            // CAS High - Cycle Time ~120ns
     }
     // Prepare Read Cycle
     PORTB |= (1 << PB3);  // Set WE High - Inactive
     PORTC &= 0xF0;
-    DDRC &= 0xF0;   // Configure IOs for Input
-    PORTC |= 0x0F;  // Use PullUps to be sure no residue Charge gives False-Positives
+    DDRC &= 0xF0;  // Configure IOs for Input
+    //PORTC |= 0x0F;  // Use PullUps to be sure no residue Charge gives False-Positives
     //RASHandlingPin20(row);       // Set Row as we changed from Write -> Read
     //msbHandlingPin20(msb << 8);  // Set the MSB as needed
     PORTB &= ~(1 << PB2);  // Set OE Low - Active
     // Iterate over 255 Columns and read & check Pattern
     for (uint16_t col = 0; col <= 255; col++) {
       PORTD = (uint8_t)col;  // Set Col Adress
-      NOP;
       PORTB &= ~1;
-      NOP;
+      NOP; // Input Settle Time for Digital Inputs = 93ns
+      NOP; // One NOP@16MHz = 62.5ns
       if ((PINC & 0x0F) != pattern4[patNr]) {
         PORTB |= 1;
         interrupts();
         error(patNr + 1, 2);
       }  // Check if Pattern matches
       PORTB |= 1;
-      NOP;
     }
     PORTB |= (1 << PB2);  // Set OE High - Inactive
   }
 }
 
 boolean Sense1Mx4() {
-  PORTB |= (1 << PB1);  // Set RAS High - Inactive
-  PORTD = 0x00;         // Set Row and Col address to 0
-  PORTB &= ~PORTB4;     // Clear address Bit 8
-  PORTC &= 0xE0;        // Set all Outputs and A9 to LOW
-  DDRC |= 0x0F;         // Configure IOs for Output
-  delayMicroseconds(1);
+  PORTB |= (1 << PB1);   // Set RAS High - Inactive
+  PORTD = 0x00;          // Set Row and Col address to 0
+  PORTB &= ~PORTB4;      // Clear address Bit 8
+  PORTC &= 0xE0;         // Set all Outputs and A9 to LOW
+  DDRC |= 0x0F;          // Configure IOs for Output
   PORTB &= ~(1 << PB1);  // RAS Latch Strobe
   PORTB &= ~(1 << PB3);  // Set WE Low - Active
   PORTB &= ~1;           // CAS Latch Strobe
-  delayMicroseconds(1);
-  PORTB |= 1;     // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
-  PORTC |= 0x1F;  // Set all Outputs and A9 High
-  delayMicroseconds(1);
-  PORTB &= ~1;  // CAS Latch Strobe
-  delayMicroseconds(1);
-  PORTB |= 1;           // CAS High - Cycle Time ~120ns -> Write 1111 to Row 0, Col 512
-  PORTB |= (1 << PB3);  // Set WE High - Inactive
-  PORTB |= (1 << PB1);  // Set RAS High - Inactive
-  DDRC &= 0xE0;         // Configure IOs for Input and clear A9 for Row access
-  PORTC |= 0x0F;        // Use PullUps to be sure no residue Charge gives False-Positives
-  delayMicroseconds(1);
+  PORTB |= 1;            // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
+  PORTC |= 0x1F;         // Set all Outputs and A9 High
+  PORTB &= ~1;           // CAS Latch Strobe
+  PORTB |= 1;            // CAS High - Cycle Time ~120ns -> Write 1111 to Row 0, Col 512
+  PORTB |= (1 << PB3);   // Set WE High - Inactive
+  PORTB |= (1 << PB1);   // Set RAS High - Inactive
+  DDRC &= 0xE0;          // Configure IOs for Input and clear A9 for Row access
+  PORTC |= 0x0F;         // Use PullUps to be sure no residue Charge gives False-Positives
   PORTB &= ~(1 << PB1);  // RAS Latch Strobe
   PORTB &= ~(1 << PB2);  // Set OE Low - Active
-  delayMicroseconds(1);
-  PORTB &= ~1;  // CAS Latch Strobe
-  delayMicroseconds(1);
+  PORTB &= ~1;           // CAS Latch Strobe
+  NOP;
+  NOP;
   uint8_t val = (PINC & 0xF);  // Read the Data at this address
   PORTB |= 1;                  // CAS High - Cycle Time ~120ns
   PORTB |= (1 << PB1);         // Set RAS High - Inactive
@@ -342,9 +330,9 @@ void testOK() {
   setupLED();
   while (true) {
     digitalWrite(LED_G, 1);
-    delay(750);
+    delay(500);
     digitalWrite(LED_G, 0);
-    delay(250);
+    delay(500);
   }
 }
 
@@ -354,10 +342,10 @@ void smallOK() {
   while (true) {
     digitalWrite(LED_G, HIGH);
     digitalWrite(LED_R, LOW);
-    delay(750);
+    delay(850);
     digitalWrite(LED_G, LOW);
     digitalWrite(LED_R, HIGH);
-    delay(250);
+    delay(150);
   }
 }
 
