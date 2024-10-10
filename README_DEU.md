@@ -1,5 +1,5 @@
 # Ram-Tester
-Ram-Tester für alte CBM Computer RAM Chips - **BETA** noch nicht gebaut/gegabelt.
+Ram-Tester für alte CBM Computer RAM Chips - **BETA** noch nicht bauen/forken.
 
 Ich habe mich entschlossen, selbst einen Tester zu bauen mit dem Ziel, einige der gängigen DRAM-Chips der CBM-Computer 1980-1990 testen zu können.
 
@@ -14,11 +14,11 @@ Dieses Projekt wurde/ist inspiriert von:
 -> Kein Code oder Schaltplan wurde von einem dieser Projekte übernommen.
 
 Warum also noch ein weiteres Projekt? 
-1. Hava eine billige und einfache Lösung. Kein schickes LCD, das keinen echten Mehrwert bietet. Wenn ein Chip defekt ist, ist es Ihnen wahrscheinlich egal, an welcher Adresse.
-2. Haben Sie eine schnelle Lösung. Einige andere RAM-Tester brauchen mehr als 1 Minute, um nur einen 64kb (8kB) Chip wie den 4164 zu testen. Dieses Projekt braucht weniger als 3 Sekunden, um einen 256x4 (128kB) Chip zu testen.
+1. Einfach eine billige und einfache Lösung. Kein schickes LCD, das keinen echten Mehrwert bietet. Wenn ein Chip defekt ist, ist es Ihnen wahrscheinlich egal, an welcher Adresse.
+2. Eine schnelle Lösung. Einige andere RAM-Tester brauchen mehr als 1 Minute, um nur einen 64kb (8kB) Chip wie den 4164 zu testen. Dieses Projekt braucht weniger als 3 Sekunden, um einen 256x4 (128kB) Chip zu testen.
 3. Einfacher Aufbau mit wenigen Bauteilen - ZIF-Sockel, wenn man sie oft braucht, ansonsten genügen wahrscheinlich normale DIP-Sockel.
 4. Kleiner Footprint PCB um Kosten zu sparen.
-5. Einen Tester haben, der auch größere RAMs unterstützt, wie sie z.B. im Amiga verwendet werden. 
+5. Einen Tester haben, der auch größere RAMs unterstützt, wie sie z.B. im Amiga verwendet werden - insb auch ZIP RAM. 
 
 Das Projekt sollte auch von unerfahrenen Leuten gebaut werden können, deshalb habe ich mich für eine Lösung mit ATMEGA 328 Prozessoren entschieden - bekannt vom Arduino UNO. Aber einfach nur ein weiteres Shield für Arduino zu haben, erschien mir unpraktisch, da man durch den Arduino selbst einige Einschränkungen hat.
 
