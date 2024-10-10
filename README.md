@@ -1,6 +1,8 @@
 # Ram-Tester
 Ram Tester for vintage CBM Computer RAM Chips - **BETA** do not build/fork yet.
 
+This is a hobbyist project, there is no warranty of any sort and usage is on your own risk. By using any information on this site you aggree to this. Please read the license.
+
 I decided to build a tester myself with the aim of being able to test some of the common DRAM chips of the CBM computers 1980-1990.
 
 ## Introduction
@@ -36,7 +38,17 @@ In order to keep build cost low, I just designed one PCB. If you want to use the
 Pre v1.0 PCB build
 
 ## Operation
-TBD
+On Power on or after pressing the Reset Button it first checks if the DIP Switches are in a valid position. If this is not the case it will signal it with continuous red flashing.
+Of a valid Config is found, the DRAM Chip is properly initialized, then Testing starts. For Configs that allow differents sizes of DRAM, the Tester will try to figure out the current Size. Then it starts Testing by using multiple patterns. 
+1. Pass = All Bit set to '0'.
+2. Pass = All Bit set to '1'.
+3. Pass = Bits set to '01'...
+4. Pass = Bits set to '10'...
+
+**NOTE:** The follwing will not be tested:
+1. Speed requirements. The tests are carried out in a way that slow and fast RAM should pass. It will not test if 70ns RAM really works flawless at 70ns.
+2. The Chessboard Patterns are actually only tested Row-Wise and not interleaved between multiple Rows.
+3. Of course there is no 100% Warranty that the Tester will not render false positive or false negative test Results. 
 
 ## Build
 **BOM**
