@@ -32,7 +32,7 @@ Derzeit funktioniert die Software nur mit 256k x 4 DRAM (z.B. TC514256-80), weil
 
 Um die Baukosten niedrig zu halten, habe ich nur eine Platine entworfen. Wenn Sie den ZIP-Adapter verwenden möchten, müssen Sie die Platine entlang der dicken weißen Linie ausschneiden. Die Baukosten mit Platine betragen weniger als 10U$, wenn man das Material bereit hat. Wenn Sie alles bestellen müssen, wird es eher 20-30U$ sein.
 
-<img src=„https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Schematic/IMG_2988.jpeg“ width=„400px“ align=„center“/>
+<img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Schematic/IMG_2988.jpeg" width="400px" align="center"/>
 Pre v1.0 PCB build
 
 ## Betrieb
