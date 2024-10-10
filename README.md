@@ -22,7 +22,7 @@ So why yet another Project?
 
 The project should also be able to be built by inexperienced people, which is why I decided on a solution with ATMEGA 328 processors - known from the Arduino UNO. But just having another Shield for Arduino seemed unpractical since you have some limitations by the Arduino itself.
 
-The processor can still be programmed and taken from an [Arduino UNO](https://store.arduino.cc/products/arduino-uno-rev3), programmed with a programmer or programmed via the existing ICSP (e.g. with an AVRISP MKII). People who want to remove the processor for programming should find enough space on the PCB to fit it with a ZIF socket. 
+The processor can still be programmed and taken from an [Arduino UNO](https://store.arduino.cc/products/arduino-uno-rev3), programmed with a programmer or programmed via the existing ICSP (e.g. with an AVRISP MKII). People who want to remove the processor for programming can swap it between an Arduino UNO and this Board. 
 
 Operation is child's play. Insert the RAM, switch on the power and observe the LED. if it flashes green at the end, everything is ok, if it flashes red, something is broken. 
 
