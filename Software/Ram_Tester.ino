@@ -2,11 +2,11 @@
 // ========================================
 //
 // Author : Andreas Hoffmann
-// Version: 1.0
-// Date   : 15.9.2024
+// Version: 1.1
+// Date   : 10.10.2024
 //
 // This Software is published under GPL 3.0 - Respect the License
-// This Project is hosted at: https://github.com/tops4u/Ram-Tester/tree/main
+// This Project is hosted at: https://github.com/tops4u/Ram-Tester/
 //
 // Fit a DRAM Test Candidate in the Board. Either by using the DIP/ZIF Socket (allign towards the LED) or by
 // using the ZIP Adapter (Pin 1 of Adapter & ZIP Chip towards LED).
@@ -21,9 +21,10 @@
 //
 // Error Blink Codes:
 // Continuous Red Blinking 	- Configuration Error, check DIP Switches. Occasionally a RAM Defect may cause this.
-// 1 Red & n Green		- Short to Ground. Count green Blinks = Pin on the DIP Socket
-// 2 Red & n Green		- Error during RAM Test. Green Blinks indicate which Test Pattern failes (see below).
-// Continuous Green Blinking	- Passed RAM TEst
+// 1 Red & n Green		  - Short to Ground. Count green Blinks = Pin on the DIP Socket
+// 2 Red & n Green		  - Error during RAM Test. Green Blinks indicate which Test Pattern failes (see below).
+// Long Green/Short Red - Successful Test of a Smaller DRAM of this Test Config
+// Long Green/Short Off - Successful Test of a Larger DRAM of this Test Config
 //
 // Assumptions:
 // This Sketch assumes that the DRAM supports Page Mode for Read & Write
@@ -34,6 +35,7 @@
 //
 // Version Information:
 // Version 1.0	- Implement 20Pin DIP/ZIP for 256x4 DRAM up to 120ns (like: MSM514256C)
+// Version 1.1  - Implemented Autodetect 1M or 256k x4 DRAM
 //
 // Disclaimer:
 // This Project (Software & Hardware) is a hobbyist Project. I do not guarantee it's fitness for any purpose
@@ -102,6 +104,7 @@ const int CPU_20PORTB[] = { 17, 4, 16, 3, EOL, EOL, EOL, EOL };  // Position 4 w
 const int CPU_20PORTC[] = { 1, 2, 18, 19, 5, 10, EOL, EOL };
 const int CPU_20PORTD[] = { 6, 7, 8, 9, 11, 12, 13, 14 };
 const int RAS_20PIN = 9;  // Digital Out 9 on Arduino Uno is used for RAS
+const int CAS_20PIN = 8;
 
 uint8_t Mode = 0;  // PinMode 2 = 16 Pin, 4 = 18 Pin, 5 = 20 Pin
 
@@ -111,36 +114,41 @@ void setup() {
   DDRC &= 0b11000000;
   DDRD = 0x0;
   // Wait for the Candidate to properly Startup
-  delay(100);
   if (digitalRead(19) == 1) { Mode += Mode_20Pin; }
   if (digitalRead(3) == 1) { Mode += Mode_18Pin; }
   if (digitalRead(2) == 1) { Mode += Mode_16Pin; }
   // Check if the DIP Switch is set for a valid Configuration.
   if (Mode < 2 || Mode > 5) ConfigFail();
+
+  // -> Currently GND Short Detection confuses the DRAMs and causes Tests to fail. 
   // With a valid Config, activate the PullUps
   //PORTB |= 0b00011111;
   //PORTC |= 0b00111111;
   //PORTD = 0xFF;
   // Settle State - PullUps my require some time.
-  delay(10);
   //checkGNDShort();  // Check for Shorts towards GND. Shorts on Vcc can't be tested as it would need Pull-Downs.
-  delay(100);
+
+  // Startup Delay as per Datasheets
+  delayMicroseconds(200);
   if (Mode == Mode_20Pin) {
-    initRAM(RAS_20PIN);
+    initRAM(RAS_20PIN, CAS_20PIN);
     test20Pin();
   }
   setupLED();
 }
 
-// IF we reach Loop, then all Tests were successful.
+// This Sketch should never reach the Loop... 
 void loop() {
 }
 
-// All RAM Chips require 8 RAS Cycles for proper initailization
-void initRAM(int RASPin) {
+// All RAM Chips require 8 RAS only Refresh Cycles (ROR) for proper initailization
+void initRAM(int RASPin, int CASPin) {
   pinMode(RASPin, OUTPUT);
+  pinMode(CASPin, OUTPUT);
   // RAS is an Active LOW Signal
   digitalWrite(RASPin, HIGH);
+  // For some DRAM CAS !NEEDS! to be low during Init!
+  digitalWrite(CASPin, HIGH);
   for (int i = 0; i < 8; i++) {
     digitalWrite(RASPin, LOW);
     digitalWrite(RASPin, HIGH);
@@ -155,21 +163,21 @@ void test20Pin() {
   DDRB = 0b00011111;
   DDRC = 0b00011111;
   DDRD = 0xFF;
-  for (uint8_t pat = 0; pat < 4; pat++)         // Check all 4Bit Patterns
-    for (uint16_t row = 0; row < 512; row++) {  // Iterate over all ROWs
-      write20PinRow(row, pat, 2);
-    }
-  // If all went smooth we checked 128kB of RAM now. Let's see if this is a 1Mx4 Chip
-  if (Sense1Mx4 == true) {
-    // Run the Tests for the larger Chip  again. The lower 512 Rows and Cols are rechecked, resulting in a 25% longer Test than really needed.
+  if (Sense1Mx4() == true) {
+    // Run the Tests for the larger Chip if A9 is used we run the larger test for 512kB
     // This could be optimized.
     for (uint8_t pat = 0; pat < 4; pat++) {        // Check all 4Bit Patterns
       for (uint16_t row = 0; row < 1024; row++) {  // Iterate over all ROWs
-        write20PinRow(row, pat, 1024);
+        write20PinRow(row, pat, 4);
       }
     }
+    // Good Candidate.
     testOK();
-  } else {
+  } else { // A9 most probably not used or defect - just run 128kB Test
+    for (uint8_t pat = 0; pat < 4; pat++)         // Check all 4Bit Patterns
+      for (uint16_t row = 0; row < 512; row++) {  // Iterate over all ROWs
+        write20PinRow(row, pat, 2);
+      }
     // Indicate with Green-Red flashlight that the "small" Version has been checked ok
     smallOK();
   }
@@ -180,7 +188,7 @@ void RASHandlingPin20(uint16_t row) {
   PORTB |= (1 << PB1);          // Set RAS High - Inactive
   msbHandlingPin20(row / 256);  // Preset ROW Adress
   PORTD = (uint8_t)(row & 0xFF);
-  PORTB &= ~(1 << PB1);  // RAS Latch Strobe
+  PORTB &= ~(1 << PB1);         // RAS Latch Strobe
 }
 
 // Prepare Controll Lines and perform Checks
@@ -219,17 +227,14 @@ void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
     // Prepare Read Cycle
     PORTB |= (1 << PB3);  // Set WE High - Inactive
     PORTC &= 0xF0;
-    DDRC &= 0xF0;  // Configure IOs for Input
-    //PORTC |= 0x0F;  // Use PullUps to be sure no residue Charge gives False-Positives
-    //RASHandlingPin20(row);       // Set Row as we changed from Write -> Read
-    //msbHandlingPin20(msb << 8);  // Set the MSB as needed
+    DDRC &= 0xF0;          // Configure IOs for Input
     PORTB &= ~(1 << PB2);  // Set OE Low - Active
     // Iterate over 255 Columns and read & check Pattern
     for (uint16_t col = 0; col <= 255; col++) {
       PORTD = (uint8_t)col;  // Set Col Adress
       PORTB &= ~1;
-      NOP; // Input Settle Time for Digital Inputs = 93ns
-      NOP; // One NOP@16MHz = 62.5ns
+      NOP;  // Input Settle Time for Digital Inputs = 93ns
+      NOP;  // One NOP@16MHz = 62.5ns
       if ((PINC & 0x0F) != pattern4[patNr]) {
         PORTB |= 1;
         interrupts();
@@ -241,12 +246,14 @@ void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
   }
 }
 
+// The following Routine checks if A9 Pin is used - which is the case for 1Mx4 DRAM
 boolean Sense1Mx4() {
   PORTB |= (1 << PB1);   // Set RAS High - Inactive
   PORTD = 0x00;          // Set Row and Col address to 0
   PORTB &= ~PORTB4;      // Clear address Bit 8
   PORTC &= 0xE0;         // Set all Outputs and A9 to LOW
   DDRC |= 0x0F;          // Configure IOs for Output
+  PORTC &= 0xE0;         // Set all Outputs and A9 to LOW
   PORTB &= ~(1 << PB1);  // RAS Latch Strobe
   PORTB &= ~(1 << PB3);  // Set WE Low - Active
   PORTB &= ~1;           // CAS Latch Strobe
@@ -255,10 +262,8 @@ boolean Sense1Mx4() {
   PORTB &= ~1;           // CAS Latch Strobe
   PORTB |= 1;            // CAS High - Cycle Time ~120ns -> Write 1111 to Row 0, Col 512
   PORTB |= (1 << PB3);   // Set WE High - Inactive
-  PORTB |= (1 << PB1);   // Set RAS High - Inactive
-  DDRC &= 0xE0;          // Configure IOs for Input and clear A9 for Row access
-  PORTC |= 0x0F;         // Use PullUps to be sure no residue Charge gives False-Positives
-  PORTB &= ~(1 << PB1);  // RAS Latch Strobe
+  DDRC &= 0xF0;          // Configure IOs for Input
+  PORTC &= 0xEF;         // Clear A9
   PORTB &= ~(1 << PB2);  // Set OE Low - Active
   PORTB &= ~1;           // CAS Latch Strobe
   NOP;
@@ -326,13 +331,14 @@ void error(uint8_t code, uint8_t error) {
   }
 }
 
+// GREEN - OFF Flashlight - Indicate a successfull test 
 void testOK() {
   setupLED();
   while (true) {
     digitalWrite(LED_G, 1);
-    delay(500);
+    delay(850);
     digitalWrite(LED_G, 0);
-    delay(500);
+    delay(250);
   }
 }
 
