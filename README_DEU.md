@@ -26,7 +26,7 @@ Der Prozessor kann immer noch programmiert und von einem [Arduino UNO](https://s
 
 Die Bedienung ist kinderleicht. RAM einstecken, Strom einschalten und die LED beobachten. Blinkt sie am Ende grün, ist alles in Ordnung, blinkt sie rot, ist etwas kaputt. 
 
-Derzeit funktioniert die Software nur mit 256k x 4 DRAM (z.B. TC514256-80), weil ich das für meine Karte brauchte. Die folgenden DRAM-Bausteine sollten aber auch testbar sein (sobald die Software dazu in der Lage ist): **4164** (64k x 1), **4416** (16k x 4), **4464** (64k x 4), **41256/57** (256k x 1) und **514400** (1M x 4). Voraussetzung ist, dass GND auf dem letzten Pin und VCC auf dem schräg gegenüberliegenden Pin liegt, sowie die IC-Größe von 16, 18 oder 20 Pins. 
+Die folgenden DRAM-Bausteine sollten testbar sein (sobald die Software dazu in der Lage ist): **4164** (64k x 1), **4416** (16k x 4), **4464** (64k x 4), **41256/57** (256k x 1), **514256** (256k x 4) und **514400** (1M x 4). Bitte das Changelog File anschauen um zu sehen, welche DRAM aktuell unterstützt sind. Voraussetzung ist, dass GND auf dem letzten Pin und VCC auf dem schräg gegenüberliegenden Pin liegt, sowie die IC-Größe von 16, 18 oder 20 Pins. 
 
 *->Daher wird dieses Projekt die folgenden RAM-Typen **nicht** unterstützen können: **2144** (Vcc auf Pin 18), **6116** (24 Pin IC), **4116** (benötigt negative und 12V Spannung).
 
