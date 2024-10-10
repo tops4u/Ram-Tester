@@ -1,7 +1,7 @@
 # Ram-Tester
 Ram Tester for vintage CBM Computer RAM Chips - **BETA** do not build/fork yet.
 
-I decided to build a tester myself with the aim of being able to test some of the common DRAM chips of the CBM computers 1980-1990. ee
+I decided to build a tester myself with the aim of being able to test some of the common DRAM chips of the CBM computers 1980-1990.
 
 ## Introduction
 This project was started because I had bought a Commodore A2630 card with 2MB Ram at a flea market and wanted to upgrade it with 2MB Ram. On the internet I found either very expensive offers or cheap ones from Chinese dealers. I tried my luck, but of course the card refused to work with the additional RAM. So I wanted a tester for the required RAM. On the one hand, there were very simple projects, which probably didn't test very well, or semi-professional testers with >1000U$. Meanwhile I was able to sort the defect RAM out by have a bootable Configuration and using Amiga Test Kit (ATK v1.22) to figure out which BIT are faulty and pinpoint possible candidates by checking the schematic. 
@@ -47,8 +47,7 @@ TBD
 - R2 1x SMD 0603 1k Resistor
 - R1 1x SMD 0603 100R Resistor
 - R6 1x SMD 0603 150R Resistor
-- R7 1x SMD 0603 47R Resistor
-- R9-R10 SMD 0603 250R Resistor
+- R7, R8 2x SMD 0603 47R Resistor
 - RNx 4x SMD 0603 47R 4xArray
 - Q1, Q2, SMD IRL 6401 SOJ P-FET
 - J1 1x PinHeader / PowerPlug 2.54mm [AliExpress](https://aliexpress.com/item/1005003179482974.html)
@@ -56,6 +55,8 @@ TBD
 - U2 1x ZIF Socket / DIP Socket 20 Pin [AliExpress](https://aliexpress.com/item/1005007205054381.html)
 - D1 1x BiColor LED 5mm (Red/Green) Common Center Cathode [AliExpress](https://aliexpress.com/item/1005006014283662.html)
 - SW1 1x 3 way Dip-Switch [AliExpress](https://aliexpress.com/item/4001205849246.html)
+- SW2 Pushbutton like [https://aliexpress.com/item/4000555847543.html]
+- J1 MicroUSB (or any power Connector having 2.54mm Spacing [https://aliexpress.com/item/1005001515820458.html]
   
 If you want to use ICSP:
 - ICSP 1x PinHeader 2x3 [AliExpress](https://aliexpress.com/item/4000303366348.html)
