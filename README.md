@@ -30,7 +30,7 @@ Currently the software only works with 256k x 4 DRAM (e.g. TC514256-80) because 
 
 *->As such, this Project will **not** be able to support the following RAM Types **2144** (Vcc on Pin 18), **6116** (24 Pin IC), **4116** (needs negative and 12V Voltage).*
 
-In order to keep build cost low, I just designed one PCB. If you want to use the ZIP Adapter you need to cut the PCB along the depicted *CUT-HERE* Area. Build cost with PCB actually less than 10U$ if you have the Material ready. If you need to order everything it is more likely to be 20-30U$.
+In order to keep build cost low, I just designed one PCB. If you want to use the ZIP Adapter you need to cut the PCB along the thick white line. Build cost with PCB actually less than 10U$ if you have the Material ready. If you need to order everything it is more likely to be 20-30U$.
 
 ![Ram-Tester PCB](https://github.com/tops4u/Ram-Tester/blob/main/RamTester.png?raw=true)
 Render from KiCad - The depicted DIP IC will just be sockets in reality. 
@@ -41,7 +41,7 @@ TBD
 ## Build
 **BOM**
 - Y1 1x 16 MHz Quartz [AliExpress](https://aliexpress.com/item/1005006119798769.html)
-- C1/C2 2x SMD 0805 100nF Capacitor 
+- C1/C2/C6/C7 4x SMD 0805 100nF Capacitor 
 - C2/C3 2x 10-20pf Disc Capacitor [AliExpress](https://aliexpress.com/item/1005003167676803.html)
 - R3, R4, R5 3x SMD 0603 1M Resistor
 - R2 1x SMD 0603 1k Resistor
@@ -50,12 +50,11 @@ TBD
 - R7, R8 2x SMD 0603 47R Resistor
 - RNx 4x SMD 0603 47R 4xArray
 - Q1, Q2, SMD IRL 6401 SOJ P-FET
-- J1 1x PinHeader / PowerPlug 2.54mm [AliExpress](https://aliexpress.com/item/1005003179482974.html)
 - U1 DIP Socket 28 Pin - Narrow
 - U2 1x ZIF Socket / DIP Socket 20 Pin [AliExpress](https://aliexpress.com/item/1005007205054381.html)
 - D1 1x BiColor LED 5mm (Red/Green) Common Center Cathode [AliExpress](https://aliexpress.com/item/1005006014283662.html)
 - SW1 1x 3 way Dip-Switch [AliExpress](https://aliexpress.com/item/4001205849246.html)
-- SW2 Pushbutton like [AliExpress](https://aliexpress.com/item/4000555847543.html)
+- SW2 Pushbutton [AliExpress](https://aliexpress.com/item/4000555847543.html)
 - J1 MicroUSB (or any power Connector having 2.54mm Spacing [AliExpress](https://aliexpress.com/item/1005001515820458.html)
   
 If you want to use ICSP:
