@@ -32,7 +32,7 @@ Currently the software only works with 256k x 4 DRAM (e.g. TC514256-80) because 
 
 In order to keep build cost low, I just designed one PCB. If you want to use the ZIP Adapter you need to cut the PCB along the thick white line. Build cost with PCB actually less than 10U$ if you have the Material ready. If you need to order everything it is more likely to be 20-30U$.
 
-![Ram-Tester PCB](https://github.com/tops4u/Ram-Tester/blob/main/RamTester.png?raw=true)
+![Ram-Tester PCB](https://github.com/tops4u/Ram-Tester/blob/Schematic/Front.jpg?raw=true)
 Render from KiCad - The depicted DIP IC will just be sockets in reality. 
 
 ## Operation
