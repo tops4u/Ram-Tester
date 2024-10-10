@@ -55,8 +55,8 @@ TBD
 - U2 1x ZIF Socket / DIP Socket 20 Pin [AliExpress](https://aliexpress.com/item/1005007205054381.html)
 - D1 1x BiColor LED 5mm (Red/Green) Common Center Cathode [AliExpress](https://aliexpress.com/item/1005006014283662.html)
 - SW1 1x 3 way Dip-Switch [AliExpress](https://aliexpress.com/item/4001205849246.html)
-- SW2 Pushbutton like [https://aliexpress.com/item/4000555847543.html]
-- J1 MicroUSB (or any power Connector having 2.54mm Spacing [https://aliexpress.com/item/1005001515820458.html]
+- SW2 Pushbutton like [AliExpress](https://aliexpress.com/item/4000555847543.html)
+- J1 MicroUSB (or any power Connector having 2.54mm Spacing [AliExpress](https://aliexpress.com/item/1005001515820458.html)
   
 If you want to use ICSP:
 - ICSP 1x PinHeader 2x3 [AliExpress](https://aliexpress.com/item/4000303366348.html)
