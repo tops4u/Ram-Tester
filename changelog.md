@@ -1,3 +1,7 @@
+v1.2 (2024-10-13
+- Added Support for 256x1 (41256) DRAM
+- Testtime approx 8sec - longer due to more complex address Decoding
+  
 v1.1 (2024-10-10)
 - Added Test for KM44C1000AZ-70 (Test Time < 10sec)
 - Tested Automatic Size detection for 256kx4 vs 1Mx4 Chips.
