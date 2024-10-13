@@ -3,7 +3,7 @@
 //
 // Author : Andreas Hoffmann
 // Version: 1.1
-// Date   : 10.10.2024
+// Date   : 13.10.2024
 //
 // This Software is published under GPL 3.0 - Respect the License
 // This Project is hosted at: https://github.com/tops4u/Ram-Tester/
@@ -36,6 +36,7 @@
 // Version Information:
 // Version 1.0	- Implement 20Pin DIP/ZIP for 256x4 DRAM up to 120ns (like: MSM514256C)
 // Version 1.1  - Implemented Autodetect 1M or 256k x4 DRAM
+// Version 1.2  - Implemented Check for 256kx1 (41256 like DRAM)
 //
 // Disclaimer:
 // This Project (Software & Hardware) is a hobbyist Project. I do not guarantee it's fitness for any purpose
@@ -53,12 +54,12 @@
 #define LED_G 12  // PB4 -> Co Used with RAM Test Socket, see comments below!
 
 // The Testpatterns to be used for 4Bit Databus RAM
-const uint8_t pattern4[] = { 0x00, 0x0F, 0x0A, 0x03 };  // Equals to 0b0000, 0b1111, 0b1010, 0b0101
+const uint8_t pattern[] = { 0x00, 0xFF, 0xAA, 0x33, 0x47, 0x81 };  // Equals to 0b0000, 0b1111, 0b1010, 0b0101
 
 // Mapping for 4164 (2ms Refresh Rate) / 41256/257 (4 ms Refresh Rate)
-// A0 = PD0   RAS = PC4   t RAS->CAS = 150-200ns -> Max Pulsewidth 10'000ns
-// A1 = PD2   CAS = PC3   t CAS->dOut= 75 -100ns -> Max Pulsewidth 10'000ns
-// A2 = PD1   WE  = PB3
+// A0 = PC4   RAS = PB1   t RAS->CAS = 150-200ns -> Max Pulsewidth 10'000ns
+// A1 = PD1   CAS = PC3   t CAS->dOut= 75 -100ns -> Max Pulsewidth 10'000ns
+// A2 = PD0   WE  = PB3
 // A3 = PB2   Din = PC1
 // A4 = PB4   Dout= PC2
 // A5 = PD7
@@ -69,7 +70,8 @@ const uint8_t pattern4[] = { 0x00, 0x0F, 0x0A, 0x03 };  // Equals to 0b0000, 0b1
 const int CPU_16PORTB[] = { 13, 4, 12, 3, EOL, EOL, EOL, EOL };  // Position 4 would be A8 but the LED is attached to PB4 as well
 const int CPU_16PORTC[] = { 1, 2, 14, 15, 5, EOL, EOL, EOL };
 const int CPU_16PORTD[] = { 6, 7, 8, NC, NC, NC, 9, 10 };
-const int RAS_16PIN = 18;  // Digital Out 18 / A4 on Arduino Uno is used for RAS
+const int RAS_16PIN = 9;  // Digital Out 9 on Arduino Uno is used for RAS
+const int CAS_16PIN = 17; // Corresponds to Analog 3 or Digital 17
 
 // Mapping for 4461 / 4464 - max Refresh 4ms
 // They have both the same Pinout. Both have 8 Bit address range, however 4416 uses only A1-A6 for Column addresses (64)
@@ -86,6 +88,7 @@ const int CPU_18PORTB[] = { 15, 4, 14, 3, EOL, EOL, EOL, EOL };  // Position 4 w
 const int CPU_18PORTC[] = { 1, 2, 16, 17, 5, EOL, EOL, EOL };
 const int CPU_18PORTD[] = { 6, 7, 8, 9, NC, 10, 11, 12 };
 const int RAS_18PIN = 18;  // Digital Out 18 / A4 on Arduino Uno is used for RAS
+const int CAS_18PIN = 16;  // Corresponds to Analog 2 or Digital 16
 
 // Mapping for 514256 / 441000 - max Refresh 8ms
 // A0 = PD0   RAS = PB1
@@ -134,7 +137,15 @@ void setup() {
     initRAM(RAS_20PIN, CAS_20PIN);
     test20Pin();
   }
-  setupLED();
+  if (Mode == Mode_18Pin) {
+    initRAM(RAS_18PIN, CAS_18PIN);
+  }
+  if (Mode == Mode_16Pin) {
+    initRAM(RAS_16PIN, CAS_16PIN);
+    test16Pin();
+
+  }
+  ConfigFail();
 }
 
 // This Sketch should never reach the Loop... 
@@ -152,6 +163,83 @@ void initRAM(int RASPin, int CASPin) {
   for (int i = 0; i < 8; i++) {
     digitalWrite(RASPin, LOW);
     digitalWrite(RASPin, HIGH);
+  }
+}
+
+void test16Pin() {
+  // Configure I/O for this Chip Type
+  PORTB = 0b00000000;
+  PORTC = 0b00000000;
+  PORTD = 0x00;
+  DDRB = 0b00011111;
+  DDRC = 0b00011011;
+  DDRD = 0b11000011;
+  if (Sense41256() == true) {
+    // Run the Tests for the larger Chip if A9 is used we run the larger test for 512kB
+    // This could be optimized.
+    for (uint16_t row = 0; row < 512; row++) {  // Iterate over all ROWs
+      write16PinRow(row, 512);
+    }
+    // Good Candidate.
+    testOK();
+  } else { // A9 most probably not used or defect - just run 128kB Test
+/*    for (uint8_t pat = 0; pat < 4; pat++)         // Check all 4Bit Patterns
+      for (uint16_t row = 0; row < 512; row++) {  // Iterate over all ROWs
+        write20PinRow(row, pat, 2);
+      }
+    // Indicate with Green-Red flashlight that the "small" Version has been checked ok
+    smallOK();
+  }*/
+  }
+}
+
+// Prepare and execute ROW Access for 20 Pin Types
+void RASHandlingPin16(uint16_t row) {
+  PORTB |= (1 << PB1);          // Set RAS High - Inactive
+  // Row Address distribution Logic for 41256/64 16 Pin RAM
+  PORTB = (PORTB & 0xea) | (row & 0x0010) | ((row & 0x0008)>>1) | ((row & 0x0040)>>6);
+  PORTC = (PORTC & 0xe9) | ((row & 0x0001)<<4) | ((row & 0x0100)>>8);
+  PORTD = (row & 0x0080) | ((row & 0x0020)<<1) | ((row & 0x0004)>>1) | ((row & 0x0002)>>1);
+  PORTB &= ~(1 << PB1);         // RAS Latch Strobe
+}
+
+// Write and Read (&Check) Pattern from Cols
+void write16PinRow(uint16_t row, uint16_t cols) {
+  for (uint8_t patNr = 0; patNr < 6; patNr++) {
+    // Prepare Write Cycle
+    PORTC &= 0x0c;          // Set CAS High
+    RASHandlingPin16(row);  // Set the Row
+    PORTB &= ~(1 << PB3);   // Set WE Low - Active
+    uint8_t pat = pattern[patNr];
+    for (uint16_t col = 0; col <= cols; col++) {
+      // Column Address distribution logic for 41256/64 16 Pin RAM
+      PORTB = (PORTB&0xea)|(col&0x0010)|((col&0x0008)>>1)|((col&0x0040)>>6); 
+	    PORTC = (PORTC&0xe9)|((col&0x0001)<<4)|((col&0x0100)>>8)|((pat&0x01)<<1);
+	    PORTD = (col&0x0080)|((col&0x0020)<<1)|((col&0x0004)>>1)|((col&0x0002)>>1);
+      PORTC &= ~0x08;           // CAS Latch Strobe
+      PORTC |= 0x08;            // CAS High - Cycle Time ~120ns
+      // Rotate the Pattern 1 Bit to the LEFT (c has not rotate so there is a trick with 2 Shift)
+      pat = (pat<<1) | (pat>>7);
+    }
+    // Prepare Read Cycle
+    PORTB |= (1 << PB3);  // Set WE High - Inactive
+    //RASHandlingPin16(row);
+    pat = pattern[patNr];
+    // Iterate over 255 Columns and read & check Pattern
+    for (uint16_t col = 0; col <= cols; col++) {
+      PORTB = (PORTB&0xea)|(col&0x0010)|((col&0x0008)>>1)|((col&0x0040)>>6); 
+	    PORTC = (PORTC&0xe9)|((col&0x0001)<<4)|((col&0x0100)>>8);
+	    PORTD = (col&0x0080)|((col&0x0020)<<1)|((col&0x0004)>>1)|((col&0x0002)>>1);
+      PORTC &= ~0x08;           // CAS Latch Strobe
+      NOP;  // Input Settle Time for Digital Inputs = 93ns
+      NOP;  // One NOP@16MHz = 62.5ns
+      if (((PINC & 0x04)>>2) != (pat & 0x01)) {
+        PORTC |= 0x08;            // CAS High - Cycle Time ~120ns
+        error((pat & 0x01) + 1, 2);
+      }  // Check if Pattern matches
+      PORTC |= 0x08;            // CAS High - Cycle Time ~120ns
+      pat = (pat<<1) | (pat>>7);
+    }
   }
 }
 
@@ -200,12 +288,14 @@ void write20PinRow(uint16_t row, uint8_t pattern, uint16_t width) {
 }
 
 void msbHandlingPin20(uint16_t address) {
-  PORTB &= ~0x10;
+  PORTB = (PORTB & 0xEF) | ((address&0x01)<<4);
+  PORTC = (PORTC & 0xEF) | ((address&0x02)<<3);
+/*  PORTB &= ~0x10;
   if (address & 0x01)
     PORTB |= 0x10;  // Set Bit 8 if required by the address
   PORTC &= ~0x10;
   if (address & 0x02)
-    PORTC |= 0x10;
+    PORTC |= 0x10;*/
 }
 
 // Write and Read (&Check) Pattern from Cols
@@ -217,7 +307,7 @@ void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
     RASHandlingPin20(row);  // Set the Row
     msbHandlingPin20(msb);  // Set the MSB as needed
     PORTB &= ~(1 << PB3);   // Set WE Low - Active
-    PORTC |= (pattern4[patNr] & 0x0F);
+    PORTC |= (pattern[patNr] & 0x0F);
     // Iterate over 255 Columns and write the Pattern
     for (uint16_t col = 0; col <= 255; col++) {
       PORTD = (uint8_t)col;  // Set Col Adress
@@ -235,7 +325,7 @@ void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
       PORTB &= ~1;
       NOP;  // Input Settle Time for Digital Inputs = 93ns
       NOP;  // One NOP@16MHz = 62.5ns
-      if ((PINC & 0x0F) != pattern4[patNr]) {
+      if ((PINC & 0x0F) != (pattern[patNr] & 0x0f)) {
         PORTB |= 1;
         interrupts();
         error(patNr + 1, 2);
@@ -246,7 +336,12 @@ void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
   }
 }
 
-// The following Routine checks if A9 Pin is used - which is the case for 1Mx4 DRAM
+// The following checks 16 Pin Mode for 41256 or 4164 Chip where A8 is NC
+boolean Sense41256() {
+  return true;
+}
+
+// The following Routine checks if A9 Pin is used - which is the case for 1Mx4 DRAM in 20Pin Mode
 boolean Sense1Mx4() {
   PORTB |= (1 << PB1);   // Set RAS High - Inactive
   PORTD = 0x00;          // Set Row and Col address to 0
