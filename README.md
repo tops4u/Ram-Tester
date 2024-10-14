@@ -39,11 +39,19 @@ Pre v1.0 PCB build
 
 ## Operation
 On Power on or after pressing the Reset Button it first checks if the DIP Switches are in a valid position. If this is not the case it will signal it with continuous red flashing.
-Of a valid Config is found, the DRAM Chip is properly initialized, then Testing starts. For Configs that allow differents sizes of DRAM, the Tester will try to figure out the current Size. Then it starts Testing by using multiple patterns. 
+Of a valid Config is found, the DRAM Chip is properly initialized, then Testing starts. First the address Lines are checked (Pin connectivity, Buffer function, Address-Decoders). For Configs that allow differents sizes of DRAM, the Tester will try to figure out the current Size. Then it starts Testing by using multiple patterns. 
 1. Pass = All Bit set to '0'.
 2. Pass = All Bit set to '1'.
 3. Pass = Bits set to '01'...
 4. Pass = Bits set to '10'...
+
+**LED Function:**
+- Continuous Red - Off - Red Flashing: Config Error with the DIP Swiches or internal Logic Error
+- Green to Yellow Fading : Testing ongoing
+- 1x Red followed by n Green Flashes : Addressline Error. n-Green indicates the failing Addressline
+- 2x Red followed by n Green Flashes : Error during Bit Testing. n-Green indicates the failing Pattern. (Pattern 1 - Stuck Bit in On, Pattern 2 - Stuck Bit in Off, 3 or 4 there is crosstalk between columns).
+- Long Green - short black : Test successfull. The Tester assumed this to be the larger Type to Test (1Mx4, 256x1 or 64x4)
+- Long Green - short red  : Test successfull. The Tester assumed this to be the smaller Type to Test (256x4, 64x1 or 16x4) **BUT**: If the Chip is not this type, this could mean a faulty Adressline (like A9 for 1Mx4 therefore it will be misstakenlly accounted as 256x4). 
 
 **NOTE:** The follwing will not be tested:
 1. Speed requirements. The tests are carried out in a way that slow and fast RAM should pass. It will not test if 70ns RAM really works flawless at 70ns.
