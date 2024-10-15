@@ -60,7 +60,7 @@ Of a valid Config is found, the DRAM Chip is properly initialized, then Testing 
 4. Refresh functionality is not tested, neither is the retention time. As tests for storage are carried out Row by Row, each Row needs to Store the Values for only a fraction of its max specified retention time. A simple Test might be added later on to check the refresh on a few rows. Intensive Testing i.e. each Row, would substantially slow tests down. 
 5. Of course there is no 100% Warranty that the Tester will not render false positive or false negative test Results.
 
-=> Don't let the project down because the RAMs might not (yet) be as thoroughly tested as you might wish (after having seen the list above). None of the linked Projects above test any of those point, not even address line connectivity. So most probably a working chip with a bent up address pin would pass as "OK" on the other RAM Testers. 
+=> Don't let the project down because the RAMs might not (yet) be as thoroughly tested as you might wish (after having seen the list above). None of the linked Projects above test any of those points, not even address line connectivity. So most probably a working chip with a bent up address pin would pass as "OK" on the other RAM Testers. 
 
 ## Build
 **BOM**
