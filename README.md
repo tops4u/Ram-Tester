@@ -58,7 +58,9 @@ Of a valid Config is found, the DRAM Chip is properly initialized, then Testing 
 2. The Chessboard Patterns are actually only tested Row-Wise and not interleaved between multiple Rows. This might be improved later on (it will make testing about 30% slower). 
 3. Pin connectivity, buffers and decoders are only simply checked if they work - no checks for severe internal errors or crosstalk. As such it is tested that no Pin got disconnected or the Buffer/Decoder ignores this pin. If the Decoder or Buffer confuses Pins this might go unnoticed. This test might be improved later on.
 4. Refresh functionality is not tested, neither is the retention time. As tests for storage are carried out Row by Row, each Row needs to Store the Values for only a fraction of its max specified retention time. A simple Test might be added later on to check the refresh on a few rows. Intensive Testing i.e. each Row, would substantially slow tests down. 
-5. Of course there is no 100% Warranty that the Tester will not render false positive or false negative test Results. 
+5. Of course there is no 100% Warranty that the Tester will not render false positive or false negative test Results.
+
+=> Don't let the project down because the RAMs are not (yet) as thoroughly tested as you might wish (after having seen the list above). BUT for example none of the above linked Projects tests for address line failures. Most probably a working chip with a bent up address pin would even pass as "OK". 
 
 ## Build
 **BOM**
