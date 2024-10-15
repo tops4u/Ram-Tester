@@ -53,14 +53,14 @@ Of a valid Config is found, the DRAM Chip is properly initialized, then Testing 
 - Long Green - short off  : Test successful. The Tester assumed this to be the larger Type to Test (1Mx4, 256x1 or 64x4)
 - Long Green - short red  : Test successful. The Tester assumed this to be the smaller Type to Test (256x4, 64x1 or 16x4) **BUT**: If the Chip is not this type, this could mean a faulty Adressline (like A9 for 1Mx4 therefore it will be mistakenly accounted as 256x4 - the tester has no way to figure this out). 
 
-**NOTE:** The following will not be tested:
+**NOTE:** The following will <INS>not</INS> be tested:
 1. Speed requirements. The tests are carried out in a way that slow and fast RAM should pass. It will not test if 70ns RAM really works flawless at 70ns.
 2. The Chessboard Patterns are actually only tested Row-Wise and not interleaved between multiple Rows. This might be improved later on (it will make testing about 30% slower). 
 3. Pin connectivity, buffers and decoders are only simply checked if they work - no checks for severe internal errors or crosstalk. As such it is tested that no Pin got disconnected or the Buffer/Decoder ignores this pin. If the Decoder or Buffer confuses Pins this might go unnoticed. This test might be improved later on.
 4. Refresh functionality is not tested, neither is the retention time. As tests for storage are carried out Row by Row, each Row needs to Store the Values for only a fraction of its max specified retention time. A simple Test might be added later on to check the refresh on a few rows. Intensive Testing i.e. each Row, would substantially slow tests down. 
 5. Of course there is no 100% Warranty that the Tester will not render false positive or false negative test Results.
 
-=> Don't let the project down because the RAMs are not (yet) as thoroughly tested as you might wish (after having seen the list above). BUT for example none of the above linked Projects tests for address line failures. Most probably a working chip with a bent up address pin would even pass as "OK". 
+=> Don't let the project down because the RAMs might not (yet) be as thoroughly tested as you might wish (after having seen the list above). None of the linked Projects above test any of those point, not even address line connectivity. So most probably a working chip with a bent up address pin would pass as "OK" on the other RAM Testers. 
 
 ## Build
 **BOM**
