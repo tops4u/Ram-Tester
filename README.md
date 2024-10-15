@@ -1,7 +1,7 @@
 # Ram-Tester
 Ram Tester for vintage CBM Computer RAM Chips - **BETA** do not build/fork yet.
 
-This is a hobbyist project, there is no warranty of any sort and usage is on your own risk. By using any information on this site you aggree to this. Please read the license.
+This is a hobbyist project, there is no warranty of any sort and usage is on your own risk. By using any information on this site you agree to this. Please read the license.
 
 I decided to build a tester myself with the aim of being able to test some of the common DRAM chips of the CBM computers 1980-1990.
 
@@ -16,7 +16,7 @@ This Project was/is inspired by:
 -> No Code or Schematic was taken from any of those Projects.
 
 So why yet another Project? 
-1. Hava a cheap and simple solution. No fancy LCD that does not give you real added value. If a chip is faulty you probably don't care at which address.
+1. Have a cheap and simple solution. No fancy LCD that does not give you real added value. If a chip is faulty you probably don't care at which address.
 2. Have a fast solution. Some other RAM Testers take more than 1 minute to just test a 64kb (8kB) Chip like the 4164. This project takes less than 3 secs for a 256x4 (128kB) Chip to test.
 3. Easy Setup with few components - ZIF Sockets if you need it often, otherwise probably normal DIP Sockets will be ok.
 4. Small Footprint PCB to save cost.
@@ -46,17 +46,18 @@ Of a valid Config is found, the DRAM Chip is properly initialized, then Testing 
 4. Pass = Bits set to '10'...
 
 **LED Function:**
-- Continuous Red - Off - Red Flashing: Config Error with the DIP Swiches or internal Logic Error
+- Continuous Red - Off - Red Flashing: Config Error with the DIP Switches or internal Logic Error
 - Green to Yellow Fading : Testing ongoing
 - 1x Red followed by n Green Flashes : Addressline Error. n-Green indicates the failing Addressline
 - 2x Red followed by n Green Flashes : Error during Bit Testing. n-Green indicates the failing Pattern. (Pattern 1 - Stuck Bit in On, Pattern 2 - Stuck Bit in Off, 3 or 4 there is crosstalk between columns).
-- Long Green - short black : Test successfull. The Tester assumed this to be the larger Type to Test (1Mx4, 256x1 or 64x4)
-- Long Green - short red  : Test successfull. The Tester assumed this to be the smaller Type to Test (256x4, 64x1 or 16x4) **BUT**: If the Chip is not this type, this could mean a faulty Adressline (like A9 for 1Mx4 therefore it will be misstakenlly accounted as 256x4). 
+- Long Green - short black : Test successful. The Tester assumed this to be the larger Type to Test (1Mx4, 256x1 or 64x4)
+- Long Green - short red  : Test successful. The Tester assumed this to be the smaller Type to Test (256x4, 64x1 or 16x4) **BUT**: If the Chip is not this type, this could mean a faulty Adressline (like A9 for 1Mx4 therefore it will be mistakenly  accounted as 256x4). 
 
-**NOTE:** The follwing will not be tested:
+**NOTE:** The following will not be tested:
 1. Speed requirements. The tests are carried out in a way that slow and fast RAM should pass. It will not test if 70ns RAM really works flawless at 70ns.
 2. The Chessboard Patterns are actually only tested Row-Wise and not interleaved between multiple Rows.
-3. Of course there is no 100% Warranty that the Tester will not render false positive or false negative test Results. 
+3. Pin connectivity, buffers and decoders are only simply checked if they work - no checks for internal errors or crosstalk.
+4. Of course there is no 100% Warranty that the Tester will not render false positive or false negative test Results. 
 
 ## Build
 **BOM**
