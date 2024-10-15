@@ -6,7 +6,7 @@ This is a hobbyist project, there is no warranty of any sort and usage is on you
 I decided to build a tester myself with the aim of being able to test some of the common DRAM chips of the CBM computers 1980-1990.
 
 ## Introduction
-This project was started because I had bought a Commodore A2630 card with 2MB Ram at a flea market and wanted to upgrade it with 2MB Ram. On the internet I found either very expensive offers or cheap ones from Chinese dealers. I tried my luck, but of course the card refused to work with the additional RAM. So I wanted a tester for the required RAM. On the one hand, there were very simple projects, which probably didn't test very well, or semi-professional testers with >1000U$. Meanwhile I was able to sort the defect RAM out by have a bootable Configuration and using Amiga Test Kit (ATK v1.22) to figure out which BIT are faulty and pinpoint possible candidates by checking the schematic. 
+This project was started because I had bought a Commodore A2630 card with 2MB Ram at a flea market and wanted to upgrade it with 2MB Ram. On the internet I found either very expensive offers or cheap ones from Chinese dealers. I tried my luck, but of course the card initially refused to work with the additional RAM. So I wanted a tester for the required RAM. On the one hand, there were very simple projects, which probably didn't test very well, or semi-professional testers with >1000U$. Meanwhile I was able to sort the defect RAM out by having (by chance) a bootable Configuration and using Amiga Test Kit (ATK v1.22) to figure out which BIT are faulty and pinpoint possible candidates by checking the schematic. 
 
 This Project was/is inspired by:
 - Project DRAM (https://github.com/ProjectDRAM/514256B)
@@ -22,13 +22,13 @@ So why yet another Project?
 4. Small Footprint PCB to save cost.
 5. Have a Tester that also supports larger RAM used in Amiga for example. 
 
-The project should also be able to be built by inexperienced people, which is why I decided on a solution with ATMEGA 328 processors - known from the Arduino UNO. But just having another Shield for Arduino seemed unpractical since you have some limitations by the Arduino itself.
+The project should also be able to be built by inexperienced people, which is why I decided on a solution with ATMEGA 328 processors - known from the Arduino UNO. But just having another Shield for Arduino seemed unpractical since you have some limitations by the Arduino itself (for 20Pin Ram we just really need all the ATMEGA IOs available).
 
 The processor can still be programmed and taken from an [Arduino UNO](https://store.arduino.cc/products/arduino-uno-rev3), programmed with a programmer or programmed via the existing ICSP (e.g. with an AVRISP MKII). People who want to remove the processor for programming can swap it between an Arduino UNO and this Board. 
 
 Operation is child's play. Insert the RAM, switch on the power and observe the LED. if it flashes green at the end, everything is ok, if it flashes red, something is broken. 
 
-This Tester should work with the following DRAM (as soon as the software is able to do so): **4164** (64k x 1), **4416** (16k x 4), **4464** (64k x 4), **41256/57** (256k x 1), **514256** (256k x 4) and **514400** (1M x 4). The prerequisite is that GND is on the last pin and VCC on the diagonally opposite pin as well as the IC size of 16, 18 or 20 pins. Check the changelog File for current supported DRAMs.
+This Tester should work with the following DRAM (as soon as the software is able to do so): **4164** (64k x 1), **4416** (16k x 4), **4464** (64k x 4), **41256/57** (256k x 1), **514256** (256k x 4) and **514400** (1M x 4). The prerequisite is that GND is on the last pin and VCC on the diagonally opposite pin as well as the IC size of 16, 18 or 20 pins. Check the changelog File for current supported DRAMs and performed Tests.
 
 *->As such, this Project will **not** be able to support the following RAM Types **2144** (Vcc on Pin 18), **6116** (24 Pin IC), **4116** (needs negative and 12V Voltage).*
 
@@ -47,17 +47,18 @@ Of a valid Config is found, the DRAM Chip is properly initialized, then Testing 
 
 **LED Function:**
 - Continuous Red - Off - Red Flashing: Config Error with the DIP Switches or internal Logic Error
-- Green to Yellow Fading : Testing ongoing
-- 1x Red followed by n Green Flashes : Addressline Error. n-Green indicates the failing Addressline
+- Constant Green or Green fading to Yellow(ish) : Test ongoing
+- 1x Red followed by n Green Flashes : Addressline Error. n-Green indicates the failing Addressline - Keep in mind zero green blink will be issued for address line 0 (A0)
 - 2x Red followed by n Green Flashes : Error during Bit Testing. n-Green indicates the failing Pattern. (Pattern 1 - Stuck Bit in On, Pattern 2 - Stuck Bit in Off, 3 or 4 there is crosstalk between columns).
-- Long Green - short black : Test successful. The Tester assumed this to be the larger Type to Test (1Mx4, 256x1 or 64x4)
-- Long Green - short red  : Test successful. The Tester assumed this to be the smaller Type to Test (256x4, 64x1 or 16x4) **BUT**: If the Chip is not this type, this could mean a faulty Adressline (like A9 for 1Mx4 therefore it will be mistakenly  accounted as 256x4). 
+- Long Green - short off  : Test successful. The Tester assumed this to be the larger Type to Test (1Mx4, 256x1 or 64x4)
+- Long Green - short red  : Test successful. The Tester assumed this to be the smaller Type to Test (256x4, 64x1 or 16x4) **BUT**: If the Chip is not this type, this could mean a faulty Adressline (like A9 for 1Mx4 therefore it will be mistakenly accounted as 256x4 - the tester has no way to figure this out). 
 
 **NOTE:** The following will not be tested:
 1. Speed requirements. The tests are carried out in a way that slow and fast RAM should pass. It will not test if 70ns RAM really works flawless at 70ns.
-2. The Chessboard Patterns are actually only tested Row-Wise and not interleaved between multiple Rows.
-3. Pin connectivity, buffers and decoders are only simply checked if they work - no checks for internal errors or crosstalk.
-4. Of course there is no 100% Warranty that the Tester will not render false positive or false negative test Results. 
+2. The Chessboard Patterns are actually only tested Row-Wise and not interleaved between multiple Rows. This might be improved later on (it will make testing about 30% slower). 
+3. Pin connectivity, buffers and decoders are only simply checked if they work - no checks for severe internal errors or crosstalk. As such it is tested that no Pin got disconnected or the Buffer/Decoder ignores this pin. If the Decoder or Buffer confuses Pins this might go unnoticed. This test might be improved later on.
+4. Refresh functionality is not tested, neither is the retention time. As tests for storage are carried out Row by Row, each Row needs to Store the Values for only a fraction of its max specified retention time. A simple Test might be added later on to check the refresh on a few rows. Intensive Testing i.e. each Row, would substantially slow tests down. 
+5. Of course there is no 100% Warranty that the Tester will not render false positive or false negative test Results. 
 
 ## Build
 **BOM**
