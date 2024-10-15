@@ -1,5 +1,5 @@
 v1.23 (2024-10-15)
-- Added checks for ROW decoder and buffer
+- Added checks for ROW decoder and buffers
   
 v1.22 (2024-10-13)
 - Added Support for 4164 (auto selection between 4164 and 41256)
