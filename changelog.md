@@ -1,3 +1,6 @@
+v1.23 (2024-10-15)
+- Added checks for ROW decoder and buffer
+  
 v1.22 (2024-10-13)
 - Added Support for 4164 (auto selection between 4164 and 41256)
 - Added check for addressline (Pins, Buffers and Colmundecoders) - No Checks for Rowdecoders yet.
