@@ -2,26 +2,17 @@
 // ========================================
 //
 // Author : Andreas Hoffmann
-// Version: 1.23
-// Date   : 15.10.2024
+// Version: 1.3
+// Date   : 16.10.2024
 //
 // This Software is published under GPL 3.0 - Respect the License
 // This Project is hosted at: https://github.com/tops4u/Ram-Tester/
 //
-// Fit a DRAM Test Candidate in the Board. Either by using the DIP/ZIF Socket (allign towards the LED) or by
-// using the ZIP Adapter (Pin 1 of Adapter & ZIP Chip towards LED).
-// Upon Connection to Power the Programm will start.
-// It will first check the Configuration of the Boards DIP Switch (20, 18 or 16 Pin RAM).
-// If the config is valid, it will check for ShortCircuit to GND on all Pins (except Vcc and 15 - 20Pin Config)
-// Once completed and no Ground Short was found it will start filling all Columns of one Row with given Patterns
-// and check them. This has the advantage that the RAM does not need to be refreshed.
-// To check another Chip, cycle Power and restart procedure as described above.
-//
-// Currently a 256k*4 DRAM Chip takes around 2 Sec to Test.
+// Note: There is a lot of Code duplication - This is really UGLY! This is no archtectual masterpice but a try to make things fast.
 //
 // Error Blink Codes:
 // Continuous Red Blinking 	- Configuration Error, check DIP Switches. Occasionally a RAM Defect may cause this.
-// 1 Red & n Green		  - Addressdecoder Test Fail - n Green Blinks = failing addressline
+// 1 Red & n Green		  - Addressdecoder Test Fail - n Green Blinks = failing addressline (Keep in mind there will be no green blink for A0)
 // 2 Red & n Green		  - Error during RAM Test. Green Blinks indicate which Test Pattern failes (see below).
 // Long Green/Short Red - Successful Test of a Smaller DRAM of this Test Config
 // Long Green/Short Off - Successful Test of a Larger DRAM of this Test Config
@@ -40,15 +31,15 @@
 // Version 1.21 - Added Column Address Line Checks for 41256/4164. This checks all address lines / buffers and column-addressdecoders
 // Version 1.22 - Added Check for 4164 / 41256
 // Version 1.23 - Added Row Address Checking for 4164/41256 complementing Column address checks from 1.21
+// Version 1.3  - Added Row and Column Tests for Pins, Buffers and Decoders for 514256 and 441000
 //
 // Disclaimer:
 // This Project (Software & Hardware) is a hobbyist Project. I do not guarantee it's fitness for any purpose
 // and I do not guarantee that it is Errorfree. All usage is on your risk.
 
 // For slow RAM we may need to introduce an additional 62.5ns delay. 16MHz Clock -> 1 Cycle = 62.5ns
-#include <math.h>
-
 #define NOP __asm__ __volatile__("nop\n\t")
+
 #define Mode_16Pin 2
 #define Mode_18Pin 4
 #define Mode_20Pin 5
@@ -57,8 +48,8 @@
 #define LED_R 13  // PB5
 #define LED_G 12  // PB4 -> Co Used with RAM Test Socket, see comments below!
 
-// The Testpatterns to be used for 4Bit Databus RAM
-const uint8_t pattern[] = { 0x00, 0xFF, 0xAA, 0x33 };                      // Equals to 0b0000, 0b1111, 0b1010, 0b0101
+// The Testpatterns
+const uint8_t pattern[] = { 0x00, 0xFF, 0xAA, 0x33 };  // Equals to 0b00000000, 0b11111111, 0b10101010, 0b01010101
 
 // Mapping for 4164 (2ms Refresh Rate) / 41256/257 (4 ms Refresh Rate)
 // A0 = PC4   RAS = PB1   t RAS->CAS = 150-200ns -> Max Pulsewidth 10'000ns
@@ -148,11 +139,11 @@ void setup() {
     initRAM(RAS_16PIN, CAS_16PIN);
     test16Pin();
   }
-  ConfigFail();
 }
 
 // This Sketch should never reach the Loop...
 void loop() {
+  ConfigFail();
 }
 
 // All RAM Chips require 8 RAS only Refresh Cycles (ROR) for proper initailization
@@ -182,14 +173,12 @@ void test16Pin() {
   PORTD = 0x00;
   DDRD = 0b11000011;
   if (Sense41256() == true) {
-    // Run the Tests for the larger Chip if A9 is used we run the larger test for 512kB
-    // This could be optimized.
     for (uint16_t row = 0; row < 512; row++) {  // Iterate over all ROWs
       write16PinRow(row, 512);
     }
     // Good Candidate.
     testOK();
-  } else {                                      // A8 most probably not used or defect - just run 8kB Test
+  } else {                                      // A8 not used or defect - just run 8kB Test
     for (uint16_t row = 0; row < 256; row++) {  // Iterate over all ROWs
       write16PinRow(row, 256);
     }
@@ -198,10 +187,10 @@ void test16Pin() {
   }
 }
 
-// Prepare and execute ROW Access for 20 Pin Types
+// Prepare and execute ROW Access for 16 Pin Types
 void RASHandlingPin16(uint16_t row) {
   PORTB |= (1 << PB1);  // Set RAS High - Inactive
-  // Row Address distribution Logic for 41256/64 16 Pin RAM
+  // Row Address distribution Logic for 41256/64 16 Pin RAM - more complicated as the PCB circuit is optimized for 256x4 / 1Mx4 Types.
   PORTB = (PORTB & 0xea) | (row & 0x0010) | ((row & 0x0008) >> 1) | ((row & 0x0040) >> 6);
   PORTC = (PORTC & 0xe8) | ((row & 0x0001) << 4) | ((row & 0x0100) >> 8);
   PORTD = ((row & 0x0080) >> 1) | ((row & 0x0020) << 2) | ((row & 0x0004) >> 2) | (row & 0x0002);
@@ -229,9 +218,8 @@ void write16PinRow(uint16_t row, uint16_t cols) {
     }
     // Prepare Read Cycle
     PORTB |= (1 << PB3);  // Set WE High - Inactive
-    //RASHandlingPin16(row);
     pat = pattern[patNr];
-    // Iterate over 255 Columns and read & check Pattern
+    // Iterate over the Columns and read & check Pattern
     for (uint16_t col = 0; col <= cols; col++) {
       PORTB = (PORTB & 0xea) | (col & 0x0010) | ((col & 0x0008) >> 1) | ((col & 0x0040) >> 6);
       PORTC = (PORTC & 0xe8) | ((col & 0x0001) << 4) | ((col & 0x0100) >> 8);
@@ -255,7 +243,7 @@ boolean Sense41256() {
   PORTC &= 0x08;  // Set CAS High
   // RAS Testing set Row 0 Col 0 and set Bit Low.
   RASHandlingPin16(0);
-  PORTB &= ~(1 << PB3);  // Set WE Low - Active  
+  PORTB &= ~(1 << PB3);  // Set WE Low - Active
   PORTC &= ~0x08;        // CAS  Strobe
   NOP;
   PORTC |= 0x08;        // CAS High
@@ -320,7 +308,7 @@ boolean Sense41256() {
     if (((PINC & 0x04) >> 2) != (0 & 0x01)) {
       // If A8 Line is set and it is a fail, this might be a 6464 Type
       if ((a == 8) && (big == false))
-        NOP; // Row Testing showed already the small type. If it did not we have a Problem.
+        NOP;  // Row Testing showed already the small type. If it did not we have a Problem.
       else {
         PORTC |= 0x08;  // CAS High
         error(a, 1);
@@ -413,8 +401,8 @@ void test20Pin() {
 
 // Prepare and execute ROW Access for 20 Pin Types
 void RASHandlingPin20(uint16_t row) {
-  PORTB |= (1 << PB1);          // Set RAS High - Inactive
-  msbHandlingPin20(row / 256);  // Preset ROW Adress
+  PORTB |= (1 << PB1);         // Set RAS High - Inactive
+  msbHandlingPin20(row >> 8);  // Preset ROW Adress
   PORTD = (uint8_t)(row & 0xFF);
   PORTB &= ~(1 << PB1);  // RAS Latch Strobe
 }
@@ -472,34 +460,85 @@ void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
 
 // The following Routine checks if A9 Pin is used - which is the case for 1Mx4 DRAM in 20Pin Mode
 boolean Sense1Mx4() {
-  PORTB |= (1 << PB1);   // Set RAS High - Inactive
-  PORTD = 0x00;          // Set Row and Col address to 0
-  PORTB &= ~PORTB4;      // Clear address Bit 8
-  PORTC &= 0xE0;         // Set all Outputs and A9 to LOW
-  DDRC |= 0x0F;          // Configure IOs for Output
-  PORTC &= 0xE0;         // Set all Outputs and A9 to LOW
-  PORTB &= ~(1 << PB1);  // RAS Latch Strobe
+  boolean big = true;
+  DDRC |= 0x0F;  // Configure IOs for Output
+  // Prepare for Test and write Row 0 Col 0 to LOW LOW LOW LOW
+  PORTB |= (1 << PB1);  // Set RAS High - Inactive
+  PORTD = 0x00;         // Set Row and Col address to 0
+  PORTB &= 0xEF;        // Clear address Bit 8
+  PORTC &= 0xE0;        // Set all Outputs and A9 to LOW
+  RASHandlingPin20(0);
   PORTB &= ~(1 << PB3);  // Set WE Low - Active
   PORTB &= ~1;           // CAS Latch Strobe
   PORTB |= 1;            // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
-  PORTC |= 0x1F;         // Set all Outputs and A9 High
+  // Row address line, buffer and decoder test
+  for (uint8_t a = 0; a <= 9; a++) {
+    uint16_t adr = (1 << a);
+    RASHandlingPin20(adr);
+    PORTD = 0x00;          // Set Col Adress
+    PORTB &= 0xEF;         // Clear address Bit 8
+    PORTC &= 0xEF;         // A9 to LOW
+    DDRC |= 0x0F;          // Configure IOs for Output
+    PORTC |= 0x0F;         // Set all Bit
+    PORTB &= ~(1 << PB3);  // Set WE Low - Active
+    PORTB &= ~1;           // CAS Latch Strobe
+    PORTB |= 1;            // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
+    PORTB |= (1 << PB3);   // Set WE High - Inactive
+    RASHandlingPin20(0);
+    PORTD = 0x00;          // Set Col Adress
+    PORTB &= 0xEF;         // Clear address Bit 8
+    PORTC &= 0xE0;         // A9 to LOW - Outputs low
+    DDRC &= 0xF0;          // Configure IOs for Input
+    PORTB &= ~(1 << PB2);  // Set OE Low - Active
+    PORTB &= ~1;           // CAS Latch Strobe
+    NOP;
+    NOP;
+    if ((PINC & 0xF) != 0x0) {  // Read the Data at this address
+      if (a == 9)
+        big = false;
+      else {
+        PORTB |= 1;  // CAS High - Cycle Time ~120ns
+        error(a, 3);
+      }
+    }
+    PORTB |= 1;  // CAS High - Cycle Time ~120ns
+  }
+  // Check Column address lines, buffers and decoders
+  RASHandlingPin20(0);
+  DDRC |= 0x0F;          // Configure IOs for Output
+  PORTC &= 0xE0;         // Set all Outputs and A9 to LOW
+  PORTB &= ~(1 << PB3);  // Set WE Low - Active
   PORTB &= ~1;           // CAS Latch Strobe
-  PORTB |= 1;            // CAS High - Cycle Time ~120ns -> Write 1111 to Row 0, Col 512
-  PORTB |= (1 << PB3);   // Set WE High - Inactive
-  DDRC &= 0xF0;          // Configure IOs for Input
-  PORTC &= 0xEF;         // Clear A9
-  PORTB &= ~(1 << PB2);  // Set OE Low - Active
-  PORTB &= ~1;           // CAS Latch Strobe
-  NOP;
-  NOP;
-  uint8_t val = (PINC & 0xF);  // Read the Data at this address
-  PORTB |= 1;                  // CAS High - Cycle Time ~120ns
-  PORTB |= (1 << PB1);         // Set RAS High - Inactive
-  PORTB |= (1 << PB2);         // Set OE High - Inactive
-  if (val == 0x00)             // If we read 0b0000 col 0 was not overwritten
-    return true;               // In this Case A9 was used and it is a 1M x 4 RAM
-  else
-    return false;  // If A9 was not used we find 1111 in the Position and the Pin is not used
+  PORTB |= 1;            // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
+  for (uint8_t a = 0; a <= 9; a++) {
+    uint16_t adr = (1 << a);
+    PORTD = (adr & 0xff);  // Set Col Adress
+    msbHandlingPin20(adr >> 8);
+    DDRC |= 0x0F;          // Configure IOs for Output
+    PORTC |= 0x0F;         // Set all Bit
+    PORTB &= ~(1 << PB3);  // Set WE Low - Active
+    PORTB &= ~1;           // CAS Latch Strobe
+    PORTB |= 1;            // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
+    PORTB |= (1 << PB3);   // Set WE High - Inactive
+    PORTD = 0x00;          // Set Col Adress
+    PORTB &= 0xEF;         // Clear address Bit 8
+    PORTC &= 0xEF;         // A9 to LOW
+    DDRC &= 0xF0;          // Configure IOs for Input
+    PORTB &= ~(1 << PB2);  // Set OE Low - Active
+    PORTB &= ~1;           // CAS Latch Strobe
+    NOP;
+    NOP;
+    if ((PINC & 0xF) != 0x0) {  // Read the Data at this address
+      if ((a == 9) && (big == false))
+        NOP;  // Row Testing showed already the small type. If it did not we have a Problem.
+      else {
+        PORTC |= 0x08;  // CAS High
+        error(a, 1);
+      }
+      PORTB |= 1;  // CAS High - Cycle Time ~120ns
+    }
+  }
+  return big;
 }
 
 //=======================================================================================
