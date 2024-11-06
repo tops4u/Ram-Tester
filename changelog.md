@@ -2,6 +2,10 @@ v2.0pre (2024-11-06)
 - Added Refresh Testing for 20 & 16 Pin Devices
 - Added Row Buffer, Decoders and Line Checks for all Devices
 - Added Row Crosstalk Check for 20 & 16 Pin Devices
+- Re-Added GND Checks
+- Streamlining of 20Pin Code
+- Fixing Issues with 20Pin Refresh Checks
+- Switch On Red LED before Testing - results in Yellow during Test. 
 
 v1.4 (2024-11-02)
 - Added Support for 4416 including ROW/COL Decoder check
