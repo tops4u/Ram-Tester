@@ -2,8 +2,9 @@
 // ========================================
 //
 // Author : Andreas Hoffmann
-// Version: 1.4pre
-// Date   : 2.11.2024
+// Version: 2.0.pre1
+// Date   : 02.11.2024
+
 //
 // This Software is published under GPL 3.0 - Respect the License
 // This Project is hosted at: https://github.com/tops4u/Ram-Tester/
@@ -13,7 +14,8 @@
 // Error Blink Codes:
 // Continuous Red Blinking 	- Configuration Error, check DIP Switches. Occasionally a RAM Defect may cause this.
 // 1 Red & n Green		  - Addressdecoder Test Fail - n Green Blinks = failing addressline (Keep in mind there will be no green blink for A0)
-// 2 Red & n Green		  - Error during RAM Test. Green Blinks indicate which Test Pattern failes (see below).
+// 2 Red & n Green		  - Error during RAM Test. Green Blinks indicate which Test Pattern failed (see below).
+// 3 Red & n Green      - Row Crosstalk Error or Refresh Data Lost Error. Green Blinks indicate which Test Pattern failed.
 // Long Green/Short Red - Successful Test of a Smaller DRAM of this Test Config
 // Long Green/Short Off - Successful Test of a Larger DRAM of this Test Config
 //
@@ -33,6 +35,7 @@
 // Version 1.23 - Added Row Address Checking for 4164/41256 complementing Column address checks from 1.21
 // Version 1.3  - Added Row and Column Tests for Pins, Buffers and Decoders for 514256 and 441000
 // Version 1.4pre - Added Support for 4416/4464 but currently only tested for 4416 as 4464 Testchips not yet available
+// Version 2.0  - Added Row Crosstalk Checks. Added Refresh Time Checks (2ms for 4164/4ms for 41256/8ms for all DIP/ZIP 20 Types)
 //
 // Disclaimer:
 // This Project (Software & Hardware) is a hobbyist Project. I do not guarantee it's fitness for any purpose
@@ -50,7 +53,8 @@
 #define LED_G 12  // PB4 -> Co Used with RAM Test Socket, see comments below!
 
 // The Testpatterns
-const uint8_t pattern[] = { 0x00, 0xFF, 0xAA, 0x33 };  // Equals to 0b00000000, 0b11111111, 0b10101010, 0b01010101
+const uint8_t pattern[] = { 0x00, 0xFF, 0xAA, 0x33, 0xAA, 0x33 };  // Equals to 0b00000000, 0b11111111, 0b10101010, 0b01010101
+// 0xAA is doubled to simply alternate for even/uneven Rows between 0xAA and 0x33
 
 // Mapping for 4164 (2ms Refresh Rate) / 41256/257 (4 ms Refresh Rate)
 // A0 = PC4   RAS = PB1   t RAS->CAS = 150-200ns -> Max Pulsewidth 10'000ns
@@ -170,6 +174,7 @@ void initRAM(int RASPin, int CASPin) {
   digitalWrite(RASPin, HIGH);
   // For some DRAM CAS !NEEDS! to be low during Init!
   digitalWrite(CASPin, HIGH);
+  delay(200);  //200ms Startup Delay
   for (int i = 0; i < 8; i++) {
     digitalWrite(RASPin, LOW);
     digitalWrite(RASPin, HIGH);
@@ -182,12 +187,12 @@ void initRAM(int RASPin, int CASPin) {
 
 void test16Pin() {
   // Configure I/O for this Chip Type
-  PORTB = 0b00001010;
-  DDRB = 0b00011111;
-  PORTC = 0b00001000;
+  DDRB = 0b00111111;
+  PORTB = 0b00101010;
   DDRC = 0b00011011;
-  PORTD = 0x00;
+  PORTC = 0b00001000;
   DDRD = 0b11000011;
+  PORTD = 0x00;
   if (Sense41256() == true) {
     for (uint16_t row = 0; row < 512; row++) {  // Iterate over all ROWs
       write16PinRow(row, 512);
@@ -234,23 +239,55 @@ void write16PinRow(uint16_t row, uint16_t cols) {
     }
     // Prepare Read Cycle
     PORTB |= (1 << PB3);  // Set WE High - Inactive
-    pat = pattern[patNr];
-    // Iterate over the Columns and read & check Pattern
-    for (uint16_t col = 0; col <= cols; col++) {
-      PORTB = (PORTB & 0xea) | (col & 0x0010) | ((col & 0x0008) >> 1) | ((col & 0x0040) >> 6);
-      PORTC = (PORTC & 0xe8) | ((col & 0x0001) << 4) | ((col & 0x0100) >> 8);
-      PORTD = ((col & 0x0080) >> 1) | ((col & 0x0020) << 2) | ((col & 0x0004) >> 2) | (col & 0x0002);
-      PORTC &= ~0x08;  // CAS Latch Strobe
-      NOP;             // Input Settle Time for Digital Inputs = 93ns
-                       // NOP;             // One NOP@16MHz = 62.5ns
-      if (((PINC & 0x04) >> 2) != (pat & 0x01)) {
-        PORTC |= 0x08;  // CAS High - Cycle Time ~120ns
-        error((pat & 0x01) + 1, 2);
-      }               // Check if Pattern matches
-      PORTC |= 0x08;  // CAS High - Cycle Time ~120ns
-      pat = (pat << 1) | (pat >> 7);
+    // Read and check the Row we just wrote, otherwise Error 2
+    rowCheck16Pin(cols, patNr, 2);
+    // If this is not the first row to check lets see if current Row modified the previous one.
+    // This Row just wrote Pattern Nr 2 and we check if the row before still has pattern Nr3
+    // Datasheet Refresh Cycles: 4164: 2ms / 41256: 4ms
+    // Cycletime for Read & Write tests: 4164: 1.98ms / 41256: 3.96ms - for one Cycle + some Overhead for Refresh and RAS
+    // So this also checks if the last Row was able to reach Data retention Times as per Datasheet specs.
+    // As we only test after PatternNr 2 this tests 3 Refresh Cycles per Row by using Ras Only Refresh (ROR)
+    if (row > 0) {
+      if (patNr == 2) {
+        RASHandlingPin16(row - 1);
+        rowCheck16Pin(cols, 3, 3);  // check if last Row still has Pattern Nr 3 - Otherwise Error 3
+      } else {
+        // just refreh the last row on any pattern change
+        refreshRow16Pin(row - 1);
+      }
     }
+    delayMicroseconds(52);  // Fine Tuning to surely be at least 2ms / 4ms respectively for the Refresh Test
+    // Measurement showed 2.045ms and 4.008 ms for my TestBoard
+    refreshRow16Pin(row);  // Refresh the current row before leaving
   }
+}
+
+void refreshRow16Pin(uint16_t row) {
+  RASHandlingPin16(row);  // Refresh this ROW
+  NOP;
+  NOP;
+  PORTB |= (1 << PB1);  // Set RAS High - Inactive
+}
+
+void rowCheck16Pin(uint16_t cols, uint8_t patNr, uint8_t check) {
+  uint8_t pat = pattern[patNr];
+  // Iterate over the Columns and read & check Pattern
+  for (uint16_t col = 0; col <= cols; col++) {
+    PORTB = (PORTB & 0xea) | (col & 0x0010) | ((col & 0x0008) >> 1) | ((col & 0x0040) >> 6);
+    PORTC = (PORTC & 0xe8) | ((col & 0x0001) << 4) | ((col & 0x0100) >> 8);
+    PORTD = ((col & 0x0080) >> 1) | ((col & 0x0020) << 2) | ((col & 0x0004) >> 2) | (col & 0x0002);
+    PORTC &= ~0x08;  // CAS Latch Strobe
+    NOP;             // Input Settle Time for Digital Inputs = 93ns
+    NOP;             // One NOP@16MHz = 62.5ns
+    if (((PINC & 0x04) >> 2) != (pat & 0x01)) {
+      PORTC |= 0x08;        // CAS High - Cycle Time ~120ns
+      PORTB |= (1 << PB1);  // Set RAS High - Inactive
+      error(patNr + 1, check);
+    }               // Check if Pattern matches
+    PORTC |= 0x08;  // CAS High - Cycle Time ~120ns
+    pat = (pat << 1) | (pat >> 7);
+  }
+  PORTB |= (1 << PB1);  // Set RAS High - Inactive
 }
 
 // Address Line Checks and sensing for 41256 or 4164
@@ -341,11 +378,13 @@ boolean Sense41256() {
 
 void test18Pin() {
   // Configure I/O for this Chip Type
-  DDRB = 0b00011111;
-  PORTB = 0b00000010;
+  DDRB = 0b00111111;
+  PORTB = 0b00000000;
   DDRC = 0b00011111;
-  PORTC = 0b00010101;
+  PORTC = 0b00000000;
+
   DDRD = 0b11100111;
+  PORTD = 0x00;
   if (Sense4464() == true) {
     for (uint16_t row = 0; row < 256; row++) {  // Iterate over all ROWs
       write18PinRow(row, 0, 256);
@@ -493,17 +532,19 @@ boolean Sense4464() {
 
 void test20Pin() {
   // Configure I/O for this Chip Type
-  PORTB = 0b00011111;
-  PORTC = 0b10000000;
-  PORTD = 0x00;
   DDRB = 0b00011111;
   DDRC = 0b00011111;
   DDRD = 0xFF;
+  PORTB = 0b00111111;
+  PORTC = 0b10000000;
+  PORTD = 0x00;
   if (Sense1Mx4() == true) {
     // Run the Tests for the larger Chip if A9 is used we run the larger test for 512kB
     // This could be optimized.
     for (uint8_t pat = 0; pat < 4; pat++) {        // Check all 4Bit Patterns
       for (uint16_t row = 0; row < 1024; row++) {  // Iterate over all ROWs
+        if (pat > 2)
+          pat+ (row & 0x0001);
         write20PinRow(row, pat, 4);
       }
     }
@@ -512,6 +553,8 @@ void test20Pin() {
   } else {                                        // A9 most probably not used or defect - just run 128kB Test
     for (uint8_t pat = 0; pat < 4; pat++)         // Check all 4Bit Patterns
       for (uint16_t row = 0; row < 512; row++) {  // Iterate over all ROWs
+        if (pat > 2)
+          pat+ (row & 0x0001);
         write20PinRow(row, pat, 2);
       }
     // Indicate with Green-Red flashlight that the "small" Version has been checked ok
@@ -542,11 +585,11 @@ void msbHandlingPin20(uint16_t address) {
 
 // Write and Read (&Check) Pattern from Cols
 void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
+  RASHandlingPin20(row);  // Set the Row
   for (uint8_t msb = 0; msb < colWidth; msb++) {
     // Prepare Write Cycle
     PORTC &= 0xF0;          // Set all Outputs to LOW
     DDRC |= 0x0F;           // Configure IOs for Output
-    RASHandlingPin20(row);  // Set the Row
     msbHandlingPin20(msb);  // Set the MSB as needed
     PORTB &= ~(1 << PB3);   // Set WE Low - Active
     PORTC |= (pattern[patNr] & 0x0F);
@@ -558,25 +601,47 @@ void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
     }
     // Prepare Read Cycle
     PORTB |= (1 << PB3);  // Set WE High - Inactive
-    PORTC &= 0xF0;
-    DDRC &= 0xF0;          // Configure IOs for Input
-    PORTB &= ~(1 << PB2);  // Set OE Low - Active
-    // Iterate over 255 Columns and read & check Pattern
-    for (uint16_t col = 0; col <= 255; col++) {
-      PORTD = (uint8_t)col;  // Set Col Adress
-      PORTB &= ~1;
-      NOP;  // Input Settle Time for Digital Inputs = 93ns
-      NOP;  // One NOP@16MHz = 62.5ns
-      if ((PINC & 0x0F) != (pattern[patNr] & 0x0f)) {
-        PORTB |= 1;
-        interrupts();
-        error(patNr + 1, 2);
-      }  // Check if Pattern matches
-      PORTB |= 1;
-    }
-    PORTB |= (1 << PB2);  // Set OE High - Inactive
+    PORTC &= 0xF0;        // Clear all Outputs
+    DDRC &= 0xF0;         // Configure IOs for Input
+    checkRow20Pin(msb, patNr, 2);
   }
+  if (row >= 7) { // Delay Row Crosstalk Testing until we reach Row 7 as this also tests Data Retention (~1.021ms per Row for Write/Read Tests)
+    if (patNr == (3+(row & 0x0001))) {
+      RASHandlingPin20(row - 7);
+      for (uint8_t msb = 0; msb < colWidth; msb++)
+        checkRow20Pin(msb, (3+(row & 0x0001)), 3);  // check if last Row still has Pattern Nr 3 - Otherwise Error 3
+    } 
+  }
+  delayMicroseconds(126);  // Fine Tuning to surely be at least 8ms  for the Refresh Test
+  // Measurement showed  for my TestBoard 
+  //refreshRow20Pin(row);  // Refresh the current row before leaving
 }
+
+void refreshRow20Pin(uint16_t row) {
+  PORTB |= 1;  // CAS High
+  RASHandlingPin20(row);
+  PORTB |= (1 << PB1);  // Set RAS High - Inactive
+}
+
+void checkRow20Pin(uint8_t msb, uint8_t patNr, uint8_t errNr) {
+  msbHandlingPin20(msb);  // Set the MSB as needed
+  PORTB &= ~(1 << PB2);   // Set OE Low - Active
+  // Iterate over 255 Columns and read & check Pattern
+  for (uint16_t col = 0; col <= 255; col++) {
+    PORTD = (uint8_t)col;  // Set Col Adress
+    PORTB &= ~1;
+    NOP;  // Input Settle Time for Digital Inputs = 93ns
+    NOP;  // One NOP@16MHz = 62.5ns
+    if ((PINC & 0x0F) != (pattern[patNr] & 0x0f)) {
+      PORTB |= 1;           // Set CAS High
+      PORTB |= (1 << PB1);  // Set RAS High - Inactive
+      error(patNr + 1, errNr);
+    }  // Check if Pattern matches
+    PORTB |= 1;
+  }
+  PORTB |= (1 << PB2);  // Set OE High - Inactive
+}
+
 
 // The following Routine checks if A9 Pin is used - which is the case for 1Mx4 DRAM in 20Pin Mode
 boolean Sense1Mx4() {

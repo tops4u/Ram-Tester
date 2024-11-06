@@ -50,16 +50,15 @@ Of a valid Config is found, the DRAM Chip is properly initialized, then Testing 
 - Constant Green or Green fading to Yellow(ish) : Test ongoing
 - 1x Red followed by n Green Flashes : Addressline Error. n-Green indicates the failing Addressline - Keep in mind zero green blink will be issued for address line 0 (A0)
 - 2x Red followed by n Green Flashes : Error during Bit Testing. n-Green indicates the failing Pattern. (Pattern 1 - Stuck Bit in On, Pattern 2 - Stuck Bit in Off, 3 or 4 there is crosstalk between columns).
+- 3x Red followed by n Green Flashes : Error in Data Retention (Refresh Cycle). The Ram lost content below the guaranteed Refresh Time. For 16 and 18 Pin Types the Test uses 2ms for 20 Pin 4ms Refresh Time. 
 - Long Green - short off  : Test successful. The Tester assumed this to be the larger Type to Test (1Mx4, 256x1 or 64x4)
 - Long Green - short red  : Test successful. The Tester assumed this to be the smaller Type to Test (256x4, 64x1 or 16x4) **BUT**: If the Chip is not this type, this could mean a faulty Adressline (like A9 for 1Mx4 therefore it will be mistakenly accounted as 256x4 - the tester has no way to figure this out). 
 
 **NOTE:** The following will <INS>not</INS> be tested:
 1. Speed requirements. The tests are carried out in a way that slow and fast RAM should pass. It will not test if 70ns RAM really works flawless at 70ns.
-2. The Chessboard Patterns are actually only tested Row-Wise and not interleaved between multiple Rows. This might be improved later on (it will make testing about 30% slower). _In the works for v2.0_
-3. Pin connectivity, buffers and decoders are only simply checked if they work - no checks for severe internal errors or crosstalk. As such it is tested that no Pin got disconnected or the Buffer/Decoder ignores this pin. If the Decoder or Buffer confuses Pins this might go unnoticed. This test might be improved later on. 
-4. Refresh functionality is not tested, neither is the retention time. As tests for storage are carried out Row by Row, each Row needs to Store the Values for only a fraction of its max specified retention time. A simple Test might be added later on to check the refresh on a few rows. Intensive Testing i.e. each Row, would substantially slow tests down. _In the works for 2.0_
-5. Voltage Levels can not be checked. This is due to the fact that vintage RAM is TTL Level compliant, while current technology is usually CMOS (like the µC used in this Project the ATMEL 328p). For an explanation check for example the Texas Instruments site [Link](https://e2e.ti.com/support/logic-group/logic/f/logic-forum/862744/faq-what-s-the-difference-between-ttl-and-5v-cmos-logic)
-6. Of course there is no 100% Warranty that the Tester will not render false positive or false negative test Results. 
+2. Pin connectivity, buffers and decoders are only simply checked if they work - no checks for severe internal errors or crosstalk. As such it is tested that no Pin got disconnected or the Buffer/Decoder ignores this pin. If the Decoder or Buffer confuses Pins this might go unnoticed. This test might be improved later on. 
+3. Voltage Levels can not be checked. This is due to the fact that vintage RAM is TTL Level compliant, while current technology is usually CMOS (like the µC used in this Project the ATMEL 328p). For an explanation check for example the Texas Instruments site [Link](https://e2e.ti.com/support/logic-group/logic/f/logic-forum/862744/faq-what-s-the-difference-between-ttl-and-5v-cmos-logic)
+4. Of course there is no 100% Warranty that the Tester will not render false positive or false negative test Results. 
 
 => Don't let the project down because the RAMs might not (yet) be as thoroughly tested as you might wish (after having seen the list above). None of the linked Projects above test any of those points, not even address line connectivity. So most probably a working chip with a bent up address pin would pass as "OK" on the other RAM Testers. 
 
