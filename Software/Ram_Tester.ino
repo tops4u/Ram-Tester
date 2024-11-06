@@ -3,7 +3,8 @@
 //
 // Author : Andreas Hoffmann
 // Version: 2.0.pre1
-// Date   : 23.10.2024
+// Date   : 02.11.2024
+
 //
 // This Software is published under GPL 3.0 - Respect the License
 // This Project is hosted at: https://github.com/tops4u/Ram-Tester/
@@ -33,6 +34,7 @@
 // Version 1.22 - Added Check for 4164 / 41256
 // Version 1.23 - Added Row Address Checking for 4164/41256 complementing Column address checks from 1.21
 // Version 1.3  - Added Row and Column Tests for Pins, Buffers and Decoders for 514256 and 441000
+// Version 1.4pre - Added Support for 4416/4464 but currently only tested for 4416 as 4464 Testchips not yet available
 // Version 2.0  - Added Row Crosstalk Checks. Added Refresh Time Checks (2ms for 4164/4ms for 41256/8ms for all DIP/ZIP 20 Types)
 //
 // Disclaimer:
@@ -87,6 +89,20 @@ const int CPU_18PORTC[] = { 1, 2, 16, 17, 5, EOL, EOL, EOL };
 const int CPU_18PORTD[] = { 6, 7, 8, 9, NC, 10, 11, 12 };
 const int RAS_18PIN = 18;  // Digital Out 18 / A4 on Arduino Uno is used for RAS
 const int CAS_18PIN = 16;  // Corresponds to Analog 2 or Digital 16
+// Address Distribution for 18Pin Types
+#define SET_ADDR_PIN18(addr) \
+  { \
+    PORTB = (PORTB & 0xeb) | ((addr & 0x01) << 2) | ((addr & 0x02) << 3); \
+    PORTD = ((addr & 0x04) << 5) | ((addr & 0x08) << 3) | ((addr & 0x80) >> 2) | ((addr & 0x20) >> 4) | ((addr & 0x40) >> 6) | ((addr & 0x10) >> 3); \
+  }
+
+#define SET_DATA_PIN18(data) \
+  { \
+    PORTB = (PORTB & 0xF6) | ((data & 0x02) << 2) | ((data & 0x04) >> 2); \
+    PORTC = (PORTC & 0xF5) | ((data & 0x01) << 1) | (data & 0x08); \
+  }
+
+#define GET_DATA_PIN18 (((PINC & 0x02) >> 1) + ((PINB & 0x08) >> 2) + ((PINB & 0x01) << 2) + (PINC & 0x08))
 
 // Mapping for 514256 / 441000 - max Refresh 8ms
 // A0 = PD0   RAS = PB1
@@ -137,6 +153,7 @@ void setup() {
   }
   if (Mode == Mode_18Pin) {
     initRAM(RAS_18PIN, CAS_18PIN);
+    test18Pin();
   }
   if (Mode == Mode_16Pin) {
     initRAM(RAS_16PIN, CAS_16PIN);
@@ -326,7 +343,7 @@ boolean Sense41256() {
   for (uint8_t a = 0; a <= 8; a++) {
     uint16_t adr = (1 << a);
     PORTB &= ~(1 << PB3);  // Set WE Low - Active
-    // Set aadress
+    // Set address
     PORTB = (PORTB & 0xea) | (adr & 0x0010) | ((adr & 0x0008) >> 1) | ((adr & 0x0040) >> 6);
     PORTC = (PORTC & 0xe8) | ((adr & 0x0001) << 4) | ((adr & 0x0100) >> 8) | 0x02;  // Set Bit 2 -> Data In
     PORTD = ((adr & 0x0080) >> 1) | ((adr & 0x0020) << 2) | ((adr & 0x0004) >> 2) | (adr & 0x0002);
@@ -365,41 +382,147 @@ void test18Pin() {
   PORTB = 0b00000000;
   DDRC = 0b00011111;
   PORTC = 0b00000000;
+
   DDRD = 0b11100111;
   PORTD = 0x00;
   if (Sense4464() == true) {
     for (uint16_t row = 0; row < 256; row++) {  // Iterate over all ROWs
-      write18PinRow(row, 256);
+      write18PinRow(row, 0, 256);
     }
     // Good Candidate.
     testOK();
   } else {                                      // 4416 has 256 ROW but only 64 Columns (Bit 1-6)
     for (uint16_t row = 0; row < 256; row++) {  // Iterate over all ROWs
-      write18PinRow(row, 64);
+      write18PinRow(row, 1, 128);
     }
     // Indicate with Green-Red flashlight that the "small" Version has been checked ok
     smallOK();
   }
 }
 
-void write18PinRow(uint8_t row, uint8_t width) {
+void write18PinRow(uint8_t row, uint8_t init_shift, uint8_t width) {
+  for (uint8_t patNr = 0; patNr < 4; patNr++) {
+    // Prepare Write Cycle
+    RASHandling18Pin(row);
+    PORTB &= ~0x02;  // Set WE LOW
+    SET_DATA_PIN18(pattern[patNr]);
+    configDOut18Pin();
+    for (uint16_t col = 0; col < width; col++) {
+      SET_ADDR_PIN18(col << init_shift);
+      PORTC &= ~0x04;  // CAS Strobe
+      NOP;
+      PORTC |= 0x04;
+    }
+    PORTB |= 0x02;  // Disable WE
+    configDIn18Pin();
+    PORTC &= ~0x01;  // Set OE LOW
+    for (uint16_t col = 0; col < width; col++) {
+      SET_ADDR_PIN18(col << init_shift);
+      PORTC &= ~0x04;  // CAS Strobe
+      NOP;
+      NOP;
+      if ((GET_DATA_PIN18 & 0xF) != (pattern[patNr] & 0xF)) {
+        PORTC |= 0x15;
+        error(patNr, 2);
+      }
+      PORTC |= 0x04;
+    }
+  }
+  PORTC &= ~0x10; // RAS High
+}
+
+void configDOut18Pin() {
+  DDRB |= 0x09;  // Configure D1 & D2 as Outputs
+  DDRC |= 0x0A;  // Configure D0 & D3 as Outputs
+}
+
+void configDIn18Pin() {
+  DDRB &= 0x16;  // Config Data Lines for input
+  DDRC &= 0x15;
+}
+
+void RASHandling18Pin(uint8_t row) {
+  PORTC |= 0x10;  // Set RAS High
+  SET_ADDR_PIN18(row);
+  PORTC &= ~0x10;  // RAS Active
 }
 
 boolean Sense4464() {
   boolean big = true;
-  PORTC &= 0x04;  // Set CAS High
-  PORTB = 0;      // Set all PortB Data, Address and WE LOW
-  PORTC = (PORTC & 0xe5);
-  PORTD = 0;
+  RASHandling18Pin(0);  // Use Row 0 for Size Tests
+  PORTB &= ~0x02;       // Set WE LOW - Active
+  SET_DATA_PIN18(0x0);
+  SET_ADDR_PIN18(0x00);
   PORTC &= ~0x04;  // CAS Strobe
   NOP;
   PORTC |= 0x04;
+  // 4416 CAS addressing does not Use A0 nor A7 we set A0 to check and Write 1111 to this Column
+  // First test the CAS addressing
   for (uint8_t a = 0; a <= 7; a++) {
-    uint8_t adr = (1 << a);
-    PORTB = (PORTB & 0xeb) | ((adr & 0x01) << 2) | ((adr & 0x02) << 3);
-    PORTD = ((adr & 0x04) << 5) | ((adr & 0x08) << 3) | ((adr & 0x90) >> 2) | ((adr & 0x20) >> 4) | ((adr & 0x40) >> 6);
+    uint8_t col = (1 << a);
+    configDOut18Pin();
+    PORTB &= ~0x02;  // Set WE LOW - Active
+    SET_DATA_PIN18(0xF);
+    SET_ADDR_PIN18(col);
+    PORTC &= ~0x04;  // CAS Strobe
+    NOP;
+    PORTC |= 0x04;
+    SET_ADDR_PIN18(0x00);
+    PORTB |= 0x02;  // WE inactive - high
+    configDIn18Pin();
+    PORTC &= ~0x05;  // CAS Strobe and OE
+    NOP;
+    NOP;
+    if ((GET_DATA_PIN18 & 0xF) != (0x0)) {
+      if (a == 0) {
+        big = false;
+        PORTC |= 0x05;   // End CAS and OE
+        PORTB &= ~0x02;  // Set WE LOW - Active
+        configDOut18Pin();
+        SET_DATA_PIN18(0x0);
+        SET_ADDR_PIN18(0x01);
+        PORTC &= ~0x04;  // CAS Strobe
+      } else if ((a == 7) && (big == false))
+        NOP;
+      else {
+        PORTC |= 0x15;
+        error(a, 1);
+      }
+    }
+    PORTC |= 0x05;
   }
-
+  // Now we check Row addressing
+  configDOut18Pin();
+  RASHandling18Pin(0);  // Use Row 0 for Size Tests
+  PORTB &= ~0x02;       // Set WE LOW - Active
+  SET_DATA_PIN18(0x0);
+  SET_ADDR_PIN18(0x18);  // Randomly choose a Column not on the edge since 4416 does not use A0 / A7 Columns
+  PORTC &= ~0x04;        // CAS Strobe
+  NOP;
+  PORTC |= 0x04;
+  for (uint8_t a = 0; a <= 7; a++) {
+    uint8_t row = (1 << a);
+    configDOut18Pin();
+    PORTB &= ~0x02;  // Set WE LOW - Active
+    SET_DATA_PIN18(0xF);
+    RASHandling18Pin(row);
+    SET_ADDR_PIN18(0x18);
+    PORTC &= ~0x04;  // CAS Strobe
+    NOP;
+    PORTC |= 0x04;
+    RASHandling18Pin(0x00);
+    SET_ADDR_PIN18(0x18);
+    PORTB |= 0x02;  // WE inactive - high
+    configDIn18Pin();
+    PORTC &= ~0x05;  // CAS Strobe and OE
+    NOP;
+    NOP;
+    if ((GET_DATA_PIN18 & 0xF) != (0x0)) {
+      PORTC |= 0x15;
+      error(a, 1);
+    }
+    PORTC |= 0x15;
+  }
   return big;
 }
 

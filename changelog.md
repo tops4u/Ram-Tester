@@ -1,3 +1,7 @@
+v1.4 (2024-11-02)
+- Added Support for 4416 including ROW/COL Decoder check
+- 4464 Code is untested, since RAM Testchip not yet available
+
 v1.3 (2024-10-16)
 - Implemented the same Row & Column pin, line, buffer and decoder tests as for the 41xx Series for the 20Pin RAM
 - This is all functionality for the 16Pin and 20Pin RAM in Version 1 of the Software. 18Pin RAM Chips not yet implemented as I don't have any of those yet to test. 
