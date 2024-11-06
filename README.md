@@ -5,4 +5,4 @@ This is a hobbyist project, there is no warranty of any sort and usage is on you
 
 I decided to build a tester myself with the aim of being able to test some of the common DRAM chips of the CBM computers 1980-1990.
 
---> The Documentation moved to the WIKI Section of this project. 
+--> The Documentation moved to the [WIKI](https://github.com/tops4u/Ram-Tester/wiki) Section of this project. 
