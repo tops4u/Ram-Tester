@@ -574,12 +574,13 @@ void msbHandlingPin20(uint16_t address) {
 }
 
 // Write and Read (&Check) Pattern from Cols
+// Write and Read (&Check) Pattern from Cols
 void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
+  RASHandlingPin20(row);  // Set the Row
   for (uint8_t msb = 0; msb < colWidth; msb++) {
     // Prepare Write Cycle
     PORTC &= 0xF0;          // Set all Outputs to LOW
     DDRC |= 0x0F;           // Configure IOs for Output
-    RASHandlingPin20(row);  // Set the Row
     msbHandlingPin20(msb);  // Set the MSB as needed
     PORTB &= ~(1 << PB3);   // Set WE Low - Active
     PORTC |= (pattern[patNr] & 0x0F);
@@ -591,25 +592,47 @@ void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
     }
     // Prepare Read Cycle
     PORTB |= (1 << PB3);  // Set WE High - Inactive
-    PORTC &= 0xF0;
-    DDRC &= 0xF0;          // Configure IOs for Input
-    PORTB &= ~(1 << PB2);  // Set OE Low - Active
-    // Iterate over 255 Columns and read & check Pattern
-    for (uint16_t col = 0; col <= 255; col++) {
-      PORTD = (uint8_t)col;  // Set Col Adress
-      PORTB &= ~1;
-      NOP;  // Input Settle Time for Digital Inputs = 93ns
-      NOP;  // One NOP@16MHz = 62.5ns
-      if ((PINC & 0x0F) != (pattern[patNr] & 0x0f)) {
-        PORTB |= 1;
-        interrupts();
-        error(patNr + 1, 2);
-      }  // Check if Pattern matches
-      PORTB |= 1;
-    }
-    PORTB |= (1 << PB2);  // Set OE High - Inactive
+    PORTC &= 0xF0;        // Clear all Outputs
+    DDRC &= 0xF0;         // Configure IOs for Input
+    checkRow20Pin(msb, patNr, 2);
   }
+  if (row >= 7) { // Delay Row Crosstalk Testing until we reach Row 7 as this also tests Data Retention (~1.021ms per Row for Write/Read Tests)
+    if (patNr == (3+(row & 0x0001))) {
+      RASHandlingPin20(row - 7);
+      for (uint8_t msb = 0; msb < colWidth; msb++)
+        checkRow20Pin(msb, (3+(row & 0x0001)), 3);  // check if last Row still has Pattern Nr 3 - Otherwise Error 3
+    } 
+  }
+  delayMicroseconds(126);  // Fine Tuning to surely be at least 8ms  for the Refresh Test
+  // Measurement showed  for my TestBoard 
+  //refreshRow20Pin(row);  // Refresh the current row before leaving
 }
+
+void refreshRow20Pin(uint16_t row) {
+  PORTB |= 1;  // CAS High
+  RASHandlingPin20(row);
+  PORTB |= (1 << PB1);  // Set RAS High - Inactive
+}
+
+void checkRow20Pin(uint8_t msb, uint8_t patNr, uint8_t errNr) {
+  msbHandlingPin20(msb);  // Set the MSB as needed
+  PORTB &= ~(1 << PB2);   // Set OE Low - Active
+  // Iterate over 255 Columns and read & check Pattern
+  for (uint16_t col = 0; col <= 255; col++) {
+    PORTD = (uint8_t)col;  // Set Col Adress
+    PORTB &= ~1;
+    NOP;  // Input Settle Time for Digital Inputs = 93ns
+    NOP;  // One NOP@16MHz = 62.5ns
+    if ((PINC & 0x0F) != (pattern[patNr] & 0x0f)) {
+      PORTB |= 1;           // Set CAS High
+      PORTB |= (1 << PB1);  // Set RAS High - Inactive
+      error(patNr + 1, errNr);
+    }  // Check if Pattern matches
+    PORTB |= 1;
+  }
+  PORTB |= (1 << PB2);  // Set OE High - Inactive
+}
+
 
 // The following Routine checks if A9 Pin is used - which is the case for 1Mx4 DRAM in 20Pin Mode
 boolean Sense1Mx4() {
@@ -693,6 +716,7 @@ boolean Sense1Mx4() {
   }
   return big;
 }
+
 
 //=======================================================================================
 // GENERIC CODE
