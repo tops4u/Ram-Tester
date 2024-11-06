@@ -15,6 +15,7 @@
 // 1 Red & n Green		  - Addressdecoder Test Fail - n Green Blinks = failing addressline (Keep in mind there will be no green blink for A0)
 // 2 Red & n Green		  - Error during RAM Test. Green Blinks indicate which Test Pattern failed (see below).
 // 3 Red & n Green      - Row Crosstalk Error or Refresh Data Lost Error. Green Blinks indicate which Test Pattern failed.
+// 4 Red & n Green      - GND Short on Pin (n Green)
 // Long Green/Short Red - Successful Test of a Smaller DRAM of this Test Config
 // Long Green/Short Off - Successful Test of a Larger DRAM of this Test Config
 //
@@ -35,7 +36,10 @@
 // Version 1.3  - Added Row and Column Tests for Pins, Buffers and Decoders for 514256 and 441000
 // Version 1.4  - Added Support for 4416/4464 but currently only tested for 4416 as 4464 Testchips not yet available
 // Version 2.0pre1 - Added Row Crosstalk Checks. Added Refresh Time Checks (2ms for 4164/4ms for 41256/8ms for all DIP/ZIP 20 Types)
-// Version 2.0pre  - Merge with 2.0 Branch No Refresh Tests for 4416/4464 yet. 
+// Version 2.0pre  - Merge with 2.0 Branch No Refresh Tests for 4416/4464 yet.
+//                   Switch ON red light during testing = yellowish light during test
+//                   Some cleanup of old code style in 20Pin code section
+//                   Re-Enabled the GND-Short-Test code. Was deactivated until RAM test works reliably
 //
 // Disclaimer:
 // This Project (Software & Hardware) is a hobbyist Project. I do not guarantee it's fitness for any purpose
@@ -53,7 +57,7 @@
 #define LED_G 12  // PB4 -> Co Used with RAM Test Socket, see comments below!
 
 // The Testpatterns
-const uint8_t pattern[] = { 0x00, 0xFF, 0xAA, 0x33 };  // Equals to 0b00000000, 0b11111111, 0b10101010, 0b01010101
+const uint8_t pattern[] = { 0x00, 0xFF, 0xAA, 0x33, 0xAA, 0x33 };  // Equals to 0b00000000, 0b11111111, 0b10101010, 0b01010101
 
 // Mapping for 4164 (2ms Refresh Rate) / 41256/257 (4 ms Refresh Rate)
 // A0 = PC4   RAS = PB1   t RAS->CAS = 150-200ns -> Max Pulsewidth 10'000ns
@@ -72,11 +76,12 @@ const int CPU_16PORTD[] = { 6, 7, 8, NC, NC, NC, 9, 10 };
 const int RAS_16PIN = 9;   // Digital Out 9 on Arduino Uno is used for RAS
 const int CAS_16PIN = 17;  // Corresponds to Analog 3 or Digital 17
 // Address Distribution for 16Pin Types. HW Circuitry is optimized for larger Models where Testing Speed is more relevant
-#define SET_ADDR_PIN16(addr, data) {\
-  PORTB = (PORTB & 0xea) | (addr & 0x0010) | ((addr & 0x0008) >> 1) | ((addr & 0x0040) >> 6);\
-  PORTC = (PORTC & 0xe8) | ((addr & 0x0001) << 4) | ((addr & 0x0100) >> 8) | ((data & 0x01) << 1);\
-  PORTD = ((addr & 0x0080) >> 1) | ((addr & 0x0020) << 2) | ((addr & 0x0004) >> 2) | (addr & 0x0002);\
-}
+#define SET_ADDR_PIN16(addr, data) \
+  { \
+    PORTB = (PORTB & 0xea) | (addr & 0x0010) | ((addr & 0x0008) >> 1) | ((addr & 0x0040) >> 6); \
+    PORTC = (PORTC & 0xe8) | ((addr & 0x0001) << 4) | ((addr & 0x0100) >> 8) | ((data & 0x01) << 1); \
+    PORTD = ((addr & 0x0080) >> 1) | ((addr & 0x0020) << 2) | ((addr & 0x0004) >> 2) | (addr & 0x0002); \
+  }
 
 // Mapping for 4416 / 4464 - max Refresh 4ms
 // They have both the same Pinout. Both have 8 Bit address range, however 4416 uses only A1-A6 for Column addresses (64)
@@ -144,11 +149,11 @@ void setup() {
 
   // -> Currently GND Short Detection confuses the DRAMs and causes Tests to fail.
   // With a valid Config, activate the PullUps
-  //PORTB |= 0b00011111;
-  //PORTC |= 0b00111111;
-  //PORTD = 0xFF;
+  PORTB |= 0b00011111;
+  PORTC |= 0b00111111;
+  PORTD = 0xFF;
   // Settle State - PullUps my require some time.
-  //checkGNDShort();  // Check for Shorts towards GND. Shorts on Vcc can't be tested as it would need Pull-Downs.
+  checkGNDShort();  // Check for Shorts towards GND. Shorts on Vcc can't be tested as it would need Pull-Downs.
 
   // Startup Delay as per Datasheets
   delayMicroseconds(200);
@@ -273,7 +278,7 @@ void rowCheck16Pin(uint16_t cols, uint8_t patNr, uint8_t check) {
   uint8_t pat = pattern[patNr];
   // Iterate over the Columns and read & check Pattern
   for (uint16_t col = 0; col <= cols; col++) {
-    SET_ADDR_PIN16(col,0);
+    SET_ADDR_PIN16(col, 0);
     PORTC &= ~0x08;  // CAS Latch Strobe
     NOP;             // Input Settle Time for Digital Inputs = 93ns
     NOP;             // One NOP@16MHz = 62.5ns
@@ -374,8 +379,8 @@ boolean Sense41256() {
 
 void test18Pin() {
   // Configure I/O for this Chip Type
-  DDRB = 0b00011111;
-  PORTB = 0b00000010;
+  DDRB = 0b00111111;
+  PORTB = 0b00100010;
   DDRC = 0b00011111;
   PORTC = 0b00010101;
   DDRD = 0b11100111;
@@ -420,9 +425,12 @@ void write18PinRow(uint8_t row, uint8_t init_shift, uint8_t width) {
         error(patNr, 2);
       }
       PORTC |= 0x04;
+      //////////////////////////////////////////////////
+      // MISSING REFRESH AND ROW CROSSTALK CHECK HERE //
+      //////////////////////////////////////////////////
     }
   }
-  PORTC &= ~0x10; // RAS High
+  PORTC &= ~0x10;  // RAS High
 }
 
 void configDOut18Pin() {
@@ -526,7 +534,7 @@ boolean Sense4464() {
 
 void test20Pin() {
   // Configure I/O for this Chip Type
-  PORTB = 0b00011111;
+  PORTB = 0b00111111;
   PORTC = 0b10000000;
   PORTD = 0x00;
   DDRB = 0b00011111;
@@ -554,10 +562,10 @@ void test20Pin() {
 
 // Prepare and execute ROW Access for 20 Pin Types
 void RASHandlingPin20(uint16_t row) {
-  PORTB |= (1 << PB1);         // Set RAS High - Inactive
+  PORTB |= 0x02;               // Set RAS High - Inactive
   msbHandlingPin20(row >> 8);  // Preset ROW Adress
   PORTD = (uint8_t)(row & 0xFF);
-  PORTB &= ~(1 << PB1);  // RAS Latch Strobe
+  PORTB &= ~0x02;  // RAS Latch Strobe
 }
 
 // Prepare Controll Lines and perform Checks
@@ -579,11 +587,11 @@ void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
   RASHandlingPin20(row);  // Set the Row
   for (uint8_t msb = 0; msb < colWidth; msb++) {
     // Prepare Write Cycle
-    PORTC &= 0xF0;          // Set all Outputs to LOW
-    DDRC |= 0x0F;           // Configure IOs for Output
-    msbHandlingPin20(msb);  // Set the MSB as needed
-    PORTB &= ~(1 << PB3);   // Set WE Low - Active
-    PORTC |= (pattern[patNr] & 0x0F);
+    PORTC &= 0xF0;                                        // Set all Outputs to LOW
+    DDRC |= 0x0F;                                         // Configure IOs for Output
+    msbHandlingPin20(msb);                                // Set the MSB as needed
+    PORTB &= ~(0x08);                                     // Set WE Low - Active
+    PORTC |= (pattern[(patNr + (row & 0x0001))] & 0x0F);  // Alternative Pattern Odd & Even so we can check for Crosstalk later.
     // Iterate over 255 Columns and write the Pattern
     for (uint16_t col = 0; col <= 255; col++) {
       PORTD = (uint8_t)col;  // Set Col Adress
@@ -591,32 +599,32 @@ void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
       PORTB |= 1;            // CAS High - Cycle Time ~120ns
     }
     // Prepare Read Cycle
-    PORTB |= (1 << PB3);  // Set WE High - Inactive
-    PORTC &= 0xF0;        // Clear all Outputs
-    DDRC &= 0xF0;         // Configure IOs for Input
-    checkRow20Pin(msb, patNr, 2);
+    PORTB |= (0x08);  // Set WE High - Inactive
+    PORTC &= 0xF0;    // Clear all Outputs
+    DDRC &= 0xF0;     // Configure IOs for Input
+    checkRow20Pin(msb, (patNr + (row & 0x0001)), 2);
   }
-  if (row >= 7) { // Delay Row Crosstalk Testing until we reach Row 7 as this also tests Data Retention (~1.021ms per Row for Write/Read Tests)
-    if (patNr == (3+(row & 0x0001))) {
+  if (row >= 7) {  // Delay Row Crosstalk Testing until we reach Row 7 as this also tests Data Retention (~1.021ms per Row for Write/Read Tests)
+    if (patNr == (3 + (row & 0x0001))) {
       RASHandlingPin20(row - 7);
       for (uint8_t msb = 0; msb < colWidth; msb++)
-        checkRow20Pin(msb, (3+(row & 0x0001)), 3);  // check if last Row still has Pattern Nr 3 - Otherwise Error 3
-    } 
+        checkRow20Pin(msb, (3 + ((row - 7) & 0x0001)), 3);  // check if last Row still has Pattern Nr 3 - Otherwise Error 3
+    }
   }
   delayMicroseconds(126);  // Fine Tuning to surely be at least 8ms  for the Refresh Test
-  // Measurement showed  for my TestBoard 
+  // Measurement showed  for my TestBoard
   //refreshRow20Pin(row);  // Refresh the current row before leaving
 }
 
 void refreshRow20Pin(uint16_t row) {
   PORTB |= 1;  // CAS High
   RASHandlingPin20(row);
-  PORTB |= (1 << PB1);  // Set RAS High - Inactive
+  PORTB |= (0x02);  // Set RAS High - Inactive
 }
 
 void checkRow20Pin(uint8_t msb, uint8_t patNr, uint8_t errNr) {
   msbHandlingPin20(msb);  // Set the MSB as needed
-  PORTB &= ~(1 << PB2);   // Set OE Low - Active
+  PORTB &= ~(0x04);       // Set OE Low - Active
   // Iterate over 255 Columns and read & check Pattern
   for (uint16_t col = 0; col <= 255; col++) {
     PORTD = (uint8_t)col;  // Set Col Adress
@@ -624,8 +632,7 @@ void checkRow20Pin(uint8_t msb, uint8_t patNr, uint8_t errNr) {
     NOP;  // Input Settle Time for Digital Inputs = 93ns
     NOP;  // One NOP@16MHz = 62.5ns
     if ((PINC & 0x0F) != (pattern[patNr] & 0x0f)) {
-      PORTB |= 1;           // Set CAS High
-      PORTB |= (1 << PB1);  // Set RAS High - Inactive
+      PORTB |= 0x03;  // Set CAS & RAS High
       error(patNr + 1, errNr);
     }  // Check if Pattern matches
     PORTB |= 1;
@@ -639,41 +646,38 @@ boolean Sense1Mx4() {
   boolean big = true;
   DDRC |= 0x0F;  // Configure IOs for Output
   // Prepare for Test and write Row 0 Col 0 to LOW LOW LOW LOW
-  PORTB |= (1 << PB1);  // Set RAS High - Inactive
-  PORTD = 0x00;         // Set Row and Col address to 0
-  PORTB &= 0xEF;        // Clear address Bit 8
-  PORTC &= 0xE0;        // Set all Outputs and A9 to LOW
+  PORTB |= 0x02;  // Set RAS High - Inactive
+  PORTD = 0x00;   // Set Row and Col address to 0
+  PORTB &= 0xEF;  // Clear address Bit 8
+  PORTC &= 0xE0;  // Set all Outputs and A9 to LOW
   RASHandlingPin20(0);
-  PORTB &= ~(1 << PB3);  // Set WE Low - Active
-  PORTB &= ~1;           // CAS Latch Strobe
-  PORTB |= 1;            // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
+  PORTB &= ~0x09;  // Set WE & CAS Low - Active
+  PORTB |= 0x01;   // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
   // Row address line, buffer and decoder test
   for (uint8_t a = 0; a <= 9; a++) {
     uint16_t adr = (1 << a);
     RASHandlingPin20(adr);
-    PORTD = 0x00;          // Set Col Adress
-    PORTB &= 0xEF;         // Clear address Bit 8
-    PORTC &= 0xEF;         // A9 to LOW
-    DDRC |= 0x0F;          // Configure IOs for Output
-    PORTC |= 0x0F;         // Set all Bit
-    PORTB &= ~(1 << PB3);  // Set WE Low - Active
-    PORTB &= ~1;           // CAS Latch Strobe
-    PORTB |= 1;            // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
-    PORTB |= (1 << PB3);   // Set WE High - Inactive
+    PORTD = 0x00;    // Set Col Adress
+    PORTB &= 0xEF;   // Clear address Bit 8
+    PORTC &= 0xEF;   // A9 to LOW
+    DDRC |= 0x0F;    // Configure IOs for Output
+    PORTC |= 0x0F;   // Set all Bit
+    PORTB &= ~0x08;  // Set WE Low - Active
+    PORTB &= ~0x01;  // CAS Latch Strobe
+    PORTB |= 0x09;   // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
     RASHandlingPin20(0);
-    PORTD = 0x00;          // Set Col Adress
-    PORTB &= 0xEF;         // Clear address Bit 8
-    PORTC &= 0xE0;         // A9 to LOW - Outputs low
-    DDRC &= 0xF0;          // Configure IOs for Input
-    PORTB &= ~(1 << PB2);  // Set OE Low - Active
-    PORTB &= ~1;           // CAS Latch Strobe
+    PORTD = 0x00;    // Set Col Adress
+    PORTB &= 0xEF;   // Clear address Bit 8
+    PORTC &= 0xE0;   // A9 to LOW - Outputs low
+    DDRC &= 0xF0;    // Configure IOs for Input
+    PORTB &= ~0x05;  // CAS and OE Low - Active
     NOP;
     NOP;
     if ((PINC & 0xF) != 0x0) {  // Read the Data at this address
       if (a == 9)
         big = false;
       else {
-        PORTB |= 1;  // CAS High - Cycle Time ~120ns
+        PORTB |= 0x03;  // CAS & RAS High
         error(a, 3);
       }
     }
@@ -681,34 +685,32 @@ boolean Sense1Mx4() {
   }
   // Check Column address lines, buffers and decoders
   RASHandlingPin20(0);
-  DDRC |= 0x0F;          // Configure IOs for Output
-  PORTC &= 0xE0;         // Set all Outputs and A9 to LOW
-  PORTB &= ~(1 << PB3);  // Set WE Low - Active
-  PORTB &= ~1;           // CAS Latch Strobe
-  PORTB |= 1;            // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
+  DDRC |= 0x0F;    // Configure IOs for Output
+  PORTC &= 0xE0;   // Set all Outputs and A9 to LOW
+  PORTB &= ~0x08;  // Set WE Low - Active
+  PORTB &= ~0x01;  // CAS Latch Strobe
+  PORTB |= 0x01;   // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
   for (uint8_t a = 0; a <= 9; a++) {
     uint16_t adr = (1 << a);
     PORTD = (adr & 0xff);  // Set Col Adress
     msbHandlingPin20(adr >> 8);
     DDRC |= 0x0F;          // Configure IOs for Output
     PORTC |= 0x0F;         // Set all Bit
-    PORTB &= ~(1 << PB3);  // Set WE Low - Active
-    PORTB &= ~1;           // CAS Latch Strobe
-    PORTB |= 1;            // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
-    PORTB |= (1 << PB3);   // Set WE High - Inactive
+    PORTB &= ~0x08;        // Set WE Low - Active
+    PORTB &= ~0x01;        // CAS Latch Strobe
+    PORTB |= 0x09;         // WE &CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
     PORTD = 0x00;          // Set Col Adress
     PORTB &= 0xEF;         // Clear address Bit 8
     PORTC &= 0xEF;         // A9 to LOW
     DDRC &= 0xF0;          // Configure IOs for Input
-    PORTB &= ~(1 << PB2);  // Set OE Low - Active
-    PORTB &= ~1;           // CAS Latch Strobe
+    PORTB &= ~0x05;  // Set OE & CAS Low - Active
     NOP;
     NOP;
     if ((PINC & 0xF) != 0x0) {  // Read the Data at this address
       if ((a == 9) && (big == false))
         NOP;  // Row Testing showed already the small type. If it did not we have a Problem.
       else {
-        PORTC |= 0x08;  // CAS High
+        PORTB |= 0x03;  // CAS & RAS High
         error(a, 1);
       }
       PORTB |= 1;  // CAS High - Cycle Time ~120ns
@@ -736,13 +738,13 @@ void checkGNDShort4Port(int *portb, int *portc, int *portd) {
   for (int i = 0; i <= 7; i++) {
     int8_t mask = 1 << i;
     if (portb[i] != EOL && portb[i] != NC && ((PINB & mask) == 0)) {
-      error(portb[i], 1);
+      error(portb[i], 4);
     }
     if (portc[i] != EOL && portc[i] != NC && ((PINC & mask) == 0)) {
-      error(portc[i], 1);
+      error(portc[i], 4);
     }
     if (portd[i] != EOL && portd[i] != NC && ((PIND & mask) == 0)) {
-      error(portd[i], 1);
+      error(portd[i], 4);
     }
   }
 }
