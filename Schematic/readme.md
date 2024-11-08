@@ -18,6 +18,7 @@ HW is still work in progress. Currently an SMD only version and a mixed SMD/TH v
 - D1 1x BiColor LED 5mm (Red/Green) Common Center Cathode [AliExpress](https://aliexpress.com/item/1005006014283662.html)
 - SW1 1x 3 way Dip-Switch [AliExpress](https://aliexpress.com/item/4001205849246.html)
 - SW2 Pushbutton [AliExpress](https://aliexpress.com/item/4000555847543.html)
+- Q1, Q2 SMD IRLML6402
 - J1 MicroUSB (or any power Connector having 2.54mm Spacing [AliExpress](https://aliexpress.com/item/1005001515820458.html)
   
 If you want to use ICSP:
