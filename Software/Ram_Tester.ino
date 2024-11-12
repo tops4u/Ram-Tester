@@ -2,8 +2,8 @@
 // ========================================
 //
 // Author : Andreas Hoffmann
-// Version: 2.0pre
-// Date   : 6.11.2024
+// Version: 2.0
+// Date   : 12.11.2024
 //
 // This Software is published under GPL 3.0 - Respect the License
 // This Project is hosted at: https://github.com/tops4u/Ram-Tester/
@@ -40,6 +40,11 @@
 //                   Switch ON red light during testing = yellowish light during test
 //                   Some cleanup of old code style in 20Pin code section
 //                   Re-Enabled the GND-Short-Test code. Was deactivated until RAM test works reliably
+//                   Code Streamlining
+// Version 2.0       Bugfixes for 4464 and timing adjustmens for Refresh Checks 
+//                   Todo: 
+//                    - Eliminate Corner Cases when Testing Crosstalk (Start and End of Rows)
+//                    - Eventually Run Checks in reverse Order (i.e. starting with last Row) to really cover all cases
 //
 // Disclaimer:
 // This Project (Software & Hardware) is a hobbyist Project. I do not guarantee it's fitness for any purpose
@@ -57,7 +62,7 @@
 #define LED_G 12  // PB4 -> Co Used with RAM Test Socket, see comments below!
 
 // The Testpatterns
-const uint8_t pattern[] = { 0x00, 0xFF, 0xAA, 0x33, 0xAA, 0x33 };  // Equals to 0b00000000, 0b11111111, 0b10101010, 0b01010101
+const uint8_t pattern[] = { 0x00, 0xff, 0xaa, 0x33, 0xff, 0x33 };  // Equals to 0b00000000, 0b11111111, 0b10101010, 0b01010101
 
 // Mapping for 4164 (2ms Refresh Rate) / 41256/257 (4 ms Refresh Rate)
 // A0 = PC4   RAS = PB1   t RAS->CAS = 150-200ns -> Max Pulsewidth 10'000ns
@@ -76,6 +81,12 @@ const int CPU_16PORTD[] = { 6, 7, 8, NC, NC, NC, 9, 10 };
 const int RAS_16PIN = 9;   // Digital Out 9 on Arduino Uno is used for RAS
 const int CAS_16PIN = 17;  // Corresponds to Analog 3 or Digital 17
 // Address Distribution for 16Pin Types. HW Circuitry is optimized for larger Models where Testing Speed is more relevant
+#define CAS_LOW16 PORTC &= 0xf7
+#define CAS_HIGH16 PORTC |= 0x08
+#define RAS_LOW16 PORTB &= 0xfd
+#define RAS_HIGH16 PORTB |= 0x02
+#define WE_LOW16 PORTB &= 0xf7
+#define WE_HIGH16 PORTB |= 0x08
 #define SET_ADDR_PIN16(addr, data) \
   { \
     PORTB = (PORTB & 0xea) | (addr & 0x0010) | ((addr & 0x0008) >> 1) | ((addr & 0x0040) >> 6); \
@@ -99,6 +110,14 @@ const int CPU_18PORTC[] = { 1, 2, 16, 17, 5, EOL, EOL, EOL };
 const int CPU_18PORTD[] = { 6, 7, 8, 9, NC, 10, 11, 12 };
 const int RAS_18PIN = 18;  // Digital Out 18 / A4 on Arduino Uno is used for RAS
 const int CAS_18PIN = 16;  // Corresponds to Analog 2 or Digital 16
+#define CAS_LOW18 PORTC &= 0xfb
+#define CAS_HIGH18 PORTC |= 0x04
+#define RAS_LOW18 PORTC &= 0xef
+#define RAS_HIGH18 PORTC |= 0x10
+#define OE_LOW18 PORTC &= 0xfe
+#define OE_HIGH18 PORTC |= 0x01
+#define WE_LOW18 PORTB &= 0xfd
+#define WE_HIGH18 PORTB |= 0x02
 // Address Distribution for 18Pin Types
 #define SET_ADDR_PIN18(addr) \
   { \
@@ -108,8 +127,8 @@ const int CAS_18PIN = 16;  // Corresponds to Analog 2 or Digital 16
 
 #define SET_DATA_PIN18(data) \
   { \
-    PORTB = (PORTB & 0xF6) | ((data & 0x02) << 2) | ((data & 0x04) >> 2); \
-    PORTC = (PORTC & 0xF5) | ((data & 0x01) << 1) | (data & 0x08); \
+    PORTB = (PORTB & 0xf6) | ((data & 0x02) << 2) | ((data & 0x04) >> 2); \
+    PORTC = (PORTC & 0xf5) | ((data & 0x01) << 1) | (data & 0x08); \
   }
 
 #define GET_DATA_PIN18 (((PINC & 0x02) >> 1) + ((PINB & 0x08) >> 2) + ((PINB & 0x01) << 2) + (PINC & 0x08))
@@ -132,6 +151,14 @@ const int CPU_20PORTC[] = { 1, 2, 18, 19, 5, 10, EOL, EOL };
 const int CPU_20PORTD[] = { 6, 7, 8, 9, 11, 12, 13, 14 };
 const int RAS_20PIN = 9;  // Digital Out 9 on Arduino Uno is used for RAS
 const int CAS_20PIN = 8;
+#define CAS_LOW20 PORTB &= 0xfe
+#define CAS_HIGH20 PORTB |= 0x01
+#define RAS_LOW20 PORTB &= 0xfd
+#define RAS_HIGH20 PORTB |= 0x02
+#define OE_LOW20 PORTB &= 0xfb
+#define OE_HIGH20 PORTB |= 0x04
+#define WE_LOW20 PORTB &= 0xf7
+#define WE_HIGH20 PORTB |= 0x08
 
 uint8_t Mode = 0;  // PinMode 2 = 16 Pin, 4 = 18 Pin, 5 = 20 Pin
 
@@ -139,7 +166,7 @@ void setup() {
   // Data Direction Register Port B, C & D - Preconfig as Input (Bit=0)
   DDRB &= 0b11100000;
   DDRC &= 0b11000000;
-  DDRD = 0x0;
+  DDRD = 0x00;
   // Wait for the Candidate to properly Startup
   if (digitalRead(19) == 1) { Mode += Mode_20Pin; }
   if (digitalRead(3) == 1) { Mode += Mode_18Pin; }
@@ -151,7 +178,7 @@ void setup() {
   // With a valid Config, activate the PullUps
   PORTB |= 0b00011111;
   PORTC |= 0b00111111;
-  PORTD = 0xFF;
+  PORTD = 0xff;
   // Settle State - PullUps my require some time.
   checkGNDShort();  // Check for Shorts towards GND. Shorts on Vcc can't be tested as it would need Pull-Downs.
 
@@ -218,32 +245,32 @@ void test16Pin() {
 }
 
 // Prepare and execute ROW Access for 16 Pin Types
-void RASHandlingPin16(uint16_t row) {
-  PORTB |= (1 << PB1);  // Set RAS High - Inactive
+void rASHandlingPin16(uint16_t row) {
+  RAS_HIGH16;
   // Row Address distribution Logic for 41256/64 16 Pin RAM - more complicated as the PCB circuit is optimized for 256x4 / 1Mx4 Types.
   SET_ADDR_PIN16(row, 0);
-  PORTB &= ~(1 << PB1);  // RAS Latch Strobe
+  RAS_LOW16;
 }
 
 // Write and Read (&Check) Pattern from Cols
 void write16PinRow(uint16_t row, uint16_t cols) {
   for (uint8_t patNr = 0; patNr < 4; patNr++) {
     // Prepare Write Cycle
-    PORTC &= 0x08;          // Set CAS High
-    RASHandlingPin16(row);  // Set the Row
-    PORTB &= ~(1 << PB3);   // Set WE Low - Active
+    CAS_HIGH16;
+    rASHandlingPin16(row);  // Set the Row
+    WE_LOW16;
     uint8_t pat = pattern[patNr];
     for (uint16_t col = 0; col <= cols; col++) {
       // Column Address distribution logic for 41256/64 16 Pin RAM
       SET_ADDR_PIN16(col, pat);
-      PORTC &= ~0x08;  // CAS Latch Strobe
-      NOP;             // Just to be sure for slower RAM
-      PORTC |= 0x08;   // CAS High - Cycle Time ~120ns
+      CAS_LOW16;
+      NOP;  // Just to be sure for slower RAM
+      CAS_HIGH16;
       // Rotate the Pattern 1 Bit to the LEFT (c has not rotate so there is a trick with 2 Shift)
       pat = (pat << 1) | (pat >> 7);
     }
     // Prepare Read Cycle
-    PORTB |= (1 << PB3);  // Set WE High - Inactive
+    WE_HIGH16;
     // Read and check the Row we just wrote, otherwise Error 2
     rowCheck16Pin(cols, patNr, 2);
     // If this is not the first row to check lets see if current Row modified the previous one.
@@ -254,7 +281,7 @@ void write16PinRow(uint16_t row, uint16_t cols) {
     // As we only test after PatternNr 2 this tests 3 Refresh Cycles per Row by using Ras Only Refresh (ROR)
     if (row > 0) {
       if (patNr == 2) {
-        RASHandlingPin16(row - 1);
+        rASHandlingPin16(row - 1);
         rowCheck16Pin(cols, 3, 3);  // check if last Row still has Pattern Nr 3 - Otherwise Error 3
       } else {
         // just refreh the last row on any pattern change
@@ -268,10 +295,10 @@ void write16PinRow(uint16_t row, uint16_t cols) {
 }
 
 void refreshRow16Pin(uint16_t row) {
-  RASHandlingPin16(row);  // Refresh this ROW
+  rASHandlingPin16(row);  // Refresh this ROW
   NOP;
   NOP;
-  PORTB |= (1 << PB1);  // Set RAS High - Inactive
+  RAS_HIGH16;
 }
 
 void rowCheck16Pin(uint16_t cols, uint8_t patNr, uint8_t check) {
@@ -279,44 +306,43 @@ void rowCheck16Pin(uint16_t cols, uint8_t patNr, uint8_t check) {
   // Iterate over the Columns and read & check Pattern
   for (uint16_t col = 0; col <= cols; col++) {
     SET_ADDR_PIN16(col, 0);
-    PORTC &= ~0x08;  // CAS Latch Strobe
-    NOP;             // Input Settle Time for Digital Inputs = 93ns
-    NOP;             // One NOP@16MHz = 62.5ns
+    CAS_LOW16;
+    NOP;  // Input Settle Time for Digital Inputs = 93ns
+    NOP;  // One NOP@16MHz = 62.5ns
     if (((PINC & 0x04) >> 2) != (pat & 0x01)) {
-      PORTC |= 0x08;        // CAS High - Cycle Time ~120ns
-      PORTB |= (1 << PB1);  // Set RAS High - Inactive
       error(patNr + 1, check);
-    }               // Check if Pattern matches
-    PORTC |= 0x08;  // CAS High - Cycle Time ~120ns
+    }  // Check if Pattern matches
+    CAS_HIGH16;
     pat = (pat << 1) | (pat >> 7);
   }
-  PORTB |= (1 << PB1);  // Set RAS High - Inactive
+  RAS_HIGH16;
 }
 
 // Address Line Checks and sensing for 41256 or 4164
 boolean Sense41256() {
   boolean big = true;
-  PORTC &= 0x08;  // Set CAS High
+  CAS_HIGH16;
   // RAS Testing set Row 0 Col 0 and set Bit Low.
-  RASHandlingPin16(0);
-  PORTB &= ~(1 << PB3);  // Set WE Low - Active
-  PORTC &= ~0x08;        // CAS  Strobe
+  rASHandlingPin16(0);
+  PORTC &= 0xfd;
+  WE_LOW16;
+  CAS_LOW16;
   NOP;
-  PORTC |= 0x08;        // CAS High
-  PORTB |= (1 << PB3);  // Set WE High - Inactive
+  CAS_HIGH16;
+  WE_HIGH16;
   for (uint8_t a = 0; a <= 8; a++) {
     uint16_t adr = (1 << a);
-    RASHandlingPin16(adr);
+    rASHandlingPin16(adr);
     // Write Bit Col 0 High
-    PORTB &= ~(1 << PB3);  // Set WE Low - Active
+    WE_LOW16;
     PORTC |= 0x02;
-    PORTC &= ~0x08;  // CAS  Strobe
+    CAS_LOW16;
     NOP;
-    PORTC |= 0x08;        // CAS High
-    PORTB |= (1 << PB3);  // Set WE High - Inactive
+    CAS_HIGH16;
+    WE_HIGH16;
     // Back to Row 0 then check if Bit at Col 0 is still 0
-    RASHandlingPin16(0);
-    PORTC &= ~0x08;  // CAS  Strobe
+    rASHandlingPin16(0);
+    CAS_LOW16;
     NOP;
     NOP;
     // Check for Dout = 0
@@ -325,37 +351,36 @@ boolean Sense41256() {
       if (a == 8)
         big = false;
       else {
-        PORTC |= 0x08;  // CAS High
         error(a, 1);
       }
     }
-    PORTC |= 0x08;  // CAS High
+    CAS_HIGH16;
   }
   // CAS address Tests performed on ROW 0
-  RASHandlingPin16(0);
-  PORTB &= ~(1 << PB3);  // Set WE Low - Active
+  rASHandlingPin16(0);
+  WE_LOW16;
   // Set Column 0 and DataIn = Low -> Preset 0 at R=0 / C=0
   PORTB = (PORTB & 0xea);
   PORTC = (PORTC & 0xe8);
   PORTD = 0;
-  PORTC &= ~0x08;  // CAS  Strobe
+  CAS_LOW16;
   NOP;
-  PORTC |= 0x08;  // CAS High
+  CAS_HIGH16;
   // Cycle through all Address lines and set 1 on each address. Check for 0 at Col 0.
   // If an address Pin or address decoder is dead we should get a 1 at Col 0
   for (uint8_t a = 0; a <= 8; a++) {
     uint16_t adr = (1 << a);
-    PORTB &= ~(1 << PB3);  // Set WE Low - Active
+    WE_LOW16;
     // Set aadress
     SET_ADDR_PIN16(adr, 0x02);
-    PORTC &= ~0x08;          // CAS  Strobe
-    NOP;                     // Just to be sure for slower RAM
-    PORTC |= 0x08;           // CAS High
-    PORTB |= (1 << PB3);     // Set WE High - Inactive
+    CAS_LOW16;
+    NOP;  // Just to be sure for slower RAM
+    CAS_HIGH16;
+    WE_HIGH16;
     PORTB = (PORTB & 0xea);  // Reset Col Addr to 0
     PORTC = (PORTC & 0xe8);
     PORTD = 0;
-    PORTC &= ~0x08;  // CAS  Strobe
+    CAS_LOW16;
     NOP;
     NOP;
     // Check for Dout = 0
@@ -364,11 +389,10 @@ boolean Sense41256() {
       if ((a == 8) && (big == false))
         NOP;  // Row Testing showed already the small type. If it did not we have a Problem.
       else {
-        PORTC |= 0x08;  // CAS High
         error(a, 1);
       }
     }
-    PORTC |= 0x08;  // CAS High
+    CAS_HIGH16;
   }
   return big;
 }
@@ -384,58 +408,90 @@ void test18Pin() {
   DDRC = 0b00011111;
   PORTC = 0b00010101;
   DDRD = 0b11100111;
-  if (Sense4464() == true) {
+  if (sense4464() == true) {
+    noInterrupts();
     for (uint16_t row = 0; row < 256; row++) {  // Iterate over all ROWs
       write18PinRow(row, 0, 256);
     }
+    interrupts();
     // Good Candidate.
     testOK();
   } else {                                      // 4416 has 256 ROW but only 64 Columns (Bit 1-6)
     for (uint16_t row = 0; row < 256; row++) {  // Iterate over all ROWs
-      write18PinRow(row, 1, 128);
+      write18PinRow(row, 1, 64);
     }
     // Indicate with Green-Red flashlight that the "small" Version has been checked ok
     smallOK();
   }
 }
 
-void write18PinRow(uint8_t row, uint8_t init_shift, uint8_t width) {
+void write18PinRow(uint8_t row, uint8_t init_shift, uint16_t width) {
+  uint16_t colAddr;  // Prepared Column Adress to safe Init Time. This is needed when A0 & A8 are not used for Col addressing.
   for (uint8_t patNr = 0; patNr < 4; patNr++) {
     // Prepare Write Cycle
-    RASHandling18Pin(row);
-    PORTB &= ~0x02;  // Set WE LOW
+    rASHandling18Pin(row);
+    WE_LOW18;
     SET_DATA_PIN18(pattern[patNr]);
     configDOut18Pin();
     for (uint16_t col = 0; col < width; col++) {
-      SET_ADDR_PIN18(col << init_shift);
-      PORTC &= ~0x04;  // CAS Strobe
+      colAddr = (col << init_shift);
+      SET_ADDR_PIN18(colAddr);
+      CAS_LOW18;
       NOP;
-      PORTC |= 0x04;
+      CAS_HIGH18;
     }
-    PORTB |= 0x02;  // Disable WE
-    configDIn18Pin();
-    PORTC &= ~0x01;  // Set OE LOW
-    for (uint16_t col = 0; col < width; col++) {
-      SET_ADDR_PIN18(col << init_shift);
-      PORTC &= ~0x04;  // CAS Strobe
-      NOP;
-      NOP;
-      if ((GET_DATA_PIN18 & 0xF) != (pattern[patNr] & 0xF)) {
-        PORTC |= 0x15;
-        error(patNr, 2);
+    WE_HIGH18;
+    // If we check 255 Columns the time for Write & Read(Check) exceeds the Refresh time. We need to add a Refresh in the Middle
+    if (init_shift == 0) {
+      refreshRow18Pin(row - 1);  // Refresh the last row
+      delayMicroseconds(41);     // Minor delay to really check for 2ms Refresh of the last row
+      rASHandling18Pin(row);     // Reselect the just written row for checking
+    }
+    checkColumn18Pin(width, patNr, init_shift, 2);
+    // If Pattern 2 was written check last row for Crosstalk, it should still read Pattern 3
+    if (init_shift == 1) {
+      if (row > 1) {
+        if (patNr == 2) {
+          rASHandling18Pin(row - 2);
+          checkColumn18Pin(width, 3, init_shift, 3);
+        } else if (patNr == 0) {
+          // In case of the 4416 with 64 Cols, the Time to Write/Read two Patterns is almost 2ms = Refresh inervals, so we refesh 2 Pattern Columns after the last access to this column1
+          refreshRow18Pin(row - 2);
+          delayMicroseconds(79);
+        }
       }
-      PORTC |= 0x04;
-      //////////////////////////////////////////////////
-      // MISSING REFRESH AND ROW CROSSTALK CHECK HERE //
-      //////////////////////////////////////////////////
+    } else if (row > 0) {
+      if (patNr == 2) {
+        rASHandling18Pin(row - 1);
+        checkColumn18Pin(width, 3, init_shift, 3);
+      } else {
+        refreshRow18Pin(row - 1);
+      }
     }
   }
-  PORTC &= ~0x10;  // RAS High
+  RAS_HIGH18;
+}
+
+void checkColumn18Pin(uint16_t width, uint8_t patNr, uint8_t init_shift, uint8_t errorNr) {
+  configDIn18Pin();
+  uint8_t pat = pattern[patNr] & 0x0f;
+  OE_LOW18;
+  for (uint16_t col = 0; col < width; col++) {
+    SET_ADDR_PIN18(col << init_shift);
+    CAS_LOW18;
+    NOP;
+    NOP;
+    if ((GET_DATA_PIN18) != pat) {
+      error(patNr, errorNr);
+    }
+    CAS_HIGH18;
+  }
+  OE_HIGH18;
 }
 
 void configDOut18Pin() {
   DDRB |= 0x09;  // Configure D1 & D2 as Outputs
-  DDRC |= 0x0A;  // Configure D0 & D3 as Outputs
+  DDRC |= 0x0a;  // Configure D0 & D3 as Outputs
 }
 
 void configDIn18Pin() {
@@ -443,51 +499,59 @@ void configDIn18Pin() {
   DDRC &= 0x15;
 }
 
-void RASHandling18Pin(uint8_t row) {
-  PORTC |= 0x10;  // Set RAS High
-  SET_ADDR_PIN18(row);
-  PORTC &= ~0x10;  // RAS Active
+void refreshRow18Pin(uint8_t row) {
+  rASHandling18Pin(row);
+  NOP;
+  NOP;
+  RAS_HIGH18;
 }
 
-boolean Sense4464() {
+void rASHandling18Pin(uint8_t row) {
+  RAS_HIGH18;
+  SET_ADDR_PIN18(row);
+  RAS_LOW18;
+}
+
+boolean sense4464() {
   boolean big = true;
-  RASHandling18Pin(0);  // Use Row 0 for Size Tests
-  PORTB &= ~0x02;       // Set WE LOW - Active
+  rASHandling18Pin(0);  // Use Row 0 for Size Tests
+  WE_LOW18;
   SET_DATA_PIN18(0x0);
   SET_ADDR_PIN18(0x00);
-  PORTC &= ~0x04;  // CAS Strobe
+  CAS_LOW18;
   NOP;
-  PORTC |= 0x04;
+  CAS_HIGH18;
   // 4416 CAS addressing does not Use A0 nor A7 we set A0 to check and Write 1111 to this Column
   // First test the CAS addressing
   for (uint8_t a = 0; a <= 7; a++) {
     uint8_t col = (1 << a);
     configDOut18Pin();
-    PORTB &= ~0x02;  // Set WE LOW - Active
-    SET_DATA_PIN18(0xF);
+    WE_LOW18;
+    SET_DATA_PIN18(0xf);
     SET_ADDR_PIN18(col);
-    PORTC &= ~0x04;  // CAS Strobe
+    CAS_LOW18;
     NOP;
-    PORTC |= 0x04;
+    CAS_HIGH18;
     SET_ADDR_PIN18(0x00);
-    PORTB |= 0x02;  // WE inactive - high
+    WE_HIGH18;
     configDIn18Pin();
-    PORTC &= ~0x05;  // CAS Strobe and OE
+    OE_LOW18;
+    CAS_LOW18;
     NOP;
     NOP;
-    if ((GET_DATA_PIN18 & 0xF) != (0x0)) {
+    if ((GET_DATA_PIN18 & 0xf) != (0x0)) {
       if (a == 0) {
         big = false;
-        PORTC |= 0x05;   // End CAS and OE
-        PORTB &= ~0x02;  // Set WE LOW - Active
+        CAS_HIGH18;
+        OE_HIGH18;
+        WE_LOW18;
         configDOut18Pin();
         SET_DATA_PIN18(0x0);
         SET_ADDR_PIN18(0x01);
-        PORTC &= ~0x04;  // CAS Strobe
+        CAS_LOW18;
       } else if ((a == 7) && (big == false))
         NOP;
       else {
-        PORTC |= 0x15;
         error(a, 1);
       }
     }
@@ -495,32 +559,32 @@ boolean Sense4464() {
   }
   // Now we check Row addressing
   configDOut18Pin();
-  RASHandling18Pin(0);  // Use Row 0 for Size Tests
-  PORTB &= ~0x02;       // Set WE LOW - Active
+  rASHandling18Pin(0);  // Use Row 0 for Size Tests
+  WE_LOW18;
   SET_DATA_PIN18(0x0);
   SET_ADDR_PIN18(0x18);  // Randomly choose a Column not on the edge since 4416 does not use A0 / A7 Columns
-  PORTC &= ~0x04;        // CAS Strobe
+  CAS_LOW18;
   NOP;
-  PORTC |= 0x04;
+  CAS_HIGH18;
   for (uint8_t a = 0; a <= 7; a++) {
     uint8_t row = (1 << a);
     configDOut18Pin();
-    PORTB &= ~0x02;  // Set WE LOW - Active
-    SET_DATA_PIN18(0xF);
-    RASHandling18Pin(row);
+    WE_LOW18;
+    SET_DATA_PIN18(0xf);
+    rASHandling18Pin(row);
     SET_ADDR_PIN18(0x18);
-    PORTC &= ~0x04;  // CAS Strobe
+    CAS_LOW18;
     NOP;
-    PORTC |= 0x04;
-    RASHandling18Pin(0x00);
+    CAS_HIGH18;
+    rASHandling18Pin(0x00);
     SET_ADDR_PIN18(0x18);
-    PORTB |= 0x02;  // WE inactive - high
+    WE_HIGH18;
     configDIn18Pin();
-    PORTC &= ~0x05;  // CAS Strobe and OE
+    OE_LOW18;
+    CAS_LOW18;
     NOP;
     NOP;
-    if ((GET_DATA_PIN18 & 0xF) != (0x0)) {
-      PORTC |= 0x15;
+    if ((GET_DATA_PIN18 & 0xf) != (0x0)) {
       error(a, 1);
     }
     PORTC |= 0x15;
@@ -540,7 +604,7 @@ void test20Pin() {
   DDRB = 0b00011111;
   DDRC = 0b00011111;
   DDRD = 0xFF;
-  if (Sense1Mx4() == true) {
+  if (sense1Mx4() == true) {
     // Run the Tests for the larger Chip if A9 is used we run the larger test for 512kB
     // This could be optimized.
     for (uint8_t pat = 0; pat < 4; pat++) {        // Check all 4Bit Patterns
@@ -561,52 +625,52 @@ void test20Pin() {
 }
 
 // Prepare and execute ROW Access for 20 Pin Types
-void RASHandlingPin20(uint16_t row) {
-  PORTB |= 0x02;               // Set RAS High - Inactive
+void rASHandlingPin20(uint16_t row) {
+  RAS_HIGH20;
   msbHandlingPin20(row >> 8);  // Preset ROW Adress
-  PORTD = (uint8_t)(row & 0xFF);
-  PORTB &= ~0x02;  // RAS Latch Strobe
+  PORTD = (uint8_t)(row & 0xff);
+  RAS_LOW20;
 }
 
 // Prepare Controll Lines and perform Checks
 void write20PinRow(uint16_t row, uint8_t pattern, uint16_t width) {
-  PORTB |= 0x0F;                          // Set all RAM Controll Lines to HIGH = Inactive
-  CASHandlingPin20(row, pattern, width);  // Do the Test
-  PORTB |= 0x0F;                          // Set all RAM Controll Lines to HIGH = Inactive
+  PORTB |= 0x0f;                          // Set all RAM Controll Lines to HIGH = Inactive
+  cASHandlingPin20(row, pattern, width);  // Do the Test
+  PORTB |= 0x0f;                          // Set all RAM Controll Lines to HIGH = Inactive
   // Enhanced PageMode Row Write & Read Done
 }
 
 void msbHandlingPin20(uint16_t address) {
-  PORTB = (PORTB & 0xEF) | ((address & 0x01) << 4);
-  PORTC = (PORTC & 0xEF) | ((address & 0x02) << 3);
+  PORTB = (PORTB & 0xef) | ((address & 0x01) << 4);
+  PORTC = (PORTC & 0xef) | ((address & 0x02) << 3);
 }
 
 // Write and Read (&Check) Pattern from Cols
 // Write and Read (&Check) Pattern from Cols
-void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
-  RASHandlingPin20(row);  // Set the Row
+void cASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
+  rASHandlingPin20(row);  // Set the Row
   for (uint8_t msb = 0; msb < colWidth; msb++) {
     // Prepare Write Cycle
-    PORTC &= 0xF0;                                        // Set all Outputs to LOW
-    DDRC |= 0x0F;                                         // Configure IOs for Output
-    msbHandlingPin20(msb);                                // Set the MSB as needed
-    PORTB &= ~(0x08);                                     // Set WE Low - Active
-    PORTC |= (pattern[(patNr + (row & 0x0001))] & 0x0F);  // Alternative Pattern Odd & Even so we can check for Crosstalk later.
+    PORTC &= 0xf0;          // Set all Outputs to LOW
+    DDRC |= 0x0f;           // Configure IOs for Output
+    msbHandlingPin20(msb);  // Set the MSB as needed
+    WE_LOW20;
+    PORTC |= (pattern[(patNr + (row & 0x0001))] & 0x0f);  // Alternative Pattern Odd & Even so we can check for Crosstalk later.
     // Iterate over 255 Columns and write the Pattern
     for (uint16_t col = 0; col <= 255; col++) {
       PORTD = (uint8_t)col;  // Set Col Adress
-      PORTB &= ~1;           // CAS Latch Strobe
-      PORTB |= 1;            // CAS High - Cycle Time ~120ns
+      CAS_LOW20;
+      CAS_HIGH20;
     }
     // Prepare Read Cycle
-    PORTB |= (0x08);  // Set WE High - Inactive
-    PORTC &= 0xF0;    // Clear all Outputs
-    DDRC &= 0xF0;     // Configure IOs for Input
+    WE_HIGH20;
+    PORTC &= 0xf0;  // Clear all Outputs
+    DDRC &= 0xf0;   // Configure IOs for Input
     checkRow20Pin(msb, (patNr + (row & 0x0001)), 2);
   }
   if (row >= 7) {  // Delay Row Crosstalk Testing until we reach Row 7 as this also tests Data Retention (~1.021ms per Row for Write/Read Tests)
     if (patNr == (3 + (row & 0x0001))) {
-      RASHandlingPin20(row - 7);
+      rASHandlingPin20(row - 7);
       for (uint8_t msb = 0; msb < colWidth; msb++)
         checkRow20Pin(msb, (3 + ((row - 7) & 0x0001)), 3);  // check if last Row still has Pattern Nr 3 - Otherwise Error 3
     }
@@ -617,104 +681,110 @@ void CASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth) {
 }
 
 void refreshRow20Pin(uint16_t row) {
-  PORTB |= 1;  // CAS High
-  RASHandlingPin20(row);
-  PORTB |= (0x02);  // Set RAS High - Inactive
+  CAS_HIGH20;
+  rASHandlingPin20(row);
+  RAS_HIGH20;
 }
 
 void checkRow20Pin(uint8_t msb, uint8_t patNr, uint8_t errNr) {
   msbHandlingPin20(msb);  // Set the MSB as needed
-  PORTB &= ~(0x04);       // Set OE Low - Active
+  uint8_t pat = pattern[patNr] & 0x0f;
+  OE_LOW20;
   // Iterate over 255 Columns and read & check Pattern
   for (uint16_t col = 0; col <= 255; col++) {
     PORTD = (uint8_t)col;  // Set Col Adress
-    PORTB &= ~1;
+    CAS_LOW20;
     NOP;  // Input Settle Time for Digital Inputs = 93ns
     NOP;  // One NOP@16MHz = 62.5ns
-    if ((PINC & 0x0F) != (pattern[patNr] & 0x0f)) {
+    if ((PINC & 0x0f) != pat) {
       PORTB |= 0x03;  // Set CAS & RAS High
       error(patNr + 1, errNr);
     }  // Check if Pattern matches
-    PORTB |= 1;
+    CAS_HIGH20;
   }
-  PORTB |= (1 << PB2);  // Set OE High - Inactive
+  OE_HIGH20;
 }
 
 
 // The following Routine checks if A9 Pin is used - which is the case for 1Mx4 DRAM in 20Pin Mode
-boolean Sense1Mx4() {
+boolean sense1Mx4() {
   boolean big = true;
-  DDRC |= 0x0F;  // Configure IOs for Output
+  DDRC |= 0x0f;  // Configure IOs for Output
   // Prepare for Test and write Row 0 Col 0 to LOW LOW LOW LOW
-  PORTB |= 0x02;  // Set RAS High - Inactive
+  RAS_HIGH20;
   PORTD = 0x00;   // Set Row and Col address to 0
-  PORTB &= 0xEF;  // Clear address Bit 8
-  PORTC &= 0xE0;  // Set all Outputs and A9 to LOW
-  RASHandlingPin20(0);
-  PORTB &= ~0x09;  // Set WE & CAS Low - Active
-  PORTB |= 0x01;   // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
+  PORTB &= 0xef;  // Clear address Bit 8
+  PORTC &= 0xe0;  // Set all Outputs and A9 to LOW
+  rASHandlingPin20(0);
+  WE_LOW20;
+  CAS_LOW20;
+  CAS_HIGH20;
   // Row address line, buffer and decoder test
   for (uint8_t a = 0; a <= 9; a++) {
     uint16_t adr = (1 << a);
-    RASHandlingPin20(adr);
-    PORTD = 0x00;    // Set Col Adress
-    PORTB &= 0xEF;   // Clear address Bit 8
-    PORTC &= 0xEF;   // A9 to LOW
-    DDRC |= 0x0F;    // Configure IOs for Output
-    PORTC |= 0x0F;   // Set all Bit
-    PORTB &= ~0x08;  // Set WE Low - Active
-    PORTB &= ~0x01;  // CAS Latch Strobe
-    PORTB |= 0x09;   // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
-    RASHandlingPin20(0);
-    PORTD = 0x00;    // Set Col Adress
-    PORTB &= 0xEF;   // Clear address Bit 8
-    PORTC &= 0xE0;   // A9 to LOW - Outputs low
-    DDRC &= 0xF0;    // Configure IOs for Input
-    PORTB &= ~0x05;  // CAS and OE Low - Active
+    rASHandlingPin20(adr);
+    PORTD = 0x00;   // Set Col Adress
+    PORTB &= 0xef;  // Clear address Bit 8
+    PORTC &= 0xef;  // A9 to LOW
+    DDRC |= 0x0f;   // Configure IOs for Output
+    PORTC |= 0x0f;  // Set all Bit
+    WE_LOW20;
+    CAS_LOW20;
+    CAS_HIGH20;
+    WE_HIGH20;
+    rASHandlingPin20(0);
+    PORTD = 0x00;   // Set Col Adress
+    PORTB &= 0xef;  // Clear address Bit 8
+    PORTC &= 0xe0;  // A9 to LOW - Outputs low
+    DDRC &= 0xf0;   // Configure IOs for Input
+    OE_LOW20;
+    CAS_LOW20;
     NOP;
     NOP;
-    if ((PINC & 0xF) != 0x0) {  // Read the Data at this address
+    if ((PINC & 0xf) != 0x0) {  // Read the Data at this address
       if (a == 9)
         big = false;
       else {
-        PORTB |= 0x03;  // CAS & RAS High
         error(a, 3);
       }
     }
-    PORTB |= 1;  // CAS High - Cycle Time ~120ns
+    CAS_HIGH20;
+    OE_HIGH20;
   }
   // Check Column address lines, buffers and decoders
-  RASHandlingPin20(0);
-  DDRC |= 0x0F;    // Configure IOs for Output
-  PORTC &= 0xE0;   // Set all Outputs and A9 to LOW
-  PORTB &= ~0x08;  // Set WE Low - Active
-  PORTB &= ~0x01;  // CAS Latch Strobe
-  PORTB |= 0x01;   // CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
+  rASHandlingPin20(0);
+  DDRC |= 0x0f;   // Configure IOs for Output
+  PORTC &= 0xe0;  // Set all Outputs and A9 to LOW
+  WE_LOW20;
+  CAS_LOW20;
+  CAS_HIGH20;
   for (uint8_t a = 0; a <= 9; a++) {
     uint16_t adr = (1 << a);
     PORTD = (adr & 0xff);  // Set Col Adress
     msbHandlingPin20(adr >> 8);
-    DDRC |= 0x0F;          // Configure IOs for Output
-    PORTC |= 0x0F;         // Set all Bit
-    PORTB &= ~0x08;        // Set WE Low - Active
-    PORTB &= ~0x01;        // CAS Latch Strobe
-    PORTB |= 0x09;         // WE &CAS High - Cycle Time ~120ns -> Write 0000 to Row 0, Col 0
-    PORTD = 0x00;          // Set Col Adress
-    PORTB &= 0xEF;         // Clear address Bit 8
-    PORTC &= 0xEF;         // A9 to LOW
-    DDRC &= 0xF0;          // Configure IOs for Input
-    PORTB &= ~0x05;  // Set OE & CAS Low - Active
+    DDRC |= 0x0f;   // Configure IOs for Output
+    PORTC |= 0x0f;  // Set all Bit
+    WE_LOW20;
+    CAS_LOW20;
+    CAS_HIGH20;
+    WE_HIGH20;
+    PORTD = 0x00;   // Set Col Adress
+    PORTB &= 0xef;  // Clear address Bit 8
+    PORTC &= 0xef;  // A9 to LOW
+    DDRC &= 0xf0;   // Configure IOs for Input
+    OE_LOW20;
+    CAS_LOW20;
     NOP;
     NOP;
-    if ((PINC & 0xF) != 0x0) {  // Read the Data at this address
+    if ((PINC & 0xf) != 0x0) {  // Read the Data at this address
       if ((a == 9) && (big == false))
         NOP;  // Row Testing showed already the small type. If it did not we have a Problem.
       else {
-        PORTB |= 0x03;  // CAS & RAS High
         error(a, 1);
       }
-      PORTB |= 1;  // CAS High - Cycle Time ~120ns
     }
+    CAS_HIGH20;
+    OE_HIGH20;
   }
   return big;
 }
@@ -751,6 +821,14 @@ void checkGNDShort4Port(int *portb, int *portc, int *portd) {
 
 // Prepare LED for inidcation of Results or Errors
 void setupLED() {
+  // Set all Pin LOW and configure all Pins as Input except the Vcc Pins and the LED
+  PORTB = 0x00;
+  PORTC &= 0xf0;
+  PORTD = 0x1c;
+  DDRB = 0x00;
+  DDRC &= 0xc0;
+  DDRD = 0x00;
+  PORTD = 0x00;
   pinMode(LED_G, OUTPUT);
   pinMode(LED_R, OUTPUT);
   digitalWrite(LED_R, LOW);
