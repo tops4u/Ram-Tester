@@ -1,4 +1,4 @@
-v2.0 
+v2.0 (2024-11-12)
 - Bugfixes for 4464
 - Timing for refreshrates of 4464 adjusted
 - General Code Streamlining by using Code Replacements for Shift and Logic Ops (#define)
