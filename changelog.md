@@ -1,3 +1,8 @@
+v2.0 
+- Bugfixes for 4464
+- Timing for refreshrates of 4464 adjusted
+- General Code Streamlining by using Code Replacements for Shift and Logic Ops (#define)
+  
 v2.0pre (2024-11-06)
 - Added Refresh Testing for 20 & 16 Pin Devices
 - Added Row Buffer, Decoders and Line Checks for all Devices
