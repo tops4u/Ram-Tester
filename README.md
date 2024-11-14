@@ -1,7 +1,9 @@
 # Ram-Tester
 Ram Tester for vintage CBM Computer RAM Chips (most RAM ever used in C64 / C128 / A-500 & A-2000) - **BETA** do not build/fork yet.
 
-There is a short YouTube Video that shows the Tester in action [YouTube](https://youtu.be/9TBlnfiTfQk)
+There is a short YouTube Video that shows the Tester in action:
+
+[![Youtube Demonstrator Video](https://img.youtube.com/vi/9TBlnfiTfQk/0.jpg)](https://www.youtube.com/watch?v=9TBlnfiTfQk "Demonstration")
 
 This is a hobbyist project, there is no warranty of any sort and usage is on your own risk. By using any information on this site you agree to this. Please read the license.
 
