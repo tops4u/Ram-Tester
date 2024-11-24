@@ -6705,7 +6705,7 @@
 				)
 			)
 		)
-		(property "Value" "16MHz"
+		(property "Value" "Crystal"
 			(at 112.522 91.186 0)
 			(effects
 				(font
@@ -8717,7 +8717,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm"
+		(property "Footprint" "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm"
 			(at 44.1452 142.24 0)
 			(effects
 				(font
