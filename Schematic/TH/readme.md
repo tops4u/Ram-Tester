@@ -8,6 +8,7 @@ This is the Thru-Hole Version - BOARD DESIGN NOT YET VERIFIED
 - Y1 1x 16 MHz Quartz [AliExpress](https://aliexpress.com/item/1005006119798769.html)
 - C1/C6/C7 3x 100nF Capacitor [AliExpress](https://aliexpress.com/item/32973259342.html)
 - C2/C3 2x 15pf Capacitor [AliExpress](https://aliexpress.com/item/32973259342.html)
+- C5 10µF Elko 
 - R3-R5 3x 1M Resistor 
 - R2 1x 1k Resistor
 - R1 1x 150R Resistor
