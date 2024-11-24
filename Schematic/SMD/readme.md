@@ -6,12 +6,13 @@ This is the SMD Version - BOARD DESIGN NOT YET VERIFIED
 
 **BOM for the mixed SMD/TH Version**
 - Y1 1x 16 MHz Quartz [AliExpress](https://aliexpress.com/item/1005006003764861.html)
-- C1/C2/C6/C7 4x SMD 0603 100nF Capacitor [AliExpress](https://aliexpress.com/item/32966526545.html)
-- C2/C3 2x 15pf Capacitor 0603 [AliExpress](https://aliexpress.com/item/32966526545.html)
+- C1/C2/C7 4x 100nF 0805 Capacitor
+- C2/C3 2x 15pf 0603 Capacitor [AliExpress](https://aliexpress.com/item/32966526545.html)
+- C5 10µF 1206 Elko
 - R3, R4, R5 3x SMD 0603 1M Resistor
 - R2 1x SMD 0603 1k Resistor
-- R1 1x SMD 0603 100R Resistor
-- R6 1x SMD 0603 150R Resistor
+- R1 1x SMD 0603 150R Resistor
+- R6 1x SMD 0603 330R Resistor
 - R7, R8 2x SMD 0603 47R Resistor
 - RNx 4x SMD 0603 47R 4xArray
 - U1 Atmega328P-AU SMD
