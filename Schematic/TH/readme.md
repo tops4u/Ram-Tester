@@ -1,4 +1,4 @@
-This is the Thru-Hole Version - BOARD DESIGN NOT YET VERIFIED 
+This is the Thru-Hole Version
 
 <img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Schematic/TH/TH_PCB_Render.jpg" width="400px" align="center"/>
 
