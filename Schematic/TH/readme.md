@@ -1,4 +1,7 @@
-This is the Thru-Hole Version
+**This is the Thru-Hole Version**
+
+It is now available at PCBWay to purchase the PCB. As soon as the SMD Version is ready you can get a ready Version from me.
+Link to PCBWay Order page, where I get a small part the sold PCBs: [PDCBWay](https://www.pcbway.com/project/shareproject/Ram_Tester_ThruHole_Version_93863356.html)
 
 <img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Schematic/TH/TH_PCB_Render.jpg" width="400px" align="center"/>
 
