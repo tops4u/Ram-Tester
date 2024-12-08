@@ -1,4 +1,5 @@
 ***WARNING - THIS VERSION HAS ERRORS! DO NOT FORK/BUILD!***
+New Version is uploaded but untested!
 
 This is the SMD Version
 
@@ -9,7 +10,7 @@ There are minor Footprint mistakes on this version. For the 100nF you can use 06
 
 **BOM for the mixed SMD/TH Version**
 - Y1 1x 16 MHz Quartz [AliExpress](https://aliexpress.com/item/1005006003764861.html)
-- C1/C2/C7 4x 100nF 0805 Capacitor
+- C1/C2/C7 4x 100nF 0603 Capacitor
 - C2/C3 2x 15pf 0603 Capacitor [AliExpress](https://aliexpress.com/item/32966526545.html)
 - C5 10µF 1206 Elko
 - R3, R4, R5 3x SMD 0603 1M Resistor
