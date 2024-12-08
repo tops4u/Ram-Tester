@@ -1,3 +1,5 @@
+***WARNING - THIS VERSION HAS ERRORS! DO NOT FORK/BUILD!***
+
 This is the SMD Version
 
 <img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Schematic/SMD/SMD_PCB_Render.jpg" width="400px" align="center"/>
