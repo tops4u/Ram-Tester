@@ -1,3 +1,6 @@
+v2.1 (2024-12-09)
+- Added test mode, after PCB soldering. For Details check WIKI.
+
 v2.0 (2024-11-12)
 - Bugfixes for 4464
 - Timing for refreshrates of 4464 adjusted
