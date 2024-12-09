@@ -2,8 +2,8 @@
 // ========================================
 //
 // Author : Andreas Hoffmann
-// Version: 2.0
-// Date   : 12.11.2024
+// Version: 2.1
+// Date   : 09.12.2024
 //
 // This Software is published under GPL 3.0 - Respect the License
 // This Project is hosted at: https://github.com/tops4u/Ram-Tester/
@@ -41,16 +41,20 @@
 //                   Some cleanup of old code style in 20Pin code section
 //                   Re-Enabled the GND-Short-Test code. Was deactivated until RAM test works reliably
 //                   Code Streamlining
-// Version 2.0       Bugfixes for 4464 and timing adjustmens for Refresh Checks 
-//                   Todo: 
+// Version 2.0       Bugfixes for 4464 and timing adjustmens for Refresh Checks
+//                   Todo:
 //                    - Eliminate Corner Cases when Testing Crosstalk (Start and End of Rows)
 //                    - Eventually Run Checks in reverse Order (i.e. starting with last Row) to really cover all cases
+// Version 2.1   - Added installation testing after soldering the PCB. At first it will start in Test Mode. Instructions in Github. 
+//                 To Exit Test Mode : Set all DIP Switches to ON - Reset - all DIP Switches to OFF - Reset. Further starts will be in normal Mode
 //
 // Disclaimer:
 // This Project (Software & Hardware) is a hobbyist Project. I do not guarantee it's fitness for any purpose
 // and I do not guarantee that it is Errorfree. All usage is on your risk.
 
 // For slow RAM we may need to introduce an additional 62.5ns delay. 16MHz Clock -> 1 Cycle = 62.5ns
+#include <EEPROM.h>
+
 #define NOP __asm__ __volatile__("nop\n\t")
 
 #define Mode_16Pin 2
@@ -58,8 +62,11 @@
 #define Mode_20Pin 5
 #define EOL 254
 #define NC 255
-#define LED_R 13  // PB5
-#define LED_G 12  // PB4 -> Co Used with RAM Test Socket, see comments below!
+// ON / OFF for the LED, depends on the Circuit. P-FET require a inverted Signal to lite the LED
+#define ON HIGH
+#define OFF LOW
+#define TESTING 0x00
+#define LED_FLAG 0x01
 
 // The Testpatterns
 const uint8_t pattern[] = { 0x00, 0xff, 0xaa, 0x33, 0xff, 0x33 };  // Equals to 0b00000000, 0b11111111, 0b10101010, 0b01010101
@@ -160,28 +167,32 @@ const int CAS_20PIN = 8;
 #define WE_LOW20 PORTB &= 0xf7
 #define WE_HIGH20 PORTB |= 0x08
 
-uint8_t Mode = 0;  // PinMode 2 = 16 Pin, 4 = 18 Pin, 5 = 20 Pin
+uint8_t Mode = 0;    // PinMode 2 = 16 Pin, 4 = 18 Pin, 5 = 20 Pin
+uint8_t red = 13;    // PB5
+uint8_t green = 12;  // PB4 -> Co Used with RAM Test Socket, see comments below!
 
 void setup() {
   // Data Direction Register Port B, C & D - Preconfig as Input (Bit=0)
   DDRB &= 0b11100000;
   DDRC &= 0b11000000;
   DDRD = 0x00;
+  // If TESTING is set enter "Factory Test" Mode
+  if (EEPROM.read(TESTING) != 0) {
+    buildTest();
+  }
   // Wait for the Candidate to properly Startup
   if (digitalRead(19) == 1) { Mode += Mode_20Pin; }
   if (digitalRead(3) == 1) { Mode += Mode_18Pin; }
   if (digitalRead(2) == 1) { Mode += Mode_16Pin; }
   // Check if the DIP Switch is set for a valid Configuration.
   if (Mode < 2 || Mode > 5) ConfigFail();
-
-  // -> Currently GND Short Detection confuses the DRAMs and causes Tests to fail.
   // With a valid Config, activate the PullUps
   PORTB |= 0b00011111;
   PORTC |= 0b00111111;
   PORTD = 0xff;
+  digitalWrite(13, ON);  // Switch the LED on PB5 on for the rest of the test as it will show as yellow not to confuse Users as steady green.
   // Settle State - PullUps my require some time.
   checkGNDShort();  // Check for Shorts towards GND. Shorts on Vcc can't be tested as it would need Pull-Downs.
-
   // Startup Delay as per Datasheets
   delayMicroseconds(200);
   if (Mode == Mode_20Pin) {
@@ -829,10 +840,10 @@ void setupLED() {
   DDRC &= 0xc0;
   DDRD = 0x00;
   PORTD = 0x00;
-  pinMode(LED_G, OUTPUT);
-  pinMode(LED_R, OUTPUT);
-  digitalWrite(LED_R, LOW);
-  digitalWrite(LED_G, LOW);
+  pinMode(red, OUTPUT);
+  pinMode(green, OUTPUT);
+  digitalWrite(red, OFF);
+  digitalWrite(green, OFF);
 }
 
 // Indicate Errors. Red LED for Error Type, and green for additional Error Info.
@@ -840,15 +851,15 @@ void error(uint8_t code, uint8_t error) {
   setupLED();
   while (true) {
     for (int i = 0; i < error; i++) {
-      digitalWrite(LED_R, 1);
+      digitalWrite(red, ON);
       delay(500);
-      digitalWrite(LED_R, 0);
+      digitalWrite(red, OFF);
       delay(500);
     }
     for (int i = 0; i < code; i++) {
-      digitalWrite(LED_G, 1);
+      digitalWrite(green, ON);
       delay(250);
-      digitalWrite(LED_G, 0);
+      digitalWrite(green, OFF);
       delay(250);
     }
     delay(1000);
@@ -859,9 +870,9 @@ void error(uint8_t code, uint8_t error) {
 void testOK() {
   setupLED();
   while (true) {
-    digitalWrite(LED_G, 1);
+    digitalWrite(green, ON);
     delay(850);
-    digitalWrite(LED_G, 0);
+    digitalWrite(green, OFF);
     delay(250);
   }
 }
@@ -870,11 +881,11 @@ void testOK() {
 void smallOK() {
   setupLED();
   while (true) {
-    digitalWrite(LED_G, HIGH);
-    digitalWrite(LED_R, LOW);
+    digitalWrite(green, ON);
+    digitalWrite(red, OFF);
     delay(850);
-    digitalWrite(LED_G, LOW);
-    digitalWrite(LED_R, HIGH);
+    digitalWrite(green, OFF);
+    digitalWrite(red, ON);
     delay(150);
   }
 }
@@ -883,9 +894,57 @@ void smallOK() {
 void ConfigFail() {
   setupLED();
   while (true) {
-    digitalWrite(LED_R, 1);
+    digitalWrite(red, ON);
     delay(250);
-    digitalWrite(LED_R, 0);
+    digitalWrite(red, OFF);
     delay(250);
   }
+}
+
+// This is the initial Test for soldering Problems
+// Switch all DIP Switches to 0
+// The LED will be green for 1 sec and red for 1 sec to test LED function. If first the Red and then the Green lites up, write 0x00 to Position 0x01 of the EEPROM.
+// All Inputs will become PullUP
+// One by One short the Inputs to GND which checks connection to GND. If Green LED comes on one Pin Grounded was detected, RED if it was more than one
+// If Green does not lite then this contact has a problem.
+// To Quit Test Mode forever set all DIP Switches to ON and Short Pin 1 to Ground for 5 Times until the Green LED is steady on. This indicates the EEPROM stored the Information.
+void buildTest() {
+  pinMode(red, OUTPUT);
+  pinMode(green, OUTPUT);
+  digitalWrite(green, OFF);
+  digitalWrite(red, OFF);
+  digitalWrite(green, ON);
+  delay(1000);
+  digitalWrite(green, OFF);
+  digitalWrite(red, ON);
+  delay(1000);
+  digitalWrite(red, OFF);
+  int8_t counter = 0;
+  bool pin1 = false;
+  DDRB &= 0b11100000;
+  DDRC &= 0b11000000;
+  DDRD = 0x00;
+  // If all DIP Switches are ON disable the Test Mode
+  if ((digitalRead(19) && digitalRead(3) && digitalRead(2)) == true) {
+    EEPROM.update(TESTING, 0x00);
+    while (true)
+      ;
+  }
+  // Activate Pullups for Testing
+  PORTB |= 0b00011111;
+  PORTC |= 0b00111111;
+  PORTD = 0xff;
+  do {
+    int c = 0;
+    for (int i = 0; i <= 19; i++) {
+        if (i==13)
+          continue;
+        if (digitalRead(i) == false)
+          c++;
+    }
+    if (c == 1)
+      digitalWrite(red, ON);
+    else
+      digitalWrite(red, OFF);
+  } while (true);
 }
