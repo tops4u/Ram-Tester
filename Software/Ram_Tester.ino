@@ -190,7 +190,7 @@ void setup() {
   PORTB |= 0b00011111;
   PORTC |= 0b00111111;
   PORTD = 0xff;
-  digitalWrite(13, ON);  // Switch the LED on PB5 on for the rest of the test as it will show as yellow not to confuse Users as steady green.
+  digitalWrite(red, ON);  // Switch the LED on PB5 on for the rest of the test as it will show as yellow not to confuse Users as steady green.
   // Settle State - PullUps my require some time.
   checkGNDShort();  // Check for Shorts towards GND. Shorts on Vcc can't be tested as it would need Pull-Downs.
   // Startup Delay as per Datasheets
@@ -903,11 +903,10 @@ void ConfigFail() {
 
 // This is the initial Test for soldering Problems
 // Switch all DIP Switches to 0
-// The LED will be green for 1 sec and red for 1 sec to test LED function. If first the Red and then the Green lites up, write 0x00 to Position 0x01 of the EEPROM.
-// All Inputs will become PullUP
-// One by One short the Inputs to GND which checks connection to GND. If Green LED comes on one Pin Grounded was detected, RED if it was more than one
-// If Green does not lite then this contact has a problem.
-// To Quit Test Mode forever set all DIP Switches to ON and Short Pin 1 to Ground for 5 Times until the Green LED is steady on. This indicates the EEPROM stored the Information.
+// All inputs will become PullUP
+// One by one short the inputs to GND which checks connection to GND. If green LED comes on one pin grounded was detected, RED if it was more than one
+// If green does not lite then this contact has a problem.
+// To quit test mode until next FW upload, set all DIP switches to ON, RESET the Board, wait for the above LED process, set all switches to OFF and RESET again. 
 void buildTest() {
   pinMode(red, OUTPUT);
   pinMode(green, OUTPUT);
