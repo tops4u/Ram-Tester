@@ -2,7 +2,7 @@
 // ========================================
 //
 // Author : Andreas Hoffmann
-// Version: 2.1
+// Version: 2.1.1
 // Date   : 09.12.2024
 //
 // This Software is published under GPL 3.0 - Respect the License
@@ -45,8 +45,9 @@
 //                   Todo:
 //                    - Eliminate Corner Cases when Testing Crosstalk (Start and End of Rows)
 //                    - Eventually Run Checks in reverse Order (i.e. starting with last Row) to really cover all cases
-// Version 2.1   - Added installation testing after soldering the PCB. At first it will start in Test Mode. Instructions in Github. 
+// Version 2.1   - Added installation testing after soldering the PCB. At first it will start in Test Mode. Instructions in Github.
 //                 To Exit Test Mode : Set all DIP Switches to ON - Reset - all DIP Switches to OFF - Reset. Further starts will be in normal Mode
+// Version 2.1.1 - Minor Bugfix for wrong Test Patterns & IO Config for 18Pin RAM
 //
 // Disclaimer:
 // This Project (Software & Hardware) is a hobbyist Project. I do not guarantee it's fitness for any purpose
@@ -69,7 +70,7 @@
 #define LED_FLAG 0x01
 
 // The Testpatterns
-const uint8_t pattern[] = { 0x00, 0xff, 0xaa, 0x33, 0xff, 0x33 };  // Equals to 0b00000000, 0b11111111, 0b10101010, 0b01010101
+const uint8_t pattern[] = { 0x00, 0xff, 0xaa, 0x55, 0xaa, 0x55 };  // Equals to 0b00000000, 0b11111111, 0b10101010, 0b01010101
 
 // Mapping for 4164 (2ms Refresh Rate) / 41256/257 (4 ms Refresh Rate)
 // A0 = PC4   RAS = PB1   t RAS->CAS = 150-200ns -> Max Pulsewidth 10'000ns
@@ -190,7 +191,7 @@ void setup() {
   PORTB |= 0b00011111;
   PORTC |= 0b00111111;
   PORTD = 0xff;
-  digitalWrite(red, ON);  // Switch the LED on PB5 on for the rest of the test as it will show as yellow not to confuse Users as steady green.
+  digitalWrite(13, ON);  // Switch the LED on PB5 on for the rest of the test as it will show as yellow not to confuse Users as steady green.
   // Settle State - PullUps my require some time.
   checkGNDShort();  // Check for Shorts towards GND. Shorts on Vcc can't be tested as it would need Pull-Downs.
   // Startup Delay as per Datasheets
@@ -442,8 +443,8 @@ void write18PinRow(uint8_t row, uint8_t init_shift, uint16_t width) {
     // Prepare Write Cycle
     rASHandling18Pin(row);
     WE_LOW18;
-    SET_DATA_PIN18(pattern[patNr]);
     configDOut18Pin();
+    SET_DATA_PIN18(pattern[patNr]);
     for (uint16_t col = 0; col < width; col++) {
       colAddr = (col << init_shift);
       SET_ADDR_PIN18(colAddr);
@@ -506,8 +507,8 @@ void configDOut18Pin() {
 }
 
 void configDIn18Pin() {
-  DDRB &= 0x16;  // Config Data Lines for input
-  DDRC &= 0x15;
+  DDRB &= 0xf6;  // Config Data Lines for input
+  DDRC &= 0xf5;
 }
 
 void refreshRow18Pin(uint8_t row) {
@@ -903,10 +904,11 @@ void ConfigFail() {
 
 // This is the initial Test for soldering Problems
 // Switch all DIP Switches to 0
-// All inputs will become PullUP
-// One by one short the inputs to GND which checks connection to GND. If green LED comes on one pin grounded was detected, RED if it was more than one
-// If green does not lite then this contact has a problem.
-// To quit test mode until next FW upload, set all DIP switches to ON, RESET the Board, wait for the above LED process, set all switches to OFF and RESET again. 
+// The LED will be green for 1 sec and red for 1 sec to test LED function. If first the Red and then the Green lites up, write 0x00 to Position 0x01 of the EEPROM.
+// All Inputs will become PullUP
+// One by One short the Inputs to GND which checks connection to GND. If Green LED comes on one Pin Grounded was detected, RED if it was more than one
+// If Green does not lite then this contact has a problem.
+// To Quit Test Mode forever set all DIP Switches to ON and Short Pin 1 to Ground for 5 Times until the Green LED is steady on. This indicates the EEPROM stored the Information.
 void buildTest() {
   pinMode(red, OUTPUT);
   pinMode(green, OUTPUT);
@@ -936,10 +938,10 @@ void buildTest() {
   do {
     int c = 0;
     for (int i = 0; i <= 19; i++) {
-        if (i==13)
-          continue;
-        if (digitalRead(i) == false)
-          c++;
+      if (i == 13)
+        continue;
+      if (digitalRead(i) == false)
+        c++;
     }
     if (c == 1)
       digitalWrite(red, ON);
