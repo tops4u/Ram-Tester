@@ -1,3 +1,7 @@
+v2.1.1 (2024-12-23)
+- Bugfix for wrong Testpatterns
+- Minor Bugfix for IO Config during Tests for 18Pin RAM
+
 v2.1 (2024-12-09)
 - Added test mode, after PCB soldering. For Details check WIKI.
 
