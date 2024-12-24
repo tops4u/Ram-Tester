@@ -16,6 +16,6 @@ Special Features:
 - Fast! All tests are within 10sec
 - Complete! Retention is tested as well as Column / Row Crosstalk.
 - Simple! Build it yourself for roughly 20-30$ - or get it from me.
-- Save! Built in Fuse will protect your Memory Tester & Ground Short Check will detect internal RAM shorts.
+- Safe! Built in Fuse will protect your Memory Tester & Ground Short Check will detect internal RAM shorts.
 
 --> The Documentation moved to the [WIKI](https://github.com/tops4u/Ram-Tester/wiki) Section of this project. 
