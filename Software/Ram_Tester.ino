@@ -1,61 +1,57 @@
-// RAM Tester Sketch for the RAM Tester PCB
-// ========================================
+// RAM Tester Program for RAM Tester PCB
+// ======================================
 //
-// Author : Andreas Hoffmann
+// Author: Andreas Hoffmann
 // Version: 2.1.1
-// Date   : 09.12.2024
+// Date: 09.12.2024
 //
-// This Software is published under GPL 3.0 - Respect the License
-// This Project is hosted at: https://github.com/tops4u/Ram-Tester/
+// This software is published under GPL 3.0. Respect the license terms.
+// Project hosted at: https://github.com/tops4u/Ram-Tester/
 //
-// Note: There is a lot of Code duplication - This is really UGLY! This is no archtectual masterpice but a try to make things fast.
+// Note: The code contains duplication and is not designed for elegance or efficiency. 
+// The goal was to make it work quickly.
 //
-// Error Blink Codes:
-// Continuous Red Blinking 	- Configuration Error, check DIP Switches. Occasionally a RAM Defect may cause this.
-// 1 Red & n Green		  - Addressdecoder Test Fail - n Green Blinks = failing addressline (Keep in mind there will be no green blink for A0)
-// 2 Red & n Green		  - Error during RAM Test. Green Blinks indicate which Test Pattern failed (see below).
-// 3 Red & n Green      - Row Crosstalk Error or Refresh Data Lost Error. Green Blinks indicate which Test Pattern failed.
-// 4 Red & n Green      - GND Short on Pin (n Green)
-// Long Green/Short Red - Successful Test of a Smaller DRAM of this Test Config
-// Long Green/Short Off - Successful Test of a Larger DRAM of this Test Config
+// Error LED Codes:
+// - Long Green - Long Red - Steady Green : Test mode active
+// - Continuous Red Blinking: Configuration error (e.g., DIP switches). Can also occur due to RAM defects.
+// - 1 Red & n Green: Address decoder error. Green flashes indicate the failing address line (no green flash for A0).
+// - 2 Red & n Green: RAM test error. Green flashes indicate which test pattern failed.
+// - 3 Red & n Green: Row crosstalk or data retention (refresh) error. Green flashes indicate the failed test pattern.
+// - 4 Red & n Green: Ground short detected on a pin. Green flashes indicate the pin number (of the ZIF Socket != ZIP).
+// - Long Green/Short Red: Test passed for a smaller DRAM size in the current configuration.
+// - Long Green/Short Off: Test passed for a larger DRAM size in the current configuration.
 //
 // Assumptions:
-// This Sketch assumes that the DRAM supports Page Mode for Read & Write
-// It needs around 150us Read and Write time. RAM having shorter Refresh Cycles may loose its content.
-// Dram with 4 Bit Databus will be checked Columnwise with 4 Testpatterns 0b0000, 0b1111, 0b1010 and 0b0101 to
-// ensure that neighbouring Bits don't influence each other. This test is not performed agains other Rows.
-// This program does not test for Ram Speed or Content retention time / Refresh Time.
+// - The DRAM supports Page Mode for reading and writing.
+// - DRAMs with a 4-bit data bus are tested column by column using these patterns: `0b0000`, `0b1111`, `0b1010`, and `0b0101`.
+// - The program does not test RAM speed (access times)
+// - This Software does not test voltage levels of the output signals
 //
-// Version Information:
-// Version 1.0	- Implement 20Pin DIP/ZIP for 256x4 DRAM up to 120ns (like: MSM514256C)
-// Version 1.1  - Implemented Autodetect 1M or 256k x4 DRAM
-// Version 1.2  - Implemented Check for 256kx1 (41256 like DRAM)
-// Version 1.21 - Added Column Address Line Checks for 41256/4164. This checks all address lines / buffers and column-addressdecoders
-// Version 1.22 - Added Check for 4164 / 41256
-// Version 1.23 - Added Row Address Checking for 4164/41256 complementing Column address checks from 1.21
-// Version 1.3  - Added Row and Column Tests for Pins, Buffers and Decoders for 514256 and 441000
-// Version 1.4  - Added Support for 4416/4464 but currently only tested for 4416 as 4464 Testchips not yet available
-// Version 2.0pre1 - Added Row Crosstalk Checks. Added Refresh Time Checks (2ms for 4164/4ms for 41256/8ms for all DIP/ZIP 20 Types)
-// Version 2.0pre  - Merge with 2.0 Branch No Refresh Tests for 4416/4464 yet.
-//                   Switch ON red light during testing = yellowish light during test
-//                   Some cleanup of old code style in 20Pin code section
-//                   Re-Enabled the GND-Short-Test code. Was deactivated until RAM test works reliably
-//                   Code Streamlining
-// Version 2.0       Bugfixes for 4464 and timing adjustmens for Refresh Checks
-//                   Todo:
-//                    - Eliminate Corner Cases when Testing Crosstalk (Start and End of Rows)
-//                    - Eventually Run Checks in reverse Order (i.e. starting with last Row) to really cover all cases
-// Version 2.1   - Added installation testing after soldering the PCB. At first it will start in Test Mode. Instructions in Github.
-//                 To Exit Test Mode : Set all DIP Switches to ON - Reset - all DIP Switches to OFF - Reset. Further starts will be in normal Mode
-// Version 2.1.1 - Minor Bugfix for wrong Test Patterns & IO Config for 18Pin RAM
+// Version History:
+// - 1.0: Initial implementation for 20-pin DIP/ZIP, supporting 256x4 DRAM (e.g., MSM514256C).
+// - 1.1: Added auto-detection for 1M or 256k x4 DRAM.
+// - 1.2: Support for 256kx1 DRAM (e.g., 41256).
+// - 1.21: Added column address line checks for 41256/4164, ensuring all address lines, buffers, and column decoders work.
+// - 1.22: Added checks for 4164/41256 DRAMs.
+// - 1.23: Added row address checking for 4164/41256, complementing column checks from version 1.21.
+// - 1.3: Full row and column tests for pins, buffers, and decoders on 514256 and 441000 DRAMs.
+// - 1.4: Support for 4416/4464 added. Only 4416 tested as 4464 test chips were unavailable.
+// - 2.0pre1: Introduced row crosstalk and refresh time checks (2ms for 4164, 4ms for 41256, 8ms for 20-pin DRAM types).
+// - 2.0pre: Refresh tests for 4416/4464 not yet included. Enabled ground short tests and cleaned 20-pin code section.
+// - 2.0: Fixed bugs for 4464 and adjusted refresh timing. To-do:
+//         - Handle corner cases during crosstalk tests.
+//         - Consider reverse-order testing (start with the last row).
+// - 2.1: Added a test mode for installation checks after soldering. Test mode instructions available on GitHub. 
+//         To exit test mode: set all DIP switches to ON, reset, set DIP switches to OFF, and reset again.
+// - 2.1.1: Fixed minor bugs in test patterns and I/O configuration for 18-pin RAM.
 //
 // Disclaimer:
-// This Project (Software & Hardware) is a hobbyist Project. I do not guarantee it's fitness for any purpose
-// and I do not guarantee that it is Errorfree. All usage is on your risk.
+// This project is for hobbyist use. There are no guarantees regarding its fitness for a specific purpose 
+// or its error-free operation. Use it at your own risk.
 
-// For slow RAM we may need to introduce an additional 62.5ns delay. 16MHz Clock -> 1 Cycle = 62.5ns
 #include <EEPROM.h>
 
+// An additional delay of 62.5ns may be required for compatibility. (16MHz clock = 1 cycle = 62.5ns).
 #define NOP __asm__ __volatile__("nop\n\t")
 
 #define Mode_16Pin 2
