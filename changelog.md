@@ -1,3 +1,8 @@
+v2.2.0 (2025-05-12)
+Beta Version of 2.2
+- Improves Testing by adding a RandomPattern Testing in the last Stage of Ram Tests. This increases the total Test-Time due to frequent changes of Data Patterns by about 20%. (currently for the 20 Pin RAM only, will be extended to all types)
+- Support for Static Column Ram added (20Pin only). New Blink Pattern if SC 41258 SC Ram is checked ok (long green, yellow, red).
+
 v2.1.1 (2024-12-23)
 - Bugfix for wrong Testpatterns
 - Minor Bugfix for IO Config during Tests for 18Pin RAM
