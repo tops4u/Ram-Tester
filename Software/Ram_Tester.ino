@@ -44,6 +44,7 @@
 // - 2.1: Added a test mode for installation checks after soldering. Test mode instructions available on GitHub. 
 //         To exit test mode: set all DIP switches to ON, reset, set DIP switches to OFF, and reset again.
 // - 2.1.1: Fixed minor bugs in test patterns and I/O configuration for 18-pin RAM.
+// - 2.1.2: Bugfix: 18Pin addressline Bug fixed. Wrong mapping of internal address bits to PORTD Bit-Mapping.
 //
 // Disclaimer:
 // This project is for hobbyist use. There are no guarantees regarding its fitness for a specific purpose 
@@ -125,8 +126,8 @@ const int CAS_18PIN = 16;  // Corresponds to Analog 2 or Digital 16
 // Address Distribution for 18Pin Types
 #define SET_ADDR_PIN18(addr) \
   { \
-    PORTB = (PORTB & 0xeb) | ((addr & 0x01) << 2) | ((addr & 0x02) << 3); \
-    PORTD = ((addr & 0x04) << 5) | ((addr & 0x08) << 3) | ((addr & 0x80) >> 2) | ((addr & 0x20) >> 4) | ((addr & 0x40) >> 6) | ((addr & 0x10) >> 3); \
+    PORTB = (PORTB & 0xeb) | ((addr & 0x01) << 2) | ((addr & 0x02) << 3); \    
+    PORTD = ((addr & 0x04) << 5) | ((addr & 0x08) << 3) | ((addr & 0x80) >> 2) | ((addr & 0x20) >> 4) | ((addr & 0x40) >> 6) | ((addr & 0x10) >> 2); \
   }
 
 #define SET_DATA_PIN18(data) \
