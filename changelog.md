@@ -1,3 +1,7 @@
+v2.1.2 (2025-05-21)
+Bugfix Version of 2.1.1
+- Error in Mapping of internal address bits to PORTD I/O Mapping leads to 2 internal Bits being mapped to the same physical line. This results in this address line not being checked on the 18 Pin Checks.
+
 v2.2.0 (2025-05-12)
 Beta Version of 2.2
 - Improves Testing by adding a RandomPattern Testing in the last Stage of Ram Tests. This increases the total Test-Time due to frequent changes of Data Patterns by about 20%. (currently for the 20 Pin RAM only, will be extended to all types)
