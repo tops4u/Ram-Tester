@@ -1,12 +1,18 @@
-v2.1.2 (2025-05-21)
-Bugfix Version of 2.1.1
-- Error in Mapping of internal address bits to PORTD I/O Mapping leads to 2 internal Bits being mapped to the same physical line. This results in this address line not being checked on the 18 Pin Checks.
+v2.3.0a (2025-05-23)
+- Major rework on Retention Testing. Introduced RAM Types for timing. Added OLED support.
+- Speed optimization in the Code to keep longer test times of pseudo random data at bay.
+- Minor Bugfix 16Bit had one col/row overrun - buggy but no negativ side effects
+- OLED Tests and final implementation missing
 
 v2.2.0 (2025-05-12)
 Beta Version of 2.2
 - Improves Testing by adding a RandomPattern Testing in the last Stage of Ram Tests. This increases the total Test-Time due to frequent changes of Data Patterns by about 20%. (currently for the 20 Pin RAM only, will be extended to all types)
 - Support for Static Column Ram added (20Pin only). New Blink Pattern if SC 41258 SC Ram is checked ok (long green, yellow, red).
 
+v2.1.2 (2025-05-21)
+Bugfix Version of 2.1.1
+- Error in Mapping of internal address bits to PORTD I/O Mapping leads to 2 internal Bits being mapped to the same physical line. This results in this address line not being checked on the 18 Pin Checks.
+  
 v2.1.1 (2024-12-23)
 - Bugfix for wrong Testpatterns
 - Minor Bugfix for IO Config during Tests for 18Pin RAM
