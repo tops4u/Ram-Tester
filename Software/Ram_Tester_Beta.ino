@@ -2,8 +2,8 @@
 // ======================================
 //
 // Author: Andreas Hoffmann
-// Version: 2.2.0b
-// Date: 12.05.2025
+// Version: 2.3.0a
+// Date: 23.05.2025
 //
 // This software is published under GPL 3.0. Respect the license terms.
 // Project hosted at: https://github.com/tops4u/Ram-Tester/
@@ -20,12 +20,14 @@
 // - 4 Red & n Green: Ground short detected on a pin. Green flashes indicate the pin number (of the ZIF Socket != ZIP).
 // - Long Green/Short Red: Test passed for a smaller DRAM size in the current configuration.
 // - Long Green/Short Off: Test passed for a larger DRAM size in the current configuration.
+// TODO: New LED Blinking for static column
 //
 // Assumptions:
 // - The DRAM supports Page Mode for reading and writing.
 // - DRAMs with a 4-bit data bus are tested column by column using these patterns: `0b0000`, `0b1111`, `0b1010`, and `0b0101`.
 // - The program does not test RAM speed (access times)
 // - This Software does not test voltage levels of the output signals
+// TODO: Add new Tests like pseudo random
 //
 // Version History:
 // - 1.0: Initial implementation for 20-pin DIP/ZIP, supporting 256x4 DRAM (e.g., MSM514256C).
@@ -44,8 +46,13 @@
 // - 2.1: Added a test mode for installation checks after soldering. Test mode instructions available on GitHub.
 //         To exit test mode: set all DIP switches to ON, reset, set DIP switches to OFF, and reset again.
 // - 2.1.1: Fixed minor bugs in test patterns and I/O configuration for 18-pin RAM.
+// - 2.1.2: Bug fix for 18Pin Verions (error in address line to physical port decoding)
 // - 2.2.0a:Adding Static Column Tests for 514258
 // - 2.2.0b:Added Random Bit Test for 20pin Types - this slightly prolonges Testing / Timing adjustment for FP-RAM pending
+// - 2.3.0a:Major rework on Retention Testing. Introduced RAM Types for timing. Added OLED support.
+//          Speed optimization in the Code to keep longer test times of pseudo random data at bay.
+//          Minor Bugfix 16Bit had one col/row overrun - buggy but no negativ side effects
+//          OLED Tests and final implementation missing
 //
 // Disclaimer:
 // This project is for hobbyist use. There are no guarantees regarding its fitness for a specific purpose
@@ -53,6 +60,10 @@
 
 #include <EEPROM.h>
 #include <avr/pgmspace.h>
+#include <U8g2lib.h>
+#include <Wire.h>
+
+U8X8_SSD1306_128X64_NONAME_SW_I2C u8x8(/* SCL=*/PB5, /* SDA=*/PB4, /* reset=*/U8X8_PIN_NONE);
 
 // An additional delay of 62.5ns may be required for compatibility. (16MHz clock = 1 cycle = 62.5ns).
 #define NOP __asm__ __volatile__("nop\n\t")
@@ -67,6 +78,43 @@
 #define OFF LOW
 #define TESTING 0x00
 #define LED_FLAG 0x01
+
+struct RAM_Definition {
+  char name[7];          // Name for the Display
+  uint8_t mSRetention;   // This Testers assumptions of the Retention Time in ms
+  uint8_t delayRows;     // How many rows are skipped before reading back and checking retention time
+  uint16_t rows;         // How many rows does this type have
+  uint16_t columns;      // How many columns does this type have
+  uint8_t iOBits;        // How many Bits can this type I/O at the same time
+  boolean staticColumn;  // Is this a Static Column Type
+  boolean nibbleMode;    // Is this a nibble Mode Type --> Not yet tested
+  boolean smallType;     // Is this the small type for this amount of pins
+  uint16_t delays[6];    // List of specific delay times for retention testing
+  uint16_t writeTime;    // Write Time to check last rows during retention testing
+};
+
+struct RAM_Definition ramTypes[] = {
+  { "4164", 2, 1, 256, 256, 1, false, false, true, { 993, 0, 0, 0, 0, 0 }, 820 },
+  { "41256", 4, 1, 512, 512, 1, false, false, false, { 0, 0, 0, 0, 0, 0 }, 1940 }, // There is a slight overshoot in retention testing (+3% of min time)
+  { "41257", 4, 2, 512, 512, 1, false, true, false, { 0, 0, 0, 0, 0, 0 }, 1940 },  // Never tested yet so we treat it as 41256
+  { "4416", 4, 4, 256, 64, 4, false, false, true, { 552, 545, 545, 545, 125, 125 }, 455 },
+  { "4464", 4, 1, 256, 256, 4, false, false, false, { 2190, 575, 575, 575, 575, 575 }, 1800 },
+  { "514256", 4, 2, 512, 512, 4, false, false, true, { 1290, 1300, 435, 435, 435, 435 }, 700 },
+  { "514257", 4, 2, 512, 512, 4, true, false, true, { 1070, 1070, 385, 385, 385, 385 }, 0 },  // --> Needs tuning
+  { "514400", 16, 5, 1024, 1024, 4, false, false, false, { 1796, 1777, 1777, 1777, 1939, 100 }, 1370 },
+  { "514402", 16, 2, 1024, 1024, 4, true, false, false, { 0, 0, 0, 0, 0, 0 }, 0 }
+};
+
+// Type Numbers for the RAM Definitions
+#define T_4164 0
+#define T_41256 1
+#define T_41257 2
+#define T_4416 3
+#define T_4464 4
+#define T_514256 5
+#define T_514257 6
+#define T_514400 7
+#define T_514402 8
 
 // The Testpatterns
 const uint8_t pattern[] = { 0x00, 0xff, 0xaa, 0x55, 0xaa, 0x55 };  // Equals to 0b00000000, 0b11111111, 0b10101010, 0b01010101
@@ -94,13 +142,62 @@ const int CAS_16PIN = 17;  // Corresponds to Analog 3 or Digital 17
 #define RAS_HIGH16 PORTB |= 0x02
 #define WE_LOW16 PORTB &= 0xf7
 #define WE_HIGH16 PORTB |= 0x08
-#define SET_ADDR_PIN16(addr, data) \
+#define SET_ADDR_PIN16(addr) \
   { \
-    PORTB = (PORTB & 0xea) | (addr & 0x0010) | ((addr & 0x0008) >> 1) | ((addr & 0x0040) >> 6); \
-    PORTC = (PORTC & 0xe8) | ((addr & 0x0001) << 4) | ((addr & 0x0100) >> 8) | ((data & 0x01) << 1); \
+    PORTB = ((PORTB & 0xea) | (addr & 0x0010) | ((addr & 0x0008) >> 1) | ((addr & 0x0040) >> 6)); \
+    PORTC = ((PORTC & 0xe8) | ((addr & 0x0001) << 4) | ((addr & 0x0100) >> 8)); \
     PORTD = ((addr & 0x0080) >> 1) | ((addr & 0x0020) << 2) | ((addr & 0x0004) >> 2) | (addr & 0x0002); \
   }
 
+/* 8-Bit-Mix aus 2×16 Bit  ─ garantiert gute Verteilung */
+#define MIX8(col, row) \
+  (uint8_t)( \
+    (((uint16_t)(col)) ^ ((uint16_t)(row)*251u)) ^ ((((uint16_t)(col)) ^ ((uint16_t)(row)*251u)) >> 8))
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Build the three 512-entry lookup tables directly in flash (PROGMEM)
+// ─────────────────────────────────────────────────────────────────────────────
+// Lookup Table generation Macros.
+#define MAP_B(a) ((((a)&0x0010)) | (((a)&0x0008) >> 1) | (((a)&0x0040) >> 6))
+#define MAP_C(a) ((((a)&0x0001) << 4) | (((a)&0x0100) >> 8)) /* PC1=Databit later */
+#define MAP_D(a) ((((a)&0x0080) >> 1) | (((a)&0x0020) << 2) | (((a)&0x0004) >> 2) | ((a)&0x0002))
+
+#define ROW16(f, base) \
+  f(base + 0), f(base + 1), f(base + 2), f(base + 3), \
+    f(base + 4), f(base + 5), f(base + 6), f(base + 7), \
+    f(base + 8), f(base + 9), f(base + 10), f(base + 11), \
+    f(base + 12), f(base + 13), f(base + 14), f(base + 15)
+
+#define ROW256(f, base) \
+  ROW16(f, base + 0), ROW16(f, base + 16), \
+    ROW16(f, base + 32), ROW16(f, base + 48), \
+    ROW16(f, base + 64), ROW16(f, base + 80), \
+    ROW16(f, base + 96), ROW16(f, base + 112), \
+    ROW16(f, base + 128), ROW16(f, base + 144), \
+    ROW16(f, base + 160), ROW16(f, base + 176), \
+    ROW16(f, base + 192), ROW16(f, base + 208), \
+    ROW16(f, base + 224), ROW16(f, base + 240)
+
+#define GEN512(f) ROW256(f, 0), ROW256(f, 256)
+
+// Look up tables, generated during compile time by the above macros
+static const uint8_t PROGMEM lutB[512] = { GEN512(MAP_B) };
+static const uint8_t PROGMEM lutC[512] = { GEN512(MAP_C) };
+static const uint8_t PROGMEM lutD[512] = { GEN512(MAP_D) };
+
+static inline void setAddrData(uint16_t addr, uint8_t dataBit /*0|1*/) {
+  /* --- PORTB: nur PB4, PB2, PB0 ändern ----------------------------- */
+  PORTB = (PORTB & 0xEA) | pgm_read_byte(&lutB[addr]);
+
+  /* --- PORTD: kompletter Byte-Write (PD0…PD7) ---------------------- */
+  PORTD = pgm_read_byte(&lutD[addr]);
+
+  /* --- PORTC: Tabelle + Datenbit auf PC1 & CAS LOW ----------------- */
+  uint8_t pc = (PORTC & 0xE0) | pgm_read_byte(&lutC[addr]);
+  if (dataBit & 1) pc |= _BV(PC1);  // PC1 = DIN
+  PORTC = pc;
+
+}
 // Mapping for 4416 / 4464 - max Refresh 4ms
 // They have both the same Pinout. Both have 8 Bit address range, however 4416 uses only A1-A6 for Column addresses (64)
 // A0 = PB2   RAS = PC4
@@ -129,7 +226,7 @@ const int CAS_18PIN = 16;  // Corresponds to Analog 2 or Digital 16
 #define SET_ADDR_PIN18(addr) \
   { \
     PORTB = (PORTB & 0xeb) | ((addr & 0x01) << 2) | ((addr & 0x02) << 3); \
-    PORTD = ((addr & 0x04) << 5) | ((addr & 0x08) << 3) | ((addr & 0x80) >> 2) | ((addr & 0x20) >> 4) | ((addr & 0x40) >> 6) | ((addr & 0x10) >> 3); \
+    PORTD = ((addr & 0x04) << 5) | ((addr & 0x08) << 3) | ((addr & 0x80) >> 2) | ((addr & 0x20) >> 4) | ((addr & 0x40) >> 6) | ((addr & 0x10) >> 2); \
   }
 
 #define SET_DATA_PIN18(data) \
@@ -139,6 +236,13 @@ const int CAS_18PIN = 16;  // Corresponds to Analog 2 or Digital 16
   }
 
 #define GET_DATA_PIN18 (((PINC & 0x02) >> 1) + ((PINB & 0x08) >> 2) + ((PINB & 0x01) << 2) + (PINC & 0x08))
+
+static inline uint8_t get_data_pin18() {
+  uint8_t current_pinc = PINC;  // Lokale Variablen, werden jedes Mal neu geladen
+  uint8_t current_pinb = PINB;
+
+  return ((current_pinc & 0x02) >> 1) + ((current_pinb & 0x08) >> 2) + ((current_pinb & 0x01) << 2) + (current_pinc & 0x08);
+}
 
 // Mapping for 514256 / 441000 - max Refresh 8ms
 // A0 = PD0   RAS = PB1
@@ -167,31 +271,38 @@ const int CAS_20PIN = 8;
 #define WE_LOW20 PORTB &= 0xf7
 #define WE_HIGH20 PORTB |= 0x08
 
+// Test Data Table for the Pseudo-Random test
+const uint8_t nibbleArray[256] = {
+  0xB, 0xC, 0x4, 0xC, 0xF, 0x1, 0xE, 0xF, 0xC, 0xA, 0x4, 0x0, 0x9, 0x8, 0xC, 0xA,
+  0xD, 0xE, 0x0, 0xE, 0xA, 0xF, 0xD, 0x6, 0xE, 0x9, 0xC, 0xB, 0xC, 0x7, 0x1, 0xC,
+  0xE, 0x8, 0x1, 0xE, 0x3, 0xF, 0xC, 0x5, 0x7, 0x9, 0x3, 0x4, 0x4, 0xD, 0xE, 0x1,
+  0x5, 0x6, 0x0, 0x3, 0xC, 0x3, 0x8, 0x0, 0xA, 0x8, 0x2, 0x7, 0x7, 0x3, 0x2, 0x1,
+  0xB, 0x7, 0x3, 0x4, 0xC, 0x9, 0x5, 0x2, 0x6, 0xF, 0x3, 0x6, 0x2, 0x4, 0x7, 0xC,
+  0x9, 0x3, 0x0, 0x0, 0xB, 0x5, 0x5, 0x2, 0x8, 0xA, 0x6, 0xD, 0xC, 0xE, 0x5, 0x3,
+  0x4, 0x8, 0x7, 0xE, 0xB, 0x6, 0xD, 0xB, 0x8, 0x1, 0x5, 0x8, 0x0, 0x3, 0xC, 0xD,
+  0x0, 0x0, 0xE, 0x7, 0x1, 0x9, 0xB, 0x7, 0xD, 0x4, 0xE, 0x0, 0x6, 0x8, 0xC, 0xA,
+  0xA, 0xC, 0xF, 0x8, 0xD, 0x7, 0xD, 0x7, 0x4, 0xF, 0xE, 0x2, 0x4, 0x3, 0xE, 0x3,
+  0x5, 0xE, 0x6, 0x0, 0xC, 0x1, 0x4, 0x9, 0xF, 0x0, 0xF, 0xA, 0x3, 0xD, 0x8, 0x0,
+  0x7, 0x0, 0xE, 0x7, 0xC, 0x5, 0x2, 0x2, 0x3, 0xD, 0xE, 0x6, 0x4, 0x4, 0x6, 0x2,
+  0xA, 0x3, 0xB, 0x5, 0x3, 0xB, 0x5, 0x5, 0x2, 0x9, 0x0, 0x5, 0xE, 0xE, 0xC, 0xA,
+  0x7, 0x8, 0x0, 0xD, 0x7, 0x5, 0x7, 0x2, 0xF, 0x6, 0x6, 0x4, 0x2, 0x1, 0x6, 0x2,
+  0xF, 0x8, 0x2, 0xA, 0x0, 0x1, 0x2, 0x0, 0x8, 0x8, 0xB, 0x6, 0x3, 0x6, 0x3, 0x4,
+  0x3, 0x3, 0xF, 0x1, 0x8, 0x7, 0x7, 0xF, 0x9, 0x6, 0x5, 0xE, 0xF, 0xD, 0x1, 0xF,
+  0xD, 0x0, 0x7, 0x2, 0xA, 0x4, 0xC, 0xE, 0x3, 0xE, 0x8, 0x7, 0xE, 0x2, 0xB, 0x5
+};
+
+// Detected RAM Type
+int type = -1;
 uint8_t Mode = 0;    // PinMode 2 = 16 Pin, 4 = 18 Pin, 5 = 20 Pin
 uint8_t red = 13;    // PB5
 uint8_t green = 12;  // PB4 -> Co Used with RAM Test Socket, see comments below!
 
-const uint8_t nibbleArray[256] = {
-  0x6B, 0x2C, 0x44, 0x2C, 0xEF, 0x81, 0x4E, 0xEF, 0xDC, 0xEA, 0xD4, 0x40, 0x79, 0x48, 0x8C, 0xAA,
-  0xED, 0x5E, 0x70, 0x0E, 0x9A, 0x7F, 0x1D, 0x76, 0x7E, 0x69, 0x7C, 0xEB, 0x0C, 0xD7, 0xE1, 0x3C,
-  0xAE, 0xA8, 0xC1, 0x8E, 0x13, 0xAF, 0x3C, 0x95, 0x27, 0x89, 0x83, 0x94, 0xA4, 0x9D, 0x8E, 0xE1,
-  0x95, 0xC6, 0x90, 0xC3, 0x2C, 0xE3, 0xF8, 0xD0, 0xAA, 0x68, 0x82, 0x87, 0xC7, 0x73, 0x92, 0x41,
-  0x8B, 0x07, 0x23, 0x04, 0xCC, 0x99, 0xC5, 0xE2, 0x16, 0xBF, 0x33, 0x66, 0xF2, 0xD4, 0x77, 0x5C,
-  0x69, 0x63, 0x30, 0x40, 0x8B, 0x55, 0xA5, 0x72, 0xD8, 0xBA, 0x76, 0xDD, 0xAC, 0x8E, 0x85, 0x03,
-  0xA4, 0xE8, 0x27, 0xCE, 0x2B, 0x26, 0xBD, 0xEB, 0xD8, 0x01, 0x55, 0x58, 0x40, 0xA3, 0xBC, 0x1D,
-  0xD0, 0x20, 0x3E, 0x27, 0xF1, 0xC9, 0xFB, 0x67, 0x1D, 0xB4, 0x8E, 0xC0, 0xF6, 0x68, 0x5C, 0x5A,
-  0xCA, 0xDC, 0xFF, 0x98, 0x6D, 0x07, 0x3D, 0x17, 0x54, 0x1F, 0xAE, 0xF2, 0xB4, 0xF3, 0x1E, 0x73,
-  0x95, 0xE6, 0x6A, 0xC0, 0x3C, 0x71, 0x44, 0xE9, 0x9F, 0x30, 0x3F, 0xCA, 0x23, 0x1D, 0x38, 0xB0,
-  0x07, 0x00, 0x0E, 0x57, 0xBC, 0x65, 0xC2, 0x32, 0x63, 0x8D, 0x4E, 0xD6, 0x54, 0x44, 0x56, 0x82,
-  0xDA, 0xF3, 0xDB, 0x85, 0x43, 0xCB, 0xE5, 0x65, 0x92, 0xC9, 0x70, 0x65, 0x6E, 0xEE, 0x6C, 0x2A,
-  0xC7, 0xF8, 0x50, 0xAD, 0x67, 0x75, 0x07, 0x42, 0x5F, 0x76, 0x86, 0x64, 0x62, 0x71, 0xB6, 0x82,
-  0xBF, 0x28, 0xA2, 0xBA, 0x80, 0xC1, 0xC2, 0x40, 0xE8, 0xA8, 0x0B, 0x16, 0x33, 0xE6, 0x63, 0xB4,
-  0xF3, 0x63, 0xEF, 0x91, 0xA8, 0x97, 0xD7, 0xFF, 0x39, 0x36, 0x65, 0xCE, 0xEF, 0xCD, 0xE1, 0x6F,
-  0x3D, 0x30, 0x77, 0xE2, 0xEA, 0x74, 0x1C, 0x9E, 0x33, 0x9E, 0xA8, 0xD7, 0x5E, 0x52, 0xAB, 0xA5
-};
-
-
 void setup() {
+  // Setup the OLED Display
+  u8x8.setI2CAddress(0x78);
+  u8x8.begin();
+  u8x8.setFont(u8x8_font_chroma48medium8_r);
+  u8x8.drawString(0, 1, "RAM - TESTER");  // Zeichne Text an Position (0, 10)
   // Data Direction Register Port B, C & D - Preconfig as Input (Bit=0)
   DDRB &= 0b11100000;
   DDRC &= 0b11000000;
@@ -262,101 +373,119 @@ void test16Pin() {
   PORTC = 0b00001000;
   DDRD = 0b11000011;
   PORTD = 0x00;
-  if (Sense41256() == true) {
-    for (uint16_t row = 0; row < 512; row++) {  // Iterate over all ROWs
-      write16PinRow(row, 512);
+  Sense41256();
+  for (uint8_t patNr = 0; patNr <= 4; patNr++)
+    for (uint16_t row = 0; row < ramTypes[type].rows; row++) {  // Iterate over all ROWs
+      write16PinRow(row, ramTypes[type].columns, patNr);
     }
-    // Good Candidate.
-    testOK(false);
-  } else {                                      // A8 not used or defect - just run 8kB Test
-    for (uint16_t row = 0; row < 256; row++) {  // Iterate over all ROWs
-      write16PinRow(row, 256);
-    }
-    // Indicate with Green-Red flashlight that the "small" Version has been checked ok
-    smallOK(false);
-  }
+  // Good Candidate.
+  testOK();
 }
 
 // Prepare and execute ROW Access for 16 Pin Types
-void rASHandlingPin16(uint16_t row) {
+void rASHandling16Pin(uint16_t row) {
   RAS_HIGH16;
   // Row Address distribution Logic for 41256/64 16 Pin RAM - more complicated as the PCB circuit is optimized for 256x4 / 1Mx4 Types.
-  SET_ADDR_PIN16(row, 0);
+  SET_ADDR_PIN16(row);
   RAS_LOW16;
 }
 
 // Write and Read (&Check) Pattern from Cols
-void write16PinRow(uint16_t row, uint16_t cols) {
-  for (uint8_t patNr = 0; patNr < 4; patNr++) {
-    // Prepare Write Cycle
-    CAS_HIGH16;
-    rASHandlingPin16(row);  // Set the Row
-    WE_LOW16;
-    uint8_t pat = pattern[patNr];
-    for (uint16_t col = 0; col <= cols; col++) {
+void write16PinRow(uint16_t row, uint16_t cols, uint8_t patNr) {
+  // Prepare Write Cycle
+  CAS_HIGH16;
+  rASHandling16Pin(row);  // Set the Row
+  WE_LOW16;
+  uint8_t pat = pattern[patNr];
+  cli();
+  uint16_t col = cols;
+  if (patNr < 4)
+    do {
       // Column Address distribution logic for 41256/64 16 Pin RAM
-      SET_ADDR_PIN16(col, pat);
-      CAS_LOW16;
-      NOP;  // Just to be sure for slower RAM
-      CAS_HIGH16;
+      setAddrData(--col, pat);
       // Rotate the Pattern 1 Bit to the LEFT (c has not rotate so there is a trick with 2 Shift)
       pat = (pat << 1) | (pat >> 7);
-    }
-    // Prepare Read Cycle
-    WE_HIGH16;
-    // Read and check the Row we just wrote, otherwise Error 2
-    rowCheck16Pin(cols, patNr, 2);
-    // If this is not the first row to check lets see if current Row modified the previous one.
-    // This Row just wrote Pattern Nr 2 and we check if the row before still has pattern Nr3
-    // Datasheet Refresh Cycles: 4164: 2ms / 41256: 4ms
-    // Cycletime for Read & Write tests: 4164: 1.98ms / 41256: 3.96ms - for one Cycle + some Overhead for Refresh and RAS
-    // So this also checks if the last Row was able to reach Data retention Times as per Datasheet specs.
-    // As we only test after PatternNr 2 this tests 3 Refresh Cycles per Row by using Ras Only Refresh (ROR)
-    if (row > 0) {
-      if (patNr == 2) {
-        rASHandlingPin16(row - 1);
-        rowCheck16Pin(cols, 3, 3);  // check if last Row still has Pattern Nr 3 - Otherwise Error 3
-      } else {
-        // just refreh the last row on any pattern change
-        refreshRow16Pin(row - 1);
-      }
-    }
-    delayMicroseconds(52);  // Fine Tuning to surely be at least 2ms / 4ms respectively for the Refresh Test
-    // Measurement showed 2.045ms and 4.008 ms for my TestBoard
-    refreshRow16Pin(row);  // Refresh the current row before leaving
+      CAS_HIGH16;
+    } while (col != 0);
+  else
+    do {
+      // Column Address distribution logic for 41256/64 16 Pin RAM
+      CAS_HIGH16;
+      col--;
+      setAddrData(col, nibbleArray[MIX8(col, row)]);
+    } while (col != 0);
+  CAS_HIGH16;
+  sei();
+  // Prepare Read Cycle
+  WE_HIGH16;
+  // Read and check the Row we just wrote, otherwise Error 2
+  if (patNr < 4) {
+    rowCheck16Pin(cols, row, patNr, 2);
+    return;
   }
+  //rowCheck16Pin(cols, row, patNr, 3);
+  refreshRow16Pin(row);
+  if (row == ramTypes[type].rows - 1) {  // Last Row writen, we have to check the last n Rows as well.
+    // Retention testing the last rows, they will no longer be written only read back. Simulte the write time to get a correct retention time test.
+    for (int8_t x = ramTypes[type].delayRows; x >= 0; x--) {
+      rASHandling16Pin(row - x);
+      rowCheck16Pin(cols, row - x, patNr, 3);
+      delayMicroseconds(ramTypes[type].writeTime);  // Simulate writing even if it is no longer done for the last rows
+      delayMicroseconds(ramTypes[type].delays[ramTypes[type].delayRows]);
+    }
+    return;
+  }
+  if (row >= ramTypes[type].delayRows) {
+    rASHandling16Pin(row - ramTypes[type].delayRows);
+    rowCheck16Pin(cols, row - ramTypes[type].delayRows, patNr, 3);
+    return;
+  }
+  if (row < ramTypes[type].delayRows)
+    delayMicroseconds(ramTypes[type].delays[row]);
+  else
+    delayMicroseconds(ramTypes[type].delays[ramTypes[type].delayRows]);
 }
 
 void refreshRow16Pin(uint16_t row) {
-  rASHandlingPin16(row);  // Refresh this ROW
-  NOP;
-  NOP;
+  rASHandling16Pin(row);  // Refresh this ROW
   RAS_HIGH16;
 }
 
-void rowCheck16Pin(uint16_t cols, uint8_t patNr, uint8_t check) {
+void rowCheck16Pin(uint16_t cols, uint16_t row, uint8_t patNr, uint8_t check) {
   uint8_t pat = pattern[patNr];
   // Iterate over the Columns and read & check Pattern
-  for (uint16_t col = 0; col <= cols; col++) {
-    SET_ADDR_PIN16(col, 0);
-    CAS_LOW16;
-    NOP;  // Input Settle Time for Digital Inputs = 93ns
-    NOP;  // One NOP@16MHz = 62.5ns
-    if (((PINC & 0x04) >> 2) != (pat & 0x01)) {
-      error(patNr + 1, check);
-    }  // Check if Pattern matches
-    CAS_HIGH16;
-    pat = (pat << 1) | (pat >> 7);
-  }
+  cli();
+  uint16_t col = cols;
+  if (patNr < 4)
+    //for (uint16_t col = 0; col < cols; col++) {
+    do {
+      setAddrData(--col, 0);
+      NOP;  // This RAM is later slow to propagate the Output, so take time to settle signals
+      CAS_HIGH16;
+      if (((PINC & 0x04) >> 2) != (pat & 0x01)) {
+        error(patNr + 1, check);
+      }  // Check if Pattern matches
+      pat = (pat << 1) | (pat >> 7);
+    } while (col != 0);
+  else
+    do {
+      setAddrData(--col, 0);
+      NOP;
+      CAS_HIGH16;
+      if (((PINC & 0x04) >> 2) != (nibbleArray[MIX8(col, row)] & 0x01)) {
+        error(patNr + 1, check);
+      }  // Check if Pattern matches
+    } while (col != 0);
+  sei();
   RAS_HIGH16;
 }
 
 // Address Line Checks and sensing for 41256 or 4164
-boolean Sense41256() {
+void Sense41256() {
   boolean big = true;
   CAS_HIGH16;
   // RAS Testing set Row 0 Col 0 and set Bit Low.
-  rASHandlingPin16(0);
+  rASHandling16Pin(0);
   PORTC &= 0xfd;
   WE_LOW16;
   CAS_LOW16;
@@ -365,7 +494,7 @@ boolean Sense41256() {
   WE_HIGH16;
   for (uint8_t a = 0; a <= 8; a++) {
     uint16_t adr = (1 << a);
-    rASHandlingPin16(adr);
+    rASHandling16Pin(adr);
     // Write Bit Col 0 High
     WE_LOW16;
     PORTC |= 0x02;
@@ -374,7 +503,7 @@ boolean Sense41256() {
     CAS_HIGH16;
     WE_HIGH16;
     // Back to Row 0 then check if Bit at Col 0 is still 0
-    rASHandlingPin16(0);
+    rASHandling16Pin(0);
     CAS_LOW16;
     NOP;
     NOP;
@@ -390,7 +519,7 @@ boolean Sense41256() {
     CAS_HIGH16;
   }
   // CAS address Tests performed on ROW 0
-  rASHandlingPin16(0);
+  rASHandling16Pin(0);
   WE_LOW16;
   // Set Column 0 and DataIn = Low -> Preset 0 at R=0 / C=0
   PORTB = (PORTB & 0xea);
@@ -405,8 +534,7 @@ boolean Sense41256() {
     uint16_t adr = (1 << a);
     WE_LOW16;
     // Set aadress
-    SET_ADDR_PIN16(adr, 0x02);
-    CAS_LOW16;
+    setAddrData(adr, 0x02);
     NOP;  // Just to be sure for slower RAM
     CAS_HIGH16;
     WE_HIGH16;
@@ -427,7 +555,10 @@ boolean Sense41256() {
     }
     CAS_HIGH16;
   }
-  return big;
+  if (big == true)
+    type = T_41256;
+  else
+    type = T_4164;
 }
 
 //=======================================================================================
@@ -441,31 +572,24 @@ void test18Pin() {
   DDRC = 0b00011111;
   PORTC = 0b00010101;
   DDRD = 0b11100111;
-  if (sense4464() == true) {
-    noInterrupts();
-    for (uint16_t row = 0; row < 256; row++) {  // Iterate over all ROWs
-      write18PinRow(row, 0, 256);
+  sense4464();
+  for (uint8_t pat = 0; pat < 5; pat++)
+    for (uint16_t row = 0; row < ramTypes[type].rows; row++) {  // Iterate over all ROWs
+      write18PinRow(row, pat, ramTypes[type].columns);
     }
-    interrupts();
-    // Good Candidate.
-    testOK(false);
-  } else {                                      // 4416 has 256 ROW but only 64 Columns (Bit 1-6)
-    for (uint16_t row = 0; row < 256; row++) {  // Iterate over all ROWs
-      write18PinRow(row, 1, 64);
-    }
-    // Indicate with Green-Red flashlight that the "small" Version has been checked ok
-    smallOK(false);
-  }
+  testOK();
 }
 
-void write18PinRow(uint8_t row, uint8_t init_shift, uint16_t width) {
+void write18PinRow(uint8_t row, uint8_t patNr, uint16_t width) {
   uint16_t colAddr;  // Prepared Column Adress to safe Init Time. This is needed when A0 & A8 are not used for Col addressing.
-  for (uint8_t patNr = 0; patNr < 4; patNr++) {
-    // Prepare Write Cycle
-    rASHandling18Pin(row);
-    WE_LOW18;
-    configDOut18Pin();
-    SET_DATA_PIN18(pattern[patNr]);
+  uint8_t init_shift = type == T_4416 ? 1 : 0;
+  // Prepare Write Cycle
+  rASHandling18Pin(row);
+  WE_LOW18;
+  configDOut18Pin();
+  SET_DATA_PIN18(pattern[patNr]);
+  cli();
+  if (patNr < 4)
     for (uint16_t col = 0; col < width; col++) {
       colAddr = (col << init_shift);
       SET_ADDR_PIN18(colAddr);
@@ -473,53 +597,73 @@ void write18PinRow(uint8_t row, uint8_t init_shift, uint16_t width) {
       NOP;
       CAS_HIGH18;
     }
-    WE_HIGH18;
-    // If we check 255 Columns the time for Write & Read(Check) exceeds the Refresh time. We need to add a Refresh in the Middle
-    if (init_shift == 0) {
-      refreshRow18Pin(row - 1);  // Refresh the last row
-      delayMicroseconds(41);     // Minor delay to really check for 2ms Refresh of the last row
-      rASHandling18Pin(row);     // Reselect the just written row for checking
+  else
+    for (uint16_t col = 0; col < width; col++) {
+      SET_DATA_PIN18(nibbleArray[((uint8_t)(col ^ row))]);
+      colAddr = (col << init_shift);
+      SET_ADDR_PIN18(colAddr);
+      CAS_LOW18;
+      NOP;
+      CAS_HIGH18;
     }
-    checkColumn18Pin(width, patNr, init_shift, 2);
-    // If Pattern 2 was written check last row for Crosstalk, it should still read Pattern 3
-    if (init_shift == 1) {
-      if (row > 1) {
-        if (patNr == 2) {
-          rASHandling18Pin(row - 2);
-          checkColumn18Pin(width, 3, init_shift, 3);
-        } else if (patNr == 0) {
-          // In case of the 4416 with 64 Cols, the Time to Write/Read two Patterns is almost 2ms = Refresh inervals, so we refesh 2 Pattern Columns after the last access to this column1
-          refreshRow18Pin(row - 2);
-          delayMicroseconds(79);
-        }
-      }
-    } else if (row > 0) {
-      if (patNr == 2) {
-        rASHandling18Pin(row - 1);
-        checkColumn18Pin(width, 3, init_shift, 3);
-      } else {
-        refreshRow18Pin(row - 1);
-      }
-    }
+  sei();
+  WE_HIGH18;
+  // If we check 255 Columns the time for Write & Read(Check) exceeds the Refresh time. We need to add a Refresh in the Middle
+  if (patNr < 4) {
+    checkRow18Pin(width, row, patNr, init_shift, 2);
+    return;
   }
-  RAS_HIGH18;
+  if (patNr == 4) {
+    refreshRow18Pin(row);
+    if (row == ramTypes[type].rows - 1) {  // Last Row writen, we have to check the last n Rows as well.
+      // Retention testing the last rows, they will no longer be written only read back. Simulte the write time to get a correct retention time test.
+      for (int8_t x = ramTypes[type].delayRows; x >= 0; x--) {
+        rASHandling18Pin(row - x);
+        checkRow18Pin(width, row - x, patNr, init_shift, 3);
+        delayMicroseconds(ramTypes[type].writeTime);  // Simulate writing even if it is no longer done for the last rows
+        delayMicroseconds(ramTypes[type].delays[ramTypes[type].delayRows]);
+      }
+      return;
+    }
+    if (row >= ramTypes[type].delayRows) {
+      rASHandling18Pin(row - ramTypes[type].delayRows);
+      checkRow18Pin(width, row - ramTypes[type].delayRows, patNr, init_shift, 3);
+    }
+    if (row < ramTypes[type].delayRows)
+      delayMicroseconds(ramTypes[type].delays[row]);
+    else
+      delayMicroseconds(ramTypes[type].delays[ramTypes[type].delayRows]);
+  }
 }
 
-void checkColumn18Pin(uint16_t width, uint8_t patNr, uint8_t init_shift, uint8_t errorNr) {
+
+void checkRow18Pin(uint16_t width, uint8_t row, uint8_t patNr, uint8_t init_shift, uint8_t errorNr) {
   configDIn18Pin();
   uint8_t pat = pattern[patNr] & 0x0f;
   OE_LOW18;
-  for (uint16_t col = 0; col < width; col++) {
-    SET_ADDR_PIN18(col << init_shift);
-    CAS_LOW18;
-    NOP;
-    NOP;
-    if ((GET_DATA_PIN18) != pat) {
-      error(patNr, errorNr);
+  cli();
+  if (patNr < 4)
+    for (uint16_t col = 0; col < width; col++) {
+      SET_ADDR_PIN18(col << init_shift);
+      CAS_LOW18;
+      NOP;
+      if ((GET_DATA_PIN18) != pat) {
+        error(patNr, errorNr);
+      }
+      CAS_HIGH18;
     }
-    CAS_HIGH18;
-  }
+  else
+    for (uint16_t col = 0; col < width; col++) {
+      SET_ADDR_PIN18(col << init_shift);
+      CAS_LOW18;
+      CAS_HIGH18;
+      if ((get_data_pin18()) != nibbleArray[((uint8_t)(col ^ row))]) {
+        error(patNr, errorNr);
+      }
+    }
+  sei();
   OE_HIGH18;
+  RAS_HIGH18;
 }
 
 void configDOut18Pin() {
@@ -545,7 +689,7 @@ void rASHandling18Pin(uint8_t row) {
   RAS_LOW18;
 }
 
-boolean sense4464() {
+void sense4464() {
   boolean big = true;
   rASHandling18Pin(0);  // Use Row 0 for Size Tests
   WE_LOW18;
@@ -622,7 +766,10 @@ boolean sense4464() {
     }
     PORTC |= 0x15;
   }
-  return big;
+  if (big == true)
+    type = T_4464;
+  else
+    type = T_4416;
 }
 
 //=======================================================================================
@@ -637,25 +784,15 @@ void test20Pin() {
   DDRB = 0b00011111;
   DDRC = 0b00011111;
   DDRD = 0xFF;
-  boolean scRam = senseSCRAM();
-  if (sense1Mx4() == true) {
-    // Run the Tests for the larger Chip if A9 is used we run the larger test for 512kB
-    // This could be optimized.
-    for (uint8_t pat = 0; pat < 4; pat++) {        // Check all 4Bit Patterns
-      for (uint16_t row = 0; row < 1024; row++) {  // Iterate over all ROWs
-        write20PinRow(row, pat, 4, scRam);
-      }
+  senseRAM_20Pin();
+  senseSCRAM();
+  for (uint8_t pat = 0; pat < 5; pat++) {                       // Check all 4Bit Patterns
+    for (uint16_t row = 0; row < ramTypes[type].rows; row++) {  // Iterate over all ROWs
+      write20PinRow(row, pat);
     }
-    // Good Candidate.
-    testOK(scRam);
-  } else {                                        // A9 most probably not used or defect - just run 128kB Test
-    for (uint8_t pat = 0; pat <= 4; pat++)        // Check all 4Bit Patterns
-      for (uint16_t row = 0; row < 512; row++) {  // Iterate over all ROWs
-        write20PinRow(row, pat, 2, scRam);
-      }
-    // Indicate with Green-Red flashlight that the "small" Version has been checked ok
-    smallOK(scRam);
   }
+  // Good Candidate.
+  testOK();
 }
 
 // Prepare and execute ROW Access for 20 Pin Types
@@ -667,36 +804,51 @@ void rASHandlingPin20(uint16_t row) {
 }
 
 // Prepare Controll Lines and perform Checks
-void write20PinRow(uint16_t row, uint8_t pattern, uint16_t width, boolean scRam) {
-  PORTB |= 0x0f;                                 // Set all RAM Controll Lines to HIGH = Inactive
-  cASHandlingPin20(row, pattern, width, scRam);  // Do the Test
-  PORTB |= 0x0f;                                 // Set all RAM Controll Lines to HIGH = Inactive
-  // Enhanced PageMode Row Write & Read Done
+void write20PinRow(uint16_t row, uint8_t pattern) {
+  PORTB |= 0x0f;                   // Set all RAM Controll Lines to HIGH = Inactive
+  cASHandlingPin20(row, pattern);  // Do the Test
+  PORTB |= 0x0f;                   // Set all RAM Controll Lines to HIGH = Inactive
 }
 
-void msbHandlingPin20(uint16_t address) {
+// 20 Pin RAM use A8 and probably A9 larger than 8 lanes of PORTD for the lower 8 address bits
+void msbHandlingPin20(uint8_t address) {
   PORTB = (PORTB & 0xef) | ((address & 0x01) << 4);
   PORTC = (PORTC & 0xef) | ((address & 0x02) << 3);
 }
 
 // Write and Read (&Check) Pattern from Cols
-void cASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth, boolean scRam) {
+void cASHandlingPin20(uint16_t row, uint8_t patNr) {
   rASHandlingPin20(row);  // Set the Row
   // Prepare Write Cycle
   PORTC &= 0xf0;                     // Set all Outputs to LOW
   DDRC |= 0x0f;                      // Configure IOs for Output
   PORTC |= (pattern[patNr] & 0x0f);  // Alternative Pattern Odd & Even so we can check for Crosstalk later.
   WE_LOW20;
+  uint8_t col = 0;
+  uint8_t msbCol = ramTypes[type].columns / 256;
   cli();
-  for (uint8_t msb = 0; msb < colWidth; msb++) {
+  // Write Data Loop
+  for (uint8_t msb = 0; msb < msbCol; msb++) {
     msbHandlingPin20(msb);  // Set the MSB as needed
-    for (uint16_t col = 0; col <= 255; col++) {
-      if (patNr == 4) {
-        PORTC = (PORTC & 0xf0) | (nibbleArray[((uint8_t)(col ^ row))] & 0x0f);
-      }
-      PORTD = (uint8_t)col;  // Set Col Adress
-      CAS_LOW20;
-      CAS_HIGH20;
+    // Regular Test patterns like 0000 / 1111 / 1010 / 0101
+    if (patNr != 4) {
+      do {
+        PORTD = col;  // Set Col Adress
+        CAS_LOW20;
+        CAS_HIGH20;
+      } while (++col != 0);
+    } else {
+      // Cache the upper IO Pins of PORTC for faster access - they will not change in the CAS Loop on 8-Bits, only Bit 9 may change in MSB Handling
+      uint8_t io = (PORTC & 0xf0);
+      // Write "Random" test data from the table
+      do {
+        if (patNr == 4) {
+          PORTC = io | (nibbleArray[((uint8_t)(col ^ row))]);
+        }
+        PORTD = col;  // Set Col Adress
+        CAS_LOW20;
+        CAS_HIGH20;
+      } while (++col != 0);
     }
   }
   sei();
@@ -704,26 +856,35 @@ void cASHandlingPin20(uint16_t row, uint8_t patNr, uint16_t colWidth, boolean sc
   WE_HIGH20;
   PORTC &= 0xf0;  // Clear all Outputs
   DDRC &= 0xf0;   // Configure IOs for Input
+  // As long its not yet Random Data just check we get the same back that was just written
   if (patNr < 4) {
-    if (scRam != true) {
-      checkRow20Pin(colWidth, patNr, row, 2);
-    } else {
-      checkSCRow20Pin(colWidth, patNr, row, 2);
-    }
+    checkRow20Pin(patNr, row, 2);
+    return;
   }
-  if (patNr == 4)
-    refreshRow20Pin(row);  // Refresh the current row before leaving
-  if (row >= 4) {          // Delay Row Crosstalk Testing until we reach Row 7 as this also tests Data Retention (~1.021ms per Row for Write/Read Tests)
-    if (patNr == 4) {
-      rASHandlingPin20(row - 4);
-      if (scRam != true)
-        checkRow20Pin(colWidth, 4, row - 4, 3);  // Check for the last random Pattern on this ROW
-      else
-        checkSCRow20Pin(colWidth, 4, row - 4, 3);
+  if (patNr == 4) {
+    // Refresh the Row to have stable Timings and check refresh
+    refreshRow20Pin(row);                  // Refresh the current row before leaving
+    if (row == ramTypes[type].rows - 1) {  // Last Row writen, we have to check the last n Rows as well.
+      // Retention testing the last rows, they will no longer be written only read back. Simulte the write time to get a correct retention time test.
+      for (int8_t x = ramTypes[type].delayRows; x >= 0; x--) {
+        rASHandlingPin20(row - x);
+        checkRow20Pin(4, row - x, 3);
+        delayMicroseconds(ramTypes[type].writeTime);  // Simulate writing even if it is no longer done for the last rows
+        delayMicroseconds(ramTypes[type].delays[ramTypes[type].delayRows]);
+      }
+      return;
     }
+    // Default Retention Testing
+    if (row >= ramTypes[type].delayRows) {
+      rASHandlingPin20(row - ramTypes[type].delayRows);
+      checkRow20Pin(4, row - ramTypes[type].delayRows, 3);  // Check for the last random Pattern on this ROW
+    }
+    // Data retention Testing first rows. They need special treatment since they will be read back later. Timing is special at the beginning to match retention times
+    if (row < ramTypes[type].delayRows)
+      delayMicroseconds(ramTypes[type].delays[row]);
+    else
+      delayMicroseconds(ramTypes[type].delays[ramTypes[type].delayRows]);
   }
-  //delayMicroseconds(500);  // Fine Tuning to surely be at least 8ms  for the Refresh Test
-  // Measurement showed  for my TestBoard
 }
 
 void refreshRow20Pin(uint16_t row) {
@@ -733,40 +894,41 @@ void refreshRow20Pin(uint16_t row) {
 }
 
 // Check one full row for normal FP-Mode RAM
-void checkRow20Pin(uint8_t colWidth, uint8_t patNr, uint16_t row, uint8_t errNr) {
+void checkRow20Pin(uint8_t patNr, uint16_t row, uint8_t errNr) {
   uint8_t pat = pattern[patNr] & 0x0f;
   OE_LOW20;
+  boolean scRAM = ramTypes[type].staticColumn;
   cli();
-  for (uint8_t msb = 0; msb < colWidth; msb++) {
+  uint8_t col = 0;
+  uint8_t msbCol = ramTypes[type].columns / 256;
+  for (uint8_t msb = 0; msb < msbCol; msb++) {
     msbHandlingPin20(msb);  // Set the MSB as needed
-    for (uint16_t col = 0; col <= 255; col++) {
-      PORTD = (uint8_t)col;  // Set Col Adress
+    // Distinguish between Static Column and FastPage Mode - Ugly code duplication but fastest code possible.
+    if (scRAM == false) {
+      do {
+        PORTD = col;  // Set Col Adress
+        CAS_LOW20;
+        CAS_HIGH20;
+        // If the Data matches the current pattern its ok
+        if (pat == (PINC & 0x0f))
+          continue;
+        // Or if it matches the random data its also ok
+        if ((PINC & 0x0f) == (nibbleArray[(uint8_t)(col ^ row)]))
+          continue;
+        // If both do not match, there is an error.
+        error(patNr, errNr);
+      } while (++col != 0);
+    } else {
+      // Same for static column RAM
       CAS_LOW20;
-      if (((patNr == 4) && ((PINC & 0x0f) != (nibbleArray[(uint8_t)(col ^ row)] & 0x0f))) || ((patNr < 4) && ((PINC & 0x0f) != pat))) {
-        sei();
+      do {
+        PORTD = col;  // Set Col Adress
+        if (pat == (PINC & 0x0f))
+          continue;
+        if ((PINC & 0x0f) == (nibbleArray[(uint8_t)(col ^ row)]))
+          continue;
         error(patNr, errNr);
-      }  // Check if Pattern matches
-      CAS_HIGH20;
-    }
-  }
-  sei();
-  OE_HIGH20;
-}
-
-// Check one full row of static column RAM
-void checkSCRow20Pin(uint8_t colWidth, uint8_t patNr, uint16_t row, uint8_t errNr) {
-  uint8_t pat = pattern[patNr] & 0x0f;
-  OE_LOW20;
-  CAS_LOW20;
-  cli();
-  for (uint8_t msb = 0; msb < colWidth; msb++) {
-    msbHandlingPin20(msb);  // Set the MSB as needed
-    for (uint16_t col = 0; col <= 255; col++) {
-      PORTD = (uint8_t)col;  // Set Col Adress
-      if (((patNr == 4) && ((PINC & 0x0f) != (nibbleArray[(uint8_t)(col ^ row)] & 0x0f))) || ((patNr < 4) && ((PINC & 0x0f) != pat))) {
-        sei();
-        error(patNr, errNr);
-      }  // Check if Pattern matches
+      } while (++col != 0);
     }
   }
   sei();
@@ -775,7 +937,7 @@ void checkSCRow20Pin(uint8_t colWidth, uint8_t patNr, uint16_t row, uint8_t errN
 }
 
 // The following Routine checks if A9 Pin is used - which is the case for 1Mx4 DRAM in 20Pin Mode
-boolean sense1Mx4() {
+void senseRAM_20Pin() {
   boolean big = true;
   DDRC |= 0x0f;  // Configure IOs for Output
   // Prepare for Test and write Row 0 Col 0 to LOW LOW LOW LOW
@@ -807,8 +969,7 @@ boolean sense1Mx4() {
     DDRC &= 0xf0;   // Configure IOs for Input
     OE_LOW20;
     CAS_LOW20;
-    NOP;
-    NOP;
+    CAS_HIGH20;
     if ((PINC & 0xf) != 0x0) {  // Read the Data at this address
       if (a == 9)
         big = false;
@@ -816,7 +977,6 @@ boolean sense1Mx4() {
         error(a, 3);
       }
     }
-    CAS_HIGH20;
     OE_HIGH20;
   }
   // Check Column address lines, buffers and decoders
@@ -842,8 +1002,8 @@ boolean sense1Mx4() {
     DDRC &= 0xf0;   // Configure IOs for Input
     OE_LOW20;
     CAS_LOW20;
-    NOP;
-    NOP;
+    CAS_HIGH20;
+
     if ((PINC & 0xf) != 0x0) {  // Read the Data at this address
       if ((a == 9) && (big == false))
         NOP;  // Row Testing showed already the small type. If it did not we have a Problem.
@@ -851,13 +1011,15 @@ boolean sense1Mx4() {
         error(a, 1);
       }
     }
-    CAS_HIGH20;
     OE_HIGH20;
   }
-  return big;
+  if (big == true)
+    type = T_514400;
+  else
+    type = T_514256;
 }
 
-boolean senseSCRAM() {
+void senseSCRAM() {
   PORTD = 0x00;   // Set Row and Col address to 0
   PORTB &= 0xef;  // Clear address Bit 8
   PORTC &= 0xe0;  // Set all Outputs and A9 to LOW
@@ -887,10 +1049,13 @@ boolean senseSCRAM() {
       CAS_HIGH20;
       OE_HIGH20;
       RAS_HIGH20;
-      return false;
+      return;
     }
   }
-  return true;
+  if (type == T_514400)
+    type = T_514402;
+  else
+    type = T_514257;
 }
 
 //=======================================================================================
@@ -907,7 +1072,7 @@ void checkGNDShort() {
 }
 
 // Check for Shorts to GND, when Inputs are Pullup
-void checkGNDShort4Port(int *portb, int *portc, int *portd) {
+void checkGNDShort4Port(const int *portb, const int *portc, const int *portd) {
   for (int i = 0; i <= 7; i++) {
     int8_t mask = 1 << i;
     if (portb[i] != EOL && portb[i] != NC && ((PINB & mask) == 0)) {
@@ -924,6 +1089,7 @@ void checkGNDShort4Port(int *portb, int *portc, int *portd) {
 
 // Prepare LED for inidcation of Results or Errors
 void setupLED() {
+  sei();
   // Set all Pin LOW and configure all Pins as Input except the Vcc Pins and the LED
   PORTB = 0x00;
   PORTC &= 0xf0;
@@ -959,30 +1125,21 @@ void error(uint8_t code, uint8_t error) {
 }
 
 // GREEN - OFF Flashlight - Indicate a successfull test
-void testOK(boolean scRam) {
+void testOK() {
   setupLED();
   while (true) {
-    digitalWrite(green, ON);
-    delay(850);
-    digitalWrite(green, OFF);
-    delay(250);
-  }
-}
-
-// RED-GREEN Flashlight - Indicate a successfull test for the "smaller" Variant of this Pin Config
-void smallOK(boolean scRam) {
-  setupLED();
-  while (true) {
-    digitalWrite(green, ON);
     digitalWrite(red, OFF);
+    digitalWrite(green, ON);
     delay(850);
-    digitalWrite(green, scRam);
-    digitalWrite(red, ON);
-    delay(250);
-    if (scRam == true) {
-      digitalWrite(green, OFF);
+    if (ramTypes[type].staticColumn == true) {
+      digitalWrite(red, ON);
       delay(250);
     }
+    digitalWrite(green, OFF);
+    if (ramTypes[type].smallType == true) {
+      digitalWrite(red, ON);
+    }
+    delay(250);
   }
 }
 
