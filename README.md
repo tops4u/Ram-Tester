@@ -1,6 +1,6 @@
 # Ram-Tester
 
-Ram Tester for vintage CBM Computer RAM Chips (most RAM commonly used in C64 / C128 / A-500 & A-2000).
+Ram Tester for vintage CBM Computer RAM Chips (most RAM commonly used in C64 / C128 / A-500 & A-2000, many Atari and Apple Computers of the time).
 
 If you like this little project, you can make a small donation via the *SPONSOR* button in the top menu bar. To give you an idea, I have spent approximately:
 - **$100** in materials, including various tests and failures.
