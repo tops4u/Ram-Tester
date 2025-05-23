@@ -1,3 +1,6 @@
+v2.3.0Pre (2025-05-23)
+- Implemented all targeted functional features. Pending Re-Verification of all Retention Times
+
 v2.3.0a (2025-05-23)
 - Major rework on Retention Testing. Introduced RAM Types for timing. Added OLED support.
 - Speed optimization in the Code to keep longer test times of pseudo random data at bay.
