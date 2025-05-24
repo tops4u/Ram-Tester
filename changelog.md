@@ -1,3 +1,8 @@
+v2.3.0Pre2 (2025-05-24)
+- Added Support for 514402 Static Column 1Mx4 RAM
+- Finetuning of retention Test Timings
+- Fixed minor Typos
+
 v2.3.0Pre (2025-05-23)
 - Implemented all targeted functional features. Pending Re-Verification of all Retention Times
 
