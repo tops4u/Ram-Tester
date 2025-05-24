@@ -5,8 +5,9 @@ Ram Tester for vintage CBM Computer RAM Chips (most RAM commonly used in C64 / C
 It is now available with or without Display.<br/>
 <img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/IMG_3591.jpeg" width="400px" align="center"/><br/>
 
-There is a short YouTube video demonstrating the tester in action. *(Note: the current version no longer requires an adapter for ZIP but includes a built-in ZIP socket):*  
-[![YouTube Demonstrator Video](https://img.youtube.com/vi/9TBlnfiTfQk/0.jpg)](https://www.youtube.com/watch?v=9TBlnfiTfQk "Demonstration")
+There is a short YouTube video demonstrating the tester in action. 
+[![YouTube Demonstrator Video](https://img.youtube.com/vi/9TBlnfiTfQk/0.jpg)](https://www.youtube.com/watch?v=9TBlnfiTfQk "Demonstration")<br/>
+*(Note: this video shows a prototype, the current SMD Design can be seen above. Handling without Display remains identical):*  
 
 ---
 
