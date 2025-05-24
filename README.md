@@ -2,9 +2,8 @@
 
 Ram Tester for vintage CBM Computer RAM Chips (most RAM commonly used in C64 / C128 / A-500 & A-2000, many Atari and Apple Computers of the time).
 
-If you like this little project, you can make a small donation via the *SPONSOR* button in the top menu bar. To give you an idea, I have spent approximately:
-- **$100** in materials, including various tests and failures.
-- **60+ hours** to get the code working.
+It is now available with or without Display.
+<img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/IMG_3591.jpeg" width="400px" align="center"/><br/>
 
 There is a short YouTube video demonstrating the tester in action. *(Note: the current version no longer requires an adapter for ZIP but includes a built-in ZIP socket):*  
 [![YouTube Demonstrator Video](https://img.youtube.com/vi/9TBlnfiTfQk/0.jpg)](https://www.youtube.com/watch?v=9TBlnfiTfQk "Demonstration")
@@ -30,3 +29,10 @@ I decided to create a tester to diagnose some of the common DRAM chips used in C
 
 **Documentation:**  
 The documentation has been moved to the [WIKI](https://github.com/tops4u/Ram-Tester/wiki) section of this project.
+
+---
+
+If you like this little project, you can make a small donation via the *SPONSOR* button in the top menu bar. To give you an idea, I have spent approximately:
+- **$100** in materials, including various tests and failures.
+- **80+ hours** to get the code working.
+
