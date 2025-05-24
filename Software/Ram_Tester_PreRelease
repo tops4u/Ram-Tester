@@ -2,8 +2,8 @@
 // ======================================
 //
 // Author: Andreas Hoffmann
-// Version: 2.3.0pre
-// Date: 23.05.2025
+// Version: 2.3.0pre2
+// Date: 24.05.2025
 //
 // This software is published under GPL 3.0. Respect the license terms.
 // Project hosted at: https://github.com/tops4u/Ram-Tester/
@@ -54,6 +54,7 @@
 //          Minor Bugfix 16Bit had one col/row overrun - buggy but no negativ side effects
 //          OLED Tests and final implementation missing
 // - 2.3.0.pre: All functional targets for 2.3.0 are met. OLED Tested and working
+// - 2.3.0.pre2: Checked and updated all Retention Timings. Fixed some minor Typos. Added 514402 Static Column 1Mx4 RAM
 //
 // Disclaimer:
 // This project is for hobbyist use. There are no guarantees regarding its fitness for a specific purpose
@@ -99,15 +100,15 @@ struct RAM_Definition {
 };
 
 struct RAM_Definition ramTypes[] = {
-  { "  4164  64Kx1  ", 2, 1, 256, 256, 1, false, false, true, { 993, 0, 0, 0, 0, 0 }, 820 },
-  { " 41256  256Kx1 ", 4, 1, 512, 512, 1, false, false, false, { 0, 0, 0, 0, 0, 0 }, 1940 },  // There is a slight overshoot in retention testing (+3% of min time)
-  { "41257 256Kx1-NM", 4, 2, 512, 512, 1, false, true, false, { 0, 0, 0, 0, 0, 0 }, 1940 },   // Never tested yet so we treat it as 41256
-  { "   4416 16Kx4  ", 4, 4, 256, 64, 4, false, false, true, { 552, 545, 545, 545, 125, 125 }, 455 },
-  { "   4464 64Kx4  ", 4, 1, 256, 256, 4, false, false, false, { 2190, 575, 575, 575, 575, 575 }, 1800 },
-  { " 514256 256Kx4 ", 4, 2, 512, 512, 4, false, false, true, { 1290, 1300, 435, 435, 435, 435 }, 700 },
-  { "514257 256Kx4SC", 4, 2, 512, 512, 4, true, false, true, { 1150v, 1300, 435, 435, 435, 435 }, 680 },  // --> Needs tuning
-  { "  514400 1Mx4  ", 16, 5, 1024, 1024, 4, false, false, false, { 1796, 1777, 1777, 1777, 1939, 100 }, 1370 },
-  { "514402 1Mx4(SC)", 16, 2, 1024, 1024, 4, true, false, false, { 0, 0, 0, 0, 0, 0 }, 0 }
+  { "   4164 64Kx1   ", 2, 1, 256, 256, 1, false, false, true, { 1000, 0, 0, 0, 0, 0 }, 885 },
+  { "  41256 256Kx1  ", 4, 1, 512, 512, 1, false, false, false, { 2104, 0, 0, 0, 0, 0 }, 1765 },  // There is a slight overshoot in retention testing (+2.5% of min time)
+  { "41257  256Kx1-NM", 4, 2, 512, 512, 1, false, true, false, { 0, 0, 0, 0, 0, 0 }, 1940 },   // Never tested yet so we treat it as 41256
+  { "   4416  16Kx4  ", 4, 4, 256, 64, 4, false, false, true, { 542, 542, 548, 543, 113, 113 }, 455 },
+  { "   4464  64Kx4  ", 4, 1, 256, 256, 4, false, false, false, { 2274, 603, 603, 603, 603, 603 }, 1700 },
+  { " 514256  256Kx4 ", 4, 2, 512, 512, 4, false, false, true, { 1225, 1225, 295, 295, 295, 295 }, 757 },
+  { "514258 256Kx4-SC", 4, 2, 512, 512, 4, true, false, true, { 1229, 1223, 425, 425, 425, 425 }, 757 },
+  { "  514400  1Mx4  ", 16, 4, 1024, 1024, 4, false, false, false, { 2486, 2485, 2485, 2485, 641, 641 }, 1480 },
+  { " 514402 1Mx4-SC ", 16, 5, 1024, 1024, 4, true, false, false, { 1687, 1687, 1687, 1591, 1782, 94 }, 1500 }
 };
 
 // Type Numbers for the RAM Definitions
@@ -117,7 +118,7 @@ struct RAM_Definition ramTypes[] = {
 #define T_4416 3
 #define T_4464 4
 #define T_514256 5
-#define T_514257 6
+#define T_514258 6
 #define T_514400 7
 #define T_514402 8
 
@@ -125,9 +126,18 @@ struct RAM_Definition ramTypes[] = {
 const uint8_t pattern[] = { 0x00, 0xff, 0xaa, 0x55, 0xaa, 0x55 };  // Equals to 0b00000000, 0b11111111, 0b10101010, 0b01010101
 
 // Randomize the access to the pseudo random table by using col & row
-#define MIX8(col, row) \
-  (uint8_t)( \
-    (((uint16_t)(col)) ^ ((uint16_t)(row)*251u)) ^ ((((uint16_t)(col)) ^ ((uint16_t)(row)*251u)) >> 8))
+static inline __attribute__((always_inline))
+uint8_t
+mix8(uint16_t col, uint16_t row) {
+  /* one MUL instead of two */
+  uint16_t v = col ^ (row * 251u);  // 251 = 0xFB
+
+  /* fold high and low byte → eight useful bits */
+  return (uint8_t)(v ^ (v >> 8));
+}
+
+/* old macro can now wrap the fast helper if you prefer */
+#define MIX8(c, r) mix8((c), (r))
 
 // Mapping for 4164 (2ms Refresh Rate) / 41256/257 (4 ms Refresh Rate)
 // A0 = PC4   RAS = PB1   t RAS->CAS = 150-200ns -> Max Pulsewidth 10'000ns
@@ -153,12 +163,13 @@ const int CAS_16PIN = 17;  // Corresponds to Analog 3 or Digital 17
 #define WE_LOW16 PORTB &= 0xf7
 #define WE_HIGH16 PORTB |= 0x08
 // This is the older implementation and is just used for RAS address setting, that does not need the DATA Pin
-#define SET_ADDR_PIN16(addr) \ 
+#define SET_ADDR_PIN16(addr) \
+  \ 
 { \
-  PORTB = ((PORTB & 0xea) | (addr & 0x0010) | ((addr & 0x0008) >> 1) | ((addr & 0x0040) >> 6)); \
-  PORTC = ((PORTC & 0xe8) | ((addr & 0x0001) << 4) | ((addr & 0x0100) >> 8)); \
-  PORTD = ((addr & 0x0080) >> 1) | ((addr & 0x0020) << 2) | ((addr & 0x0004) >> 2) | (addr & 0x0002); \
-}
+    PORTB = ((PORTB & 0xea) | (addr & 0x0010) | ((addr & 0x0008) >> 1) | ((addr & 0x0040) >> 6)); \
+    PORTC = ((PORTC & 0xe8) | ((addr & 0x0001) << 4) | ((addr & 0x0100) >> 8)); \
+    PORTD = ((addr & 0x0080) >> 1) | ((addr & 0x0020) << 2) | ((addr & 0x0004) >> 2) | (addr & 0x0002); \
+  }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Build the three 512-entry lookup tables directly in flash (PROGMEM)
@@ -300,6 +311,7 @@ uint8_t green = 12;  // PB4 -> Co Used with RAM Test Socket, see comments below!
 void setup() {
   // Init the OLED Disaplay
   u8x8.begin();
+  u8x8.setBusClock(10000000);
   u8x8.setPowerSave(0);
   u8x8.setFont(u8x8_font_7x14B_1x2_f);
   u8x8.drawString(0, 0, "   RAM-TESTER");
@@ -328,8 +340,11 @@ void setup() {
   }
   // Check if the DIP Switch is set for a valid Configuration.
   if (Mode < 2 || Mode > 5) {
-    u8x8.setInverseFont(1);
-    u8x8.drawString(0, 2, "Invalid DIP Set!");
+    u8x8.clearDisplay();
+    u8x8.setFont(u8x8_font_open_iconic_embedded_4x4);
+    u8x8.drawString(6, 0, "H");
+    u8x8.setFont(u8x8_font_7x14B_1x2_r);
+    u8x8.drawString(1, 5, "DIP Settings!");
     ConfigFail();
   }
   // With a valid Config, activate the PullUps
@@ -478,7 +493,7 @@ void rowCheck16Pin(uint16_t cols, uint16_t row, uint8_t patNr, uint8_t check) {
     //for (uint16_t col = 0; col < cols; col++) {
     do {
       setAddrData(--col, 0);
-      NOP;  // This RAM is later slow to propagate the Output, so take time to settle signals
+      //NOP;  // This RAM is later slow to propagate the Output, so take time to settle signals
       CAS_HIGH16;
       if (((PINC & 0x04) >> 2) != (pat & 0x01)) {
         error(patNr + 1, check);
@@ -488,7 +503,7 @@ void rowCheck16Pin(uint16_t cols, uint16_t row, uint8_t patNr, uint8_t check) {
   else
     do {
       setAddrData(--col, 0);
-      NOP;
+      //NOP;
       CAS_HIGH16;
       if (((PINC & 0x04) >> 2) != (nibbleArray[MIX8(col, row)] & 0x01)) {
         error(patNr + 1, check);
@@ -1085,7 +1100,7 @@ void senseSCRAM() {
   if (type == T_514400)
     type = T_514402;
   else
-    type = T_514257;
+    type = T_514258;
 }
 
 //=======================================================================================
@@ -1208,9 +1223,10 @@ void testOK() {
       delay(250);
     }
     digitalWrite(green, OFF);
-    if (ramTypes[type].smallType == true) {
+    if (ramTypes[type].smallType == true)
       digitalWrite(red, ON);
-    }
+    else
+      digitalWrite(red, OFF);
     delay(250);
   }
 }
