@@ -2,7 +2,7 @@
 
 Ram Tester for vintage CBM Computer RAM Chips (most RAM commonly used in C64 / C128 / A-500 & A-2000, many Atari and Apple Computers of the time).
 
-It is now available with or without Display.
+It is now available with or without Display.<br/>
 <img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/IMG_3591.jpeg" width="400px" align="center"/><br/>
 
 There is a short YouTube video demonstrating the tester in action. *(Note: the current version no longer requires an adapter for ZIP but includes a built-in ZIP socket):*  
