@@ -1,6 +1,6 @@
 # Ram-Tester
 
-Ram Tester for vintage CBM Computer RAM Chips (most RAM commonly used in C64 / C128 / A-500 & A-2000, many Atari and Apple Computers of the time).
+Ram Tester for vintage CBM Computer RAM Chips (most RAM commonly used in C64 / C128 / most Amiga, many Atari and Apple Computers of the time).
 
 It is now available with or without Display.<br/>
 <img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/IMG_3591.jpeg" width="400px" align="center"/><br/>
@@ -16,6 +16,15 @@ This is a hobbyist project. There is no warranty of any kind, and usage is at yo
 ## Why Build a RAM Tester?
 
 I decided to create a tester to diagnose some of the common DRAM chips used in CBM computers from 1980 to 1990.
+Overview, which RAM types can be tested (Numbers at the end are the tested retention times):
+- 4164 (64K x 1) - 2ms
+- 41256 (256K x 1) - 4ms
+- 4416 (16K x 4) - 4ms
+- 4464 (64K x 4) - 4ms
+- 44256 (256K x 4) - 4ms
+- 44258 (256K x 4) Static Column - 4ms
+- 514400 (1M x 4) - 16ms
+- 514402 (1M x 4) Static Column - 16ms
 
 ---
 
