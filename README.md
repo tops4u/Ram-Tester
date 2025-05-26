@@ -1,5 +1,5 @@
 # Vintage DRAM Tester  
-Fast – Precise – Open for all 8-/16-bit systems
+Fast – Precise – Open for many 8-/16-bit systems like C64, C128, Amigas, Atari 800XL and others, Apple IIe, Spektrum and many more
 
 <img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/IMG_3591.jpeg" width="400px" align="center"/><br/>
 
@@ -7,9 +7,9 @@ Fast – Precise – Open for all 8-/16-bit systems
 
 ## Why this tester?
 
-Most Arduino-based DRAM testers need 40 s or more per IC and check only basic functions.  
-This project completes a full memory, address and data-line test **in 12 s or less**.  
-It is one of the fastest Arduino solutions and also covers **static-column DRAMs, cell retention time and 20-pin ZIP packages**.
+Most Arduino-based DRAM testers need up to 2 mins or even more for a single 41256 RAM and check only basic functions.  
+This project completes a full memory, address, data-line and retention time test **in 12 s or less**. (add 2.5sec if using the optional Display)
+It is probably the fastest Arduino solution which also covers **static-column DRAMs, cell retention time and 20-pin ZIP packages**.
 
 ---
 
@@ -18,8 +18,8 @@ It is one of the fastest Arduino solutions and also covers **static-column DRAMs
 | Feature | Benefit |
 |---------|---------|
 | Test time <= 12 s | Rapid diagnosis on the workbench or at retro repair events |
-| Retention-time measurement | Detects weak chips by extending the refresh pause for every cell |
-| Static-column support | Reliable testing of 44258, 514402 and other SC devices |
+| Retention-time measurement | Detects weak chips by checking it meets the min retention times |
+| Static-column support | Reliable testing of 44258, 514402 static column functions|
 | 20-pin ZIP socket | Direct test of 20-pin ZIP DRAMs without an adapter |
 | Optional OLED display or LED blink codes | Full text feedback or minimal hardware setup |
 | Open hardware and firmware | KiCad, Gerber files and Arduino source under an open licence |
@@ -57,15 +57,16 @@ There is a short YouTube video demonstrating the tester in action. <br/>
 ---
 
 ## Build or buy
-Salles thread on Amibay - Sell Hw - Commodore Section [https://www.amibay.com](https://www.amibay.com/threads/memory-tester.2450230/)<br/>
-DIY PCBWay for Thru-Hole Version : https://www.pcbway.com/project/shareproject/Ram_Tester_ThruHole_Version_93863356.html
+Sales thread on Amibay: [https://www.amibay.com](https://www.amibay.com/threads/memory-tester.2450230/)<br/>
+DIY order at PCBWay for Thru-Hole Version: [https://www.pcbway.com](https://www.pcbway.com/project/shareproject/Ram_Tester_ThruHole_Version_93863356.html)
+Use the provided Gerber Files from this Repo
 
 ---
 
 ## Documentation
 
 * **Wiki** – assembly and operating guide  
-* **Software** – source code and pre-compiled HEX files  
+* **Software** – source code 
 * **Schematic** – KiCad project and Gerber files  
 * **Changelog**
 
