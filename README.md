@@ -8,7 +8,7 @@ Fast – Precise – Open for many 8-/16-bit systems like C64, C128, Amigas, Ata
 ## Why this tester?
 
 Most Arduino-based DRAM testers need up to 2 mins or even more for a single 41256 RAM and check only basic functions.  
-This project completes a full memory, address, data-line and retention time test **in 15 s or less**. (add 2.5sec if using the optional Display).
+This project completes a full memory, address, data-line and retention time test **in 15 s or less**. (or even 2.5sec faster without the Display).
 It is probably the fastest Arduino solution which also covers **static-column DRAMs, cell retention time and 20-pin ZIP packages**.
 
 ---
