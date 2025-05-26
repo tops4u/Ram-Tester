@@ -1,3 +1,7 @@
+v2.3.0 (2025-05-26)
+- Added simple possibility to exclude Display code if you don't use a Display. Speeds up Tests by 2.5sec
+- Print Firmware Version on DIP Switch Error Page
+
 v2.3.0Pre2 (2025-05-24)
 - Added Support for 514402 Static Column 1Mx4 RAM
 - Finetuning of retention Test Timings
