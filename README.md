@@ -8,7 +8,7 @@ Fast – Precise – Open for many 8-/16-bit systems like C64, C128, Amigas, Ata
 ## Why this tester?
 
 Most Arduino-based DRAM testers need up to 2 mins or even more for a single 41256 RAM and check only basic functions.  
-This project completes a full memory, address, data-line and retention time test **in 12 s or less**. (add 2.5sec if using the optional Display)
+This project completes a full memory, address, data-line and retention time test **in 15 s or less**. (add 2.5sec if using the optional Display).
 It is probably the fastest Arduino solution which also covers **static-column DRAMs, cell retention time and 20-pin ZIP packages**.
 
 ---
@@ -17,7 +17,7 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 
 | Feature | Benefit |
 |---------|---------|
-| Test time <= 12 s | Rapid diagnosis on the workbench or at retro repair events |
+| Test time <= 15 s | Rapid diagnosis on the workbench or at retro repair events |
 | Retention-time measurement | Detects weak chips by checking it meets the min retention times |
 | Static-column support | Reliable testing of 44258, 514402 static column functions|
 | 20-pin ZIP socket | Direct test of 20-pin ZIP DRAMs without an adapter |
@@ -28,16 +28,16 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 
 ## Supported DRAM types (selection)
 
-| Capacity | DIP | 20-pin ZIP | Static column |
-|----------|-----|-----------|---------------|
-| 16 K × 4 | 4416 | – | – |
-| 64 K × 1 | 4164 | - | – |
-| 64 K × 4 | 4464 | – | – |
-| 256 K × 1 | 41256 | - | – |
-| 256 K × 4 | 44256 | both | 44258 |
-| 1 M × 4 | 514256, 514400 | both | 514402 |
+| Capacity | DIP | 20-pin ZIP | Static column | Retention Time | Test Time |
+|----------|-----|-----------|---------------|----------------|-----------|
+| 16 K × 4 | 4416 | – | – | 4ms | 3.7sec |
+| 64 K × 1 | 4164 | - | – | 2ms | 5 sec |
+| 64 K × 4 | 4464 | – | – | 4ms | 6.5 sec |
+| 256 K × 1 | 41256 | - | – | 4ms | 12 sec |
+| 256 K × 4 | 44256 | both | 44258 | 4ms | 5.2 - 5.5 sec|
+| 1 M × 4 | 514256, 514400 | both | 514402 | 16ms | 12.5-14.5 sec |
 
-Most pin-compatible variants are also detected.
+Note: Above test times include the OLED Display. Without Display, the test durations are 2.5secs shorter.
 
 ---
 
@@ -58,7 +58,7 @@ There is a short YouTube video demonstrating the tester in action. <br/>
 
 ## Build or buy
 Sales thread on Amibay: [https://www.amibay.com](https://www.amibay.com/threads/memory-tester.2450230/)<br/>
-DIY order at PCBWay for Thru-Hole Version: [https://www.pcbway.com](https://www.pcbway.com/project/shareproject/Ram_Tester_ThruHole_Version_93863356.html)
+DIY order at PCBWay for Thru-Hole Version: [https://www.pcbway.com](https://www.pcbway.com/project/shareproject/Ram_Tester_ThruHole_Version_93863356.html)<br/>
 Use the provided Gerber Files from this Repo
 
 ---
