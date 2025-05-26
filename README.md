@@ -26,7 +26,7 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 
 ---
 
-## Supported DRAM types (selection)
+## Supported DRAM types 
 
 | Capacity | DIP | 20-pin ZIP | Static column | Retention Time | Test Time |
 |----------|-----|-----------|---------------|----------------|-----------|
