@@ -1,9 +1,54 @@
-# Ram-Tester
+# Vintage DRAM Tester  
+Fast – Precise – Open for all 8-/16-bit systems
 
-Ram Tester for vintage CBM Computer RAM Chips (most RAM commonly used in C64 / C128 / most Amiga, many Atari and Apple Computers of the time).
-
-It is now available with or without Display.<br/>
 <img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/IMG_3591.jpeg" width="400px" align="center"/><br/>
+
+---
+
+## Why this tester?
+
+Most Arduino-based DRAM testers need 40 s or more per IC and check only basic functions.  
+This project completes a full memory, address and data-line test **in 12 s or less**.  
+It is one of the fastest Arduino solutions and also covers **static-column DRAMs, cell retention time and 20-pin ZIP packages**.
+
+---
+
+## Key features
+
+| Feature | Benefit |
+|---------|---------|
+| Test time <= 12 s | Rapid diagnosis on the workbench or at retro repair events |
+| Retention-time measurement | Detects weak chips by extending the refresh pause for every cell |
+| Static-column support | Reliable testing of 44258, 514402 and other SC devices |
+| 20-pin ZIP socket | Direct test of 20-pin ZIP DRAMs without an adapter |
+| Optional OLED display or LED blink codes | Full text feedback or minimal hardware setup |
+| Open hardware and firmware | KiCad, Gerber files and Arduino source under an open licence |
+
+---
+
+## Supported DRAM types (selection)
+
+| Capacity | DIP | 20-pin ZIP | Static column |
+|----------|-----|-----------|---------------|
+| 16 K × 4 | 4416 | – | – |
+| 64 K × 1 | 4164 | - | – |
+| 64 K × 4 | 4464 | – | – |
+| 256 K × 1 | 41256 | - | – |
+| 256 K × 4 | 44256 | both | 44258 |
+| 1 M × 4 | 514256, 514400 | both | 514402 |
+
+Most pin-compatible variants are also detected.
+
+---
+
+## Test procedure
+
+1. Insert the device (18, 20 or 28 pins, DIP or ZIP).  
+2. Connect 5 V via USB.  
+3. Press the Start button.  
+4. Read the result  
+   * OLED version: plain-text report on the display  
+   * LED-only version: green = pass, red = fail
 
 There is a short YouTube video demonstrating the tester in action. <br/>
 [![YouTube Demonstrator Video](https://img.youtube.com/vi/9TBlnfiTfQk/0.jpg)](https://www.youtube.com/watch?v=9TBlnfiTfQk "Demonstration")<br/>
@@ -11,38 +56,24 @@ There is a short YouTube video demonstrating the tester in action. <br/>
 
 ---
 
-This is a hobbyist project. There is no warranty of any kind, and usage is at your own risk. By using any information provided here, you agree to these terms. Please read the license.
-
-## Why Build a RAM Tester?
-
-I decided to create a tester to diagnose some of the common DRAM chips used in CBM computers from 1980 to 1990.
-Overview, which RAM types can be tested (Numbers at the end are the tested retention times):
-- 4164 (64K x 1) - 2ms
-- 41256 (256K x 1) - 4ms
-- 4416 (16K x 4) - 4ms
-- 4464 (64K x 4) - 4ms
-- 44256 (256K x 4) - 4ms
-- 44258 (256K x 4) Static Column - 4ms
-- 514400 (1M x 4) - 16ms
-- 514402 (1M x 4) Static Column - 16ms
+## Build or buy
+Salles thread on Amibay - Sell Hw - Commodore Section [https://www.amibay.com](https://www.amibay.com/threads/memory-tester.2450230/)<br/>
+DIY PCBWay for Thru-Hole Version : https://www.pcbway.com/project/shareproject/Ram_Tester_ThruHole_Version_93863356.html
 
 ---
 
-## Special Features
+## Documentation
 
-- **Fast!** All tests complete within 10 seconds.
-- **Complete!** Tests include retention checks as well as column/row crosstalk.
-- **Simple!** Build it yourself for roughly $20–30, or get one directly from me. *(Sales thread on [AmiBay](https://www.amibay.com/threads/memory-tester.2450230/))*.
-- **Safe!** A built-in fuse protects the tester, and a ground short check detects internal RAM shorts.
-
----
-
-**Documentation:**  
-The documentation has been moved to the [WIKI](https://github.com/tops4u/Ram-Tester/wiki) section of this project.
+* **Wiki** – assembly and operating guide  
+* **Software** – source code and pre-compiled HEX files  
+* **Schematic** – KiCad project and Gerber files  
+* **Changelog**
 
 ---
 
-If you like this little project, you can make a small donation via the *SPONSOR* button in the top menu bar. To give you an idea, I have spent approximately:
-- **$100** in materials, including various tests and failures.
-- **80+ hours** to get the code working.
+## Contributing
 
+Pull requests, issues and forks are welcome.  
+Questions: GitHub Discussions or contact **tops4u** on AmiBay.
+
+Open-source hardware under GPL v3 – use at your own risk.
