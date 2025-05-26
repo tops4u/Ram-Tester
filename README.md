@@ -43,10 +43,9 @@ Note: Above test times include the OLED Display. Without Display, the test durat
 
 ## Test procedure
 
-1. Insert the device (18, 20 or 28 pins, DIP or ZIP).  
-2. Connect 5 V via USB.  
-3. Press the Start button.  
-4. Read the result  
+1. Insert the device (16, 18 or 20 pins, DIP or ZIP).  
+2. Connect USB power supply.  
+3. Read the result  
    * OLED version: plain-text report on the display  
    * LED-only version: green = pass, red = fail
 
