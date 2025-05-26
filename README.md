@@ -1,5 +1,5 @@
 # Vintage DRAM Tester  
-Fast – Precise – Open for many 8-/16-bit systems like C64, C128, Amigas, Atari 800XL and others, Apple IIe, Spektrum and many more
+Fast – Precise – Open for many 8-/16-bit systems like C64, C128, Amigas, Atari 800XL, 1040ST and others, Apple IIe, Spektrum and many more
 
 <img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/IMG_3591.jpeg" width="400px" align="center"/><br/>
 
