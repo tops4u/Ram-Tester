@@ -1,7 +1,7 @@
 # Vintage DRAM Tester  
 Schnell – Präzise – Offen für viele 8-/16-Bit-Systeme wie C64, C128, Amigas, Atari 800XL und andere, Apple IIe, Spektrum und viele mehr
 
-<img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/IMG_3591.jpeg" width="400px" align="center"/><br/>
+<img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/Tester.jpeg" width="400px" align="center"/><br/>
 
 ---
 
