@@ -5,13 +5,15 @@ No warranty that the list is correct or complete (surely some systems will be mi
 | --------------------------------- | --------------------------|
 | Commodore 16 / 116                | 4416 (16 K×4) DIP-18 |
 | Commodore Plus/4                  | 4416 DIP-18 |
-| Commodore 64 (Breadbin)           | 4164 (64 K×1) DIP-16 |
-| Commodore 64 C                    | 4464 (64 K×4) DIP-18 |
+| Commodore 64 (Breadbin)           | 4164 (64K×1) DIP-16 |
+| Commodore 64 C                    | 4464 (64K×4) DIP-18 |
 | C128 / 128D (early PCB)           | 4164 DIP-16 |
 | C128DCR (1986)                    | 4464 DIP-18 |
-| Amiga 1000                        | 41256 (256 K×1) DIP-16 |
+|Amiga 500 Rev 5/6	                | 41256 (256K×1) DIP-16 |
+|Amiga 500 Plus (Rev 8)	            | 514256 (256K×4) DIP-18 |
+| Amiga 1000                        | 41256 (256K×1) DIP-16 |
 | Amiga 2000 Rev 4.x                | 41256 DIP-16 |
-| Amiga 2000 Rev 6.x                | 514256 (256 K×4) DIP-20 |
+| Amiga 2000 Rev 6.x                | 514256 (256K×4) DIP-20 |
 | Amiga 3000 (Fast-RAM, DIP-Socket) | 514256 DIP-20 |
 | Amiga 3000 (Fast-RAM, ZIP-Socket) | 514402 (1 M×4 Static-Column) ZIP-20 |
 | Amiga 4000 (Chip-RAM)             | 514400 (1 M×4) DIP-20 |
@@ -22,12 +24,15 @@ No warranty that the list is correct or complete (surely some systems will be mi
 | Atari 130XE (late)               | 4464 DIP-18 |
 | Atari 520 ST                      | 41256 DIP-16 |
 | Atari 1040 ST                     | 41256 DIP-16 |
+| Atari Falcon 030                  | 514256 (DIP-20) |
 | Apple IIe                         | 4164 DIP-16 |
 | Apple IIc (v1 1984)               | 4164 DIP-16 |
 | Apple IIc (v2 1986)               | 4464 DIP-18 |
 | Apple IIGS                        | 41256 DIP-16 |
 | Macintosh 128 K                   | 4164 DIP-16 |
 | Macintosh 512 K                   | 41256 DIP-16 |
+| Macintosh Plus | 41256 DIP-16 |
+| Macintosh Classic | 514256 DIP-20 |
 | KC 85/3 (DDR)                     | 4164 DIP-16 |
 | Robotron A 7150                   | 41256 DIP-16 |
 | Pravetz 8M (BG)                   | 4164 DIP-16 |
