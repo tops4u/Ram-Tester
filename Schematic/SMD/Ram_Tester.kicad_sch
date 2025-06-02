@@ -8036,7 +8036,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "47"
+		(property "Value" "47R"
 			(at 205.74 78.7399 0)
 			(effects
 				(font
@@ -8219,7 +8219,7 @@
 			(uuid "fd3b4b0d-12d4-44e3-bb84-64ea38307446")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "U3")
 					(unit 1)
@@ -8245,7 +8245,7 @@
 				)
 			)
 		)
-		(property "Value" "47"
+		(property "Value" "47R"
 			(at 111.76 110.744 90)
 			(effects
 				(font
@@ -8441,7 +8441,7 @@
 			(uuid "fd019091-6085-46d7-aa5f-e9ddb88b2132")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "Y1")
 					(unit 1)
@@ -8467,7 +8467,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "47"
+		(property "Value" "47R"
 			(at 188.214 78.74 90)
 			(effects
 				(font
@@ -8536,7 +8536,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "150"
+		(property "Value" "150R"
 			(at 149.86 179.578 90)
 			(effects
 				(font
@@ -8716,7 +8716,7 @@
 			(uuid "a8c6fb22-93c7-4834-9374-661052565380")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "F1")
 					(unit 1)
@@ -8742,7 +8742,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330"
+		(property "Value" "470R"
 			(at 132.08 179.578 90)
 			(effects
 				(font
@@ -8855,7 +8855,7 @@
 			(uuid "eadc11be-76e0-4f01-aa13-23493e0a43b0")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "C3")
 					(unit 1)
@@ -8880,7 +8880,7 @@
 				)
 			)
 		)
-		(property "Value" "47"
+		(property "Value" "47R"
 			(at 133.35 63.5 90)
 			(effects
 				(font
@@ -8922,7 +8922,7 @@
 			(uuid "385f48e4-ebd0-4eda-ac7e-1f161aa2cead")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "R7")
 					(unit 1)
@@ -9002,7 +9002,7 @@
 			(uuid "6c5cca81-30f9-41b7-925c-049fca3e49ec")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "J2")
 					(unit 1)
@@ -9157,7 +9157,7 @@
 			(uuid "4d4eb406-2b7e-4030-9571-6963c62f4fea")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "SW1")
 					(unit 1)
@@ -9230,7 +9230,7 @@
 			(uuid "3b9ade56-fa0e-4502-885f-00a1eb5fdcf6")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "J1")
 					(unit 1)
@@ -9352,7 +9352,7 @@
 			(uuid "4d97d657-d474-4df3-9438-56cc6d9e548e")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "U2")
 					(unit 1)
@@ -9421,7 +9421,7 @@
 			(uuid "3a5ae54b-28cf-47d1-8cf6-f9b84cea9ef1")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "R9")
 					(unit 1)
@@ -9446,7 +9446,7 @@
 				)
 			)
 		)
-		(property "Value" "USB_C_Receptacle_PowerOnly_6P"
+		(property "Value" "KUSBX-SMT-CS-6-BTR"
 			(at 29.21 52.07 0)
 			(effects
 				(font
@@ -9503,7 +9503,7 @@
 			(uuid "39a15b2e-afed-4969-9482-0f09a2575876")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "J3")
 					(unit 1)
@@ -9598,7 +9598,7 @@
 				)
 			)
 		)
-		(property "Value" "LED_Dual_AAKK"
+		(property "Value" "VS 3JD8"
 			(at 92.583 176.53 0)
 			(effects
 				(font
@@ -9646,7 +9646,7 @@
 			(uuid "1037456d-0d31-41a8-b835-c5bdc4e83e60")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "D1")
 					(unit 1)
@@ -9721,7 +9721,7 @@
 			(uuid "86c8ced6-e79a-49c7-a997-377e21dd673f")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "Q1")
 					(unit 1)
@@ -9791,7 +9791,7 @@
 			(uuid "4a20e161-4fcd-4df3-a14d-a35934e86d00")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "C5")
 					(unit 1)
@@ -9861,7 +9861,7 @@
 			(uuid "d235e2e5-9a47-43c0-98ba-a358e8074813")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "C2")
 					(unit 1)
@@ -9956,7 +9956,7 @@
 				)
 			)
 		)
-		(property "Value" "47"
+		(property "Value" "47R"
 			(at 114.046 133.35 90)
 			(effects
 				(font
@@ -10089,7 +10089,7 @@
 			(uuid "0a2f3c5f-0966-4cb5-8a58-0436eddb4b53")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "SW2")
 					(unit 1)
@@ -10185,7 +10185,7 @@
 				)
 			)
 		)
-		(property "Value" "47"
+		(property "Value" "47R"
 			(at 118.11 66.04 90)
 			(effects
 				(font
@@ -10245,7 +10245,7 @@
 			(uuid "802bb844-0ad2-4342-9b09-29376ebb873f")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "RN1")
 					(unit 1)
@@ -10475,7 +10475,7 @@
 			(uuid "07940698-04a1-4c31-a33e-212c93693bb8")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "U1")
 					(unit 1)
@@ -10614,7 +10614,7 @@
 			(uuid "5497b98d-4475-4cdd-a6e4-f99c8a0febbb")
 		)
 		(instances
-			(project ""
+			(project "Ram_Tester"
 				(path "/9a90cd34-b6db-44ec-969f-9bfdcecefc17"
 					(reference "C1")
 					(unit 1)
