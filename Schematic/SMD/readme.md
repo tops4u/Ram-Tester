@@ -12,12 +12,12 @@ This is the SMD Version
 - R3, R4, R5 3x SMD 0603 1M Resistor
 - R2 1x SMD 0603 1k Resistor
 - R1 1x SMD 0603 150R Resistor
-- R6 1x SMD 0603 330R Resistor
+- R6 1x SMD 0603 470R Resistor
 - R7, R8 2x SMD 0603 47R Resistor
 - RNx 4x SMD 0603 47R 4xArray
 - U1 Atmega328P-AU SMD
 - U2 1x ZIF Socket / DIP Socket 20 Pin [AliExpress](https://aliexpress.com/item/1005007205054381.html)
-- D1 1x BiColor 0603 [AliExpress](https://aliexpress.com/item/1005006283807337.html) -> Note the seller claims 0805 but it is 0603
+- D1 1x BiColor 0605 [AliExpress](https://aliexpress.com/item/1005006283807337.html) -> Note the seller claims 0805 but it is 0605
 - SW1 1x 3 way Dip-Switch [AliExpress](https://aliexpress.com/item/4001205849246.html)
 - SW2 Pushbutton [AliExpress](https://aliexpress.com/item/4000555847543.html)
 - Q1, Q2 SMD BSS138 SOT-23
