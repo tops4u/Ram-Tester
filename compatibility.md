@@ -1,5 +1,5 @@
-**System Compatibility List**
-No warranty that the list is correct or complete (surely some systems will be missing). 
+# System Compatibility List
+*No warranty that the list is correct or complete (surely some systems will be missing).*
 
 | Computer / Modell (Revision)      | Used Ram Chips |
 | --------------------------------- | --------------------------|
