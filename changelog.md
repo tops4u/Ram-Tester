@@ -1,3 +1,7 @@
+v2.3.1 (2025-06-06)
+- Added some more in depth address decoder checks
+- Added a "RAM Inserted?" Screen when autodetect was not able to determine the RAM
+  
 v2.3.0 (2025-05-26)
 - Added simple possibility to exclude Display code if you don't use a Display. Speeds up Tests by 2.5sec
 - Print Firmware Version on DIP Switch Error Page
