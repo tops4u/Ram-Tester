@@ -55,6 +55,27 @@ Es gibt ein kurzes YouTube-Video, das den Tester in Aktion zeigt. <br/>
 
 ---
 
+## Was wird getestet?
+1. GND-Kurzschlüsse, falls Ihr RAM einen Kurzschluss gegen GND an einem Pin hat
+2. Netzteil-Kurzschlüsse - es gibt eine rückstellbare Sicherung zum Schutz der Platine
+3. Adressleitungs- oder Decoder-Fehler
+4. Hängende Zellen oder Übersprechen durch verschiedene Testmuster
+5. Zufällige Muster kombiniert mit Datenerhaltungszeit-Prüfungen
+6. Alle oben genannten Tests verwenden Fast Page Mode oder Static Column Steuerung je nach RAM-Chip-Typ
+
+### Warum also kein MARCH-B?
+Hier ist die Analyse dieses Algorithmus gegenüber March-B
+
+| Aspekt | Aktueller Code | MARCH-B |
+| --- | --- | --- |
+| Muster-Abdeckung | ✅ 0x00, 0xFF, 0xAA, 0x55 | ✅ 0, 1 |
+| 0,1-Übergangstests | ✅ Durch Muster-Sequenz | ✅ Durch R0W1, R1W0 |
+| Adress-Sequenz | ⚠️ Nur aufsteigend | ✅ Auf-/absteigend |
+| Kopplungserkennung | ✅ Durch Retention-Verzögerung | ✅ Systematisch |
+| Echte Datenerhaltung | ✅ 2-16ms Tests | ❌ Nur µs-Bereich |
+
+---
+
 ## Selbst bauen oder kaufen  
 Verkaufsthread auf Amibay: [https://www.amibay.com](https://www.amibay.com/threads/memory-tester.2450230/)<br/>
 DIY-Bestellung bei PCBWay für die THT-Version: [https://www.pcbway.com](https://www.pcbway.com/project/shareproject/Ram_Tester_ThruHole_Version_93863356.html)<br/>
