@@ -55,6 +55,26 @@ There is a short YouTube video demonstrating the tester in action. <br/>
 
 ---
 
+## What does it test?
+1. GND Shorts, if you RAM has a Short to GND on any Pin
+2. Power Supply Shorts - well there is a resetable fuse to protect the board
+3. Addressline or decoder faults
+4. Stuck Cells or Crosstalk by using various patterns
+5. Random patterns combined with retention time checks
+6. All of the above uses Fast Page Mode or Static Column control depending on RAM Chip type
+
+### So why no MARCH-B?
+Here is the analytics of this algorithm vs. March-B
+
+| Aspect | Actual Code | MARCH-B |
+| --- | --- | --- |
+| Pattern Coverage     | ✅ 0x00, 0xFF, 0xAA, 0x55 | ✅                   | 
+| 0, 1Transition Tests | ✅ Thru Pattern-Sequence  | ✅ Thru R0W1, R1W0   |
+| Address Sequence     | ⚠️ Ascending only         | ✅ Asc-/Descending   |
+| Coupling Detection   | ✅ By Retention-Delay     | ✅ Systematically    |
+| Real Retention       | ✅ 2-16ms Tests           | ❌ Only µs-Range     |
+
+---
 ## Build or buy
 Sales thread on Amibay: [https://www.amibay.com](https://www.amibay.com/threads/memory-tester.2450230/)<br/>
 DIY order at PCBWay for Thru-Hole Version: [https://www.pcbway.com](https://www.pcbway.com/project/shareproject/Ram_Tester_ThruHole_Version_93863356.html)<br/>
