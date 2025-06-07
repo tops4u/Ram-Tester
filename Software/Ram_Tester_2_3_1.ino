@@ -2,8 +2,8 @@
 // ======================================
 //
 // Author: Andreas Hoffmann
-// Version: 2.3.0
-// Date: 23.05.2025
+// Version: 2.3.1.fix
+// Date: 07.06.2025
 //
 // This software is published under GPL 3.0. Respect the license terms.
 // Project hosted at: https://github.com/tops4u/Ram-Tester/
