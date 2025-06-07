@@ -14,7 +14,6 @@
 // Error LED Codes:
 // - Long Green - Long Red - Steady Green : Test mode active
 // - Continuous Red Blinking: Configuration error (e.g., DIP switches). Can also occur due to RAM defects.
-// - Short Green flashes: Check if there is a Ram inserted
 // - 1 Red & n Green: Address decoder error. Green flashes indicate the failing address line (no green flash for A0).
 // - 2 Red & n Green: RAM test error. Green flashes indicate which test pattern failed.
 // - 3 Red & n Green: Row crosstalk or data retention (refresh) error. Green flashes indicate the failed test pattern.
@@ -60,6 +59,7 @@
 //          Code Version output in DIP Switch Error Screen.
 // - 2.3.1 : Improved Address & Decoder Checks
 //           RAM Inserted? Display
+// - 2.3.1.fix Timing issue with 20Pin address tests
 //
 // Disclaimer:
 // This project is for hobbyist use. There are no guarantees regarding its fitness for a specific purpose
@@ -768,7 +768,7 @@ void Sense41256() {
       // If A8 Line is set and it is a fail, this might be a 6464 Type
       if (a == 8)
         big = false;
-      else 
+      else
         error(1, 0);
     }
     CAS_HIGH16;
@@ -1168,7 +1168,6 @@ void test20Pin() {
   DDRB = 0b00011111;
   DDRC = 0b00011111;
   DDRD = 0xFF;
-  isRAM_20Pin_present();
   senseRAM_20Pin();
   senseSCRAM();
 #ifdef OLED
@@ -1354,7 +1353,6 @@ void checkAdressing_20Pin() {
   //===========================================================================
   // PHASE 1: ROW ADDRESS LINES TESTING
   //===========================================================================
-
   DDRC |= 0x0f;  // IOs als Output
   RAS_HIGH20;
   CAS_HIGH20;
@@ -1362,27 +1360,34 @@ void checkAdressing_20Pin() {
   WE_LOW20;
 
   // Write Phase - Walking-Bit Pattern für Row-Adressen
-  cli();
   for (uint8_t bit = 0; bit <= row_bits; bit++) {
-    register uint16_t test_addr = (bit == 0) ? 0 : (1 << (bit - 1));
+    register uint16_t test_row = (bit == 0) ? 0 : (1 << (bit - 1));
     register uint8_t test_data = (bit == 0) ? 0x00 : 0x55;
+    register uint8_t test_col = 0x00;  // Feste Column für Row-Test
 
-    // Direkte Port-Manipulation
-    register uint8_t addr_msb = test_addr >> 8;
-    register uint8_t addr_lsb = test_addr & 0xff;
+    // Phase 1: Row-Adresse setzen und RAS aktivieren
+    register uint8_t row_msb = test_row >> 8;
+    register uint8_t row_lsb = test_row & 0xff;
 
-    PORTB = (PORTB & 0xef) | ((addr_msb & 0x01) << 4);
-    PORTC = (PORTC & 0xe0) | ((addr_msb & 0x02) << 3) | (test_data & 0x0f);
-    PORTD = addr_lsb;
-
+    PORTB = (PORTB & 0xef) | ((row_msb & 0x01) << 4);
+    PORTC = (PORTC & 0xe0) | ((row_msb & 0x02) << 3);
+    PORTD = row_lsb;
     RAS_LOW20;
-    NOP;
+
+    // Phase 2: Column-Adresse setzen und CAS aktivieren
+    register uint8_t col_msb = test_col >> 8;
+    register uint8_t col_lsb = test_col & 0xff;
+
+    PORTB = (PORTB & 0xef) | ((col_msb & 0x01) << 4);
+    PORTC = (PORTC & 0xe0) | ((col_msb & 0x02) << 3) | (test_data & 0x0f);
+    PORTD = col_lsb;
+
     CAS_LOW20;
     NOP;
     CAS_HIGH20;
+    NOP;
     RAS_HIGH20;
   }
-  sei();
 
   WE_HIGH20;
 
@@ -1391,32 +1396,38 @@ void checkAdressing_20Pin() {
   PORTC &= 0xe0;
   OE_LOW20;
 
-  cli();
   for (uint8_t bit = 0; bit <= row_bits; bit++) {
-    register uint16_t test_addr = (bit == 0) ? 0 : (1 << (bit - 1));
+    register uint16_t test_row = (bit == 0) ? 0 : (1 << (bit - 1));
     register uint8_t expected_data = (bit == 0) ? 0x00 : 0x55;
+    register uint8_t test_col = 0x00;  // Dieselbe Column
 
-    register uint8_t addr_msb = test_addr >> 8;
-    register uint8_t addr_lsb = test_addr & 0xff;
+    // Phase 1: Row-Adresse setzen
+    register uint8_t row_msb = test_row >> 8;
+    register uint8_t row_lsb = test_row & 0xff;
 
-    PORTB = (PORTB & 0xef) | ((addr_msb & 0x01) << 4);
-    PORTC = (PORTC & 0xef) | ((addr_msb & 0x02) << 3);
-    PORTD = addr_lsb;
-
+    PORTB = (PORTB & 0xef) | ((row_msb & 0x01) << 4);
+    PORTC = (PORTC & 0xef) | ((row_msb & 0x02) << 3);
+    PORTD = row_lsb;
     RAS_LOW20;
-    NOP;
+
+    // Phase 2: Column-Adresse setzen
+    register uint8_t col_msb = test_col >> 8;
+    register uint8_t col_lsb = test_col & 0xff;
+
+    PORTB = (PORTB & 0xef) | ((col_msb & 0x01) << 4);
+    PORTC = (PORTC & 0xef) | ((col_msb & 0x02) << 3);
+    PORTD = col_lsb;
+
     CAS_LOW20;
     NOP;
-
-    if ((PINC & 0x0f) != (expected_data & 0x0f)) {
-      sei();
+    NOP;
+    if ((expected_data & 0x0f) != (PINC & 0x0f)) {
       error(bit, 1);  // Row address line error
     }
 
     CAS_HIGH20;
     RAS_HIGH20;
   }
-  sei();
 
   OE_HIGH20;
 
@@ -1471,7 +1482,7 @@ void checkAdressing_20Pin() {
 
     CAS_LOW20;
     NOP;
-
+    NOP;
     if ((PINC & 0x0f) != (expected_data & 0x0f)) {
       sei();
       error(bit + 16, 1);  // Column address line error (16-31)
@@ -1504,13 +1515,15 @@ void checkAdressing_20Pin() {
     PORTD = gray_addr & 0xff;
 
     RAS_LOW20;
+    NOP;
     CAS_LOW20;
     NOP;
     CAS_HIGH20;
+    NOP;
     RAS_HIGH20;
   }
   sei();
-
+  NOP;
   WE_HIGH20;
 
   // Gray-Code Verifikation
@@ -1531,7 +1544,7 @@ void checkAdressing_20Pin() {
     RAS_LOW20;
     CAS_LOW20;
     NOP;
-
+    NOP;
     if ((PINC & 0x0f) != (expected_data & 0x0f)) {
       sei();
       error(32 + (i & 0x1f), 1);  // Decoder error (32-63)
@@ -1588,39 +1601,6 @@ void senseRAM_20Pin() {
     }
     OE_HIGH20;
   }
-  // // Check Column address lines, buffers and decoders
-  // rASHandlingPin20(0);
-  // DDRC |= 0x0f;   // Configure IOs for Output
-  // PORTC &= 0xe0;  // Set all Outputs and A9 to LOW
-  // WE_LOW20;
-  // CAS_LOW20;
-  // CAS_HIGH20;
-  // for (uint8_t a = 0; a <= 9; a++) {
-  //   uint16_t adr = (1 << a);
-  //   PORTD = (adr & 0xff);  // Set Col Adress
-  //   msbHandlingPin20(adr >> 8);
-  //   DDRC |= 0x0f;   // Configure IOs for Output
-  //   PORTC |= 0x0f;  // Set all Bit
-  //   WE_LOW20;
-  //   CAS_LOW20;
-  //   CAS_HIGH20;
-  //   WE_HIGH20;
-  //   PORTD = 0x00;   // Set Col Adress
-  //   PORTB &= 0xef;  // Clear address Bit 8
-  //   PORTC &= 0xef;  // A9 to LOW
-  //   DDRC &= 0xf0;   // Configure IOs for Input
-  //   OE_LOW20;
-  //   CAS_LOW20;
-  //   CAS_HIGH20;
-  //   if ((PINC & 0xf) != 0x0) {  // Read the Data at this address
-  //     if ((a == 9) && (big == false))
-  //       NOP;  // Row Testing showed already the small type. If it did not we have a Problem.
-  //     else {
-  //       error(a, 1);
-  //     }
-  //   }
-  //   OE_HIGH20;
-  // }
   if (big)
     type = T_514400;
   else
@@ -1633,9 +1613,7 @@ void senseSCRAM() {
   PORTC &= 0xe0;  // Set all Outputs and A9 to LOW
   DDRC |= 0x0f;   // IOs as Outputs
   rASHandlingPin20(0);
-  // Row address line, buffer and decoder test
   WE_LOW20;
-  CAS_LOW20;
   for (uint8_t col = 0; col <= 16; col++) {
     PORTC = ((PORTC & 0xf0) | (col & 0x0f));
     PORTD = col;  // Set Col Adress
@@ -1660,38 +1638,13 @@ void senseSCRAM() {
       return;
     }
   }
+  CAS_HIGH20;
+  OE_HIGH20;
+  RAS_HIGH20;
   if (type == T_514400)
     type = T_514402;
   else
     type = T_514258;
-}
-
-boolean isRAM_20Pin_present() {
-  // Method 1: Floating Pin Check
-  // Wenn kein RAM eingesetzt ist, floaten die Data-Pins
-  OE_LOW20;
-  DDRC &= 0xf0;   // Data-Pins als Input
-  PORTC &= 0xf0;  // Pullups aus
-
-  // Kurz warten bis Pins floaten
-  delayMicroseconds(10);
-
-  uint8_t floating_test1 = PINC & 0x0f;
-  delayMicroseconds(5);
-  uint8_t floating_test2 = PINC & 0x0f;
-  OE_HIGH20;
-  // Floating Pins ändern sich oft zufällig
-  if (floating_test1 != floating_test2) {
-#ifdef OLED
-    u8x8.clearDisplay();
-    u8x8.setFont(u8x8_font_open_iconic_check_4x4);
-    u8x8.drawString(6, 0, "B");
-    u8x8.setFont(u8x8_font_7x14B_1x2_r);
-    u8x8.drawString(0, 5, "RAM present?");
-    while (true)
-      ;
-#endif
-  }
 }
 
 //=======================================================================================
@@ -1746,11 +1699,11 @@ void error(uint8_t code, uint8_t error) {
   u8x8.clearDisplay();
   switch (error) {
     case 0:
-        u8x8.setFont(u8x8_font_open_iconic_embedded_4x4);
-        u8x8.drawString(6, 0, "G");
-        u8x8.setFont(u8x8_font_7x14B_1x2_r);
-        u8x8.drawString(1, 5, "RAM Inserted?");
-        break;
+      u8x8.setFont(u8x8_font_open_iconic_embedded_4x4);
+      u8x8.drawString(6, 0, "G");
+      u8x8.setFont(u8x8_font_7x14B_1x2_r);
+      u8x8.drawString(1, 5, "RAM Inserted?");
+      break;
     case 1:
       {
         u8x8.setFont(u8x8_font_open_iconic_check_4x4);
