@@ -56,7 +56,7 @@
 | Board name (manufacturer) | DRAM package / organisation                       |
 | ------------------------- | ------------------------------------------------- |
 | **Gigatron A1000**        | 256 K × 1 DIP-16 (41256)  |
-| ~~**Roßmöller A8 MB-1000**~~  | 1 M × 1 DIP-16 (41C1000) |
+| ~~**Roßmöller A8 MB-1000**~~  | ~~1 M × 1 DIP-16 (41C1000)~~ |
 
 ### Amiga 500/500+
 | Board name                                      | DRAM package / organisation       |
@@ -74,12 +74,12 @@
 | Board name                     | DRAM package / organisation                                     |
 | ------------------------------ | --------------------------------------------------------------- |
 | **Commodore A2052**            | 256 K × 1 DIP-16 (41256)            |
-| ~~**Commodore A2058**~~            | 1 M × 1 DIP-16 (41C1000)             |
+| ~~**Commodore A2058**~~            | ~~1 M × 1 DIP-16 (41C1000)~~             |
 | **Commodore A2091** (SCSI+RAM) | 256 K × 4 DIP-16 (44256)             |
 | **3-State MegaMix III / IV**   | 256 K × 4 ZIP-20 (414256)         |
 | **BSC Memory Master**          | 1 M × 4 ZIP-20 (514400)              |
 | **Alfa Data AlfaRam RA2-8 M**  | 1 M × 4 ZIP-20 (514400)               |
-| ~~**ICD AdRAM 2080**~~             | 1 M × 1 DIP-16 (41C1000)               |
+| ~~**ICD AdRAM 2080**~~             | ~~1 M × 1 DIP-16 (41C1000)~~               |
 | **Omega Datentechnik RE9**     | 1 M × 4 ZIP-20 (514400)                 |
 | **GVP Impact A2000-RAM8**      | 256 K × 1 DIP-16 (41256) for base 2 MB ( |
 
