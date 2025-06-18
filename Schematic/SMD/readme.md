@@ -14,6 +14,7 @@ This is the SMD Version
 - R1 1x SMD 0603 150R Resistor
 - R6 1x SMD 0603 470R Resistor
 - R7, R8 2x SMD 0603 47R Resistor
+- R9, R10 2 x SMD 0603 5k1 Resistor
 - RNx 4x SMD 0603 47R 4xArray
 - U1 Atmega328P-AU SMD
 - U2 1x ZIF Socket / DIP Socket 20 Pin [AliExpress](https://aliexpress.com/item/1005007205054381.html)
@@ -29,3 +30,5 @@ If you want to use ICSP:
   
 If you want to use the ZIP Socket
 - U3 2x 10Pin Pin Header Female [AliExpress](https://aliexpress.com/item/32717301965.html)
+
+Regarding R1/R6 depends on the LED you use. For the linked one of Aliexpress R6 could even be 500-560 Ohms.
