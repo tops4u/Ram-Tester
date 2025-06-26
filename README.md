@@ -17,7 +17,7 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 
 | Feature | Benefit |
 |---------|---------|
-| Test time <= 15 s | Rapid diagnosis on the workbench or at retro repair events |
+| Most tests are <= 10s | Rapid diagnosis on the workbench or at retro repair events |
 | Retention-time measurement | Detects weak chips by checking it meets the min retention times |
 | Static-column support | Reliable testing of 44258, 514402 static column functions|
 | 20-pin ZIP socket | Direct test of 20-pin ZIP DRAMs without an adapter |
