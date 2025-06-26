@@ -30,14 +30,15 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 
 | Capacity | DIP | 20-pin ZIP | Static column | Retention Time | Test Time |
 |----------|-----|-----------|---------------|----------------|-----------|
-| 16 K × 4 | 4416 | – | – | 4ms | 3.7sec |
-| 64 K × 1 | 4164 | - | – | 2ms | 5 sec |
-| 64 K × 4 | 4464 | – | – | 4ms | 6.5 sec |
-| 256 K × 1 | 41256 | - | – | 4ms | 12 sec |
-| 256 K × 4 | 44256 | both | 44258 | 4ms | 5.2 - 5.5 sec|
-| 1 M × 4 | 514256, 514400 | both | 514402 | 16ms | 12.5-14.5 sec |
+| 16 K × 4 | 4416 | – | – | 4ms | 2.6sec |
+| 64 K × 1 | 4164 | - | – | 2ms | 3.5 sec |
+| 64 K × 4 | 4464 | – | – | 4ms | 5.2 sec |
+| 256 K × 1 | 41256 | - | – | 4ms | 8.9 sec |
+| 256 K × 4 | 44256 | both | 44258 | 4ms | 3.8 sec|
+| 1 M x 1 | 411000 | NO! | - | 8ms | 28 sec |
+| 1 M × 4 | 514400 | both | 514402 | 16ms | 8.9 sec |
 
-Note: Above test times include the OLED Display. Without Display, the test durations are 2.5secs shorter.
+Note: Above test times include the OLED Display. Without Display, the test durations are approx 1.7 sec shorter.
 
 ---
 
