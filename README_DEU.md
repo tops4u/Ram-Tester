@@ -17,7 +17,7 @@ Es ist wahrscheinlich die schnellste Arduino-Lösung, die außerdem **Static-Col
 
 | Funktion | Vorteil |
 |----------|---------|
-| Testzeit <= 15 s | Schnelle Diagnose auf der Werkbank oder bei Retro-Reparatur-Events |
+| Die meisten Tests <= 10 s | Schnelle Diagnose auf der Werkbank oder bei Retro-Reparatur-Events |
 | Retention-Zeitmessung | Erkennt schwache Chips durch Prüfung auf minimale Retention-Zeiten |
 | Static-Column-Unterstützung | Zuverlässige Prüfung von 44258, 514402 Static-Column-Funktionen |
 | 20-poliger ZIP-Sockel | Direkter Test von 20-poligen ZIP-DRAMs ohne Adapter |
@@ -30,14 +30,15 @@ Es ist wahrscheinlich die schnellste Arduino-Lösung, die außerdem **Static-Col
 
 | Kapazität | DIP | 20-pol ZIP | Static Column | Retention-Zeit | Testzeit |
 |-----------|-----|------------|----------------|-----------------|----------|
-| 16 K × 4 | 4416 | – | – | 4ms | 3,7 Sek. |
-| 64 K × 1 | 4164 | - | – | 2ms | 5 Sek. |
-| 64 K × 4 | 4464 | – | – | 4ms | 6,5 Sek. |
-| 256 K × 1 | 41256 | - | – | 4ms | 12 Sek. |
-| 256 K × 4 | 44256 | beide | 44258 | 4ms | 5,2 - 5,5 Sek. |
-| 1 M × 4 | 514256, 514400 | beide | 514402 | 16ms | 12,5 - 14,5 Sek. |
+| 16 K × 4 | 4416 | – | – | 4ms | 2.6sec |
+| 64 K × 1 | 4164 | - | – | 2ms | 3.5 sec |
+| 64 K × 4 | 4464 | – | – | 4ms | 5.2 sec |
+| 256 K × 1 | 41256 | - | – | 4ms | 8.9 sec |
+| 256 K × 4 | 44256 | beide | 44258 | 4ms | 3.8 sec|
+| 1 M x 1 | 411000 | Nur DIP! | - | 8ms | 28 sec |
+| 1 M × 4 | 514400 | beide | 514402 | 16ms | 8.9 sec |
 
-Hinweis: Die oben genannten Testzeiten beinhalten das OLED-Display. Ohne Display verkürzen sich die Zeiten um 2,5 Sekunden.
+Hinweis: Die oben genannten Testzeiten beinhalten das OLED-Display. Ohne Display verkürzen sich die Zeiten um ca 1.7 Sekunden.
 
 ---
 
