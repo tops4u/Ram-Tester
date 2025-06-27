@@ -35,7 +35,7 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 | 64 K × 4 | 4464 | – | – | 4ms | 5.2 sec |
 | 256 K × 1 | 41256 | - | – | 4ms | 8.9 sec |
 | 256 K × 4 | 44256 | both | 44258 | 4ms | 3.8 sec|
-| 1 M x 1 | 411000 | NO! | - | 8ms | 28 sec |
+| 1 M x 1 | 411000 | !NO! | - | 8ms | 28 sec |
 | 1 M × 4 | 514400 | both | 514402 | 16ms | 8.9 sec |
 
 Note: Above test times include the OLED Display. Without Display, the test durations are approx 1.7 sec shorter.
