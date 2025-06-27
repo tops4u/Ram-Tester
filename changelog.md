@@ -1,3 +1,9 @@
+v2.4.0 (2025-06-26)
+- Support for 411000 added. Test takes 28 secs
+- General Speed improvements, see table below for details.
+- **Important Notice:** I’ve modified the load on the output pins of the 18‑pin chips by enabling the pull‑ups, so that the RAM must actively pull the outputs LOW when required. This change was necessary because parasitic capacitances were holding the input levels even after the RAM pin switched to output mode—even when the RAM was unplugged between tests. With pull‑ups enabled, all I/Os are now held at 5 V unless the RAM actively drives them low.
+However, older RAM modules or those produced with earlier processes often have weaker output drivers. While they may work fine in environments with minimal loading, their driver strength can be insufficient for this test setup—potentially leading to false‑negative results.
+
 v2.3.1 (2025-06-06)
 - Added some more in depth address decoder checks
 - Added a "RAM Inserted?" Screen when autodetect was not able to determine the RAM
