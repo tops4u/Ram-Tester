@@ -1,3 +1,7 @@
+v2.4.1 (2025-06-27)
+- EEPROM controlled Pseudo Random Data Flip added to have 100% Cell coverage in Random and Retention Tests if user wants it.
+- Added DIAG Macro to Enable / Disable Diag Mode after Firmware upload
+  
 v2.4.0 (2025-06-26)
 - Support for 411000 added. Test takes 28 secs
 - General Speed improvements, see table below for details.
