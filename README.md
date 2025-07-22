@@ -76,8 +76,10 @@ Here is the analytics of this algorithm vs. March-B
 | Real Retention       | ✅ 2-16ms Tests           | ❌ Only µs-Range     |
 
 ---
-## Build or buy
+## Build or buy - the choice is yours
 Sales thread on Amibay: [https://www.amibay.com](https://www.amibay.com/threads/memory-tester.2450230/)<br/>
+Product Listing on Tindie: [https://www.tindie.com](https://www.tindie.com/products/38927/)<br/>
+Product Listing on EBAY: [https://www.ebay.ch](https://www.ebay.ch/itm/135957529215)<br/>
 DIY order at PCBWay for Thru-Hole Version: [https://www.pcbway.com](https://www.pcbway.com/project/shareproject/Ram_Tester_ThruHole_Version_93863356.html)<br/>
 Use the provided Gerber Files from this Repo
 
