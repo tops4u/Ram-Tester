@@ -1,3 +1,6 @@
+v2.4.2 (2025-07-28)
+- Bugfix for EEPROM wear leveling algorithm. It stopped working after the first EEPROM Cell was full. 
+
 v2.4.1 (2025-06-27)
 - EEPROM controlled Pseudo Random Data Flip added to have 100% Cell coverage in Random and Retention Tests if user wants it.
 - Added DIAG Macro to Enable / Disable Diag Mode after Firmware upload
