@@ -1,3 +1,5 @@
+3rd Party Licenses, see bottom of file
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
@@ -672,3 +674,47 @@ may consider it more useful to permit linking proprietary applications with
 the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 <https://www.gnu.org/licenses/why-not-lgpl.html>.
+
+
+Third Party Licenses
+====================
+This project makes use of third-party libraries and components.  
+The following notices are provided in compliance with their respective licenses.
+
+-------------------------------------------------------------------------------
+Arduino Core Libraries
+-------------------------------------------------------------------------------
+Files: Arduino.h, EEPROM.h  
+License: GNU Lesser General Public License (LGPL) v2.1  
+Source: https://github.com/arduino/ArduinoCore-avr
+
+These files are part of the official Arduino Core and are licensed under
+the LGPL 2.1. You may redistribute and/or modify them under the terms of
+the LGPL as published by the Free Software Foundation.
+
+-------------------------------------------------------------------------------
+avr-libc
+-------------------------------------------------------------------------------
+Files: avr/pgmspace.h  avr/io.h
+License: Modified BSD License  
+Source: https://savannah.nongnu.org/projects/avr-libc/
+
+Portions of this project use avr-libc, which is licensed under a 
+modified BSD license. Redistribution and use in source and binary forms, 
+with or without modification, are permitted provided that the conditions 
+of the license are met.
+
+-------------------------------------------------------------------------------
+U8g2 / U8x8 Graphics Library
+-------------------------------------------------------------------------------
+Library: U8g2 / U8x8 by olikraus  
+License: BSD 2-Clause License  
+Source: https://github.com/olikraus/u8g2
+
+This project uses the U8g2 graphics library, licensed under the BSD 2-Clause
+License. Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the conditions of the license are met.
+
+-------------------------------------------------------------------------------
+
+All other project code is licensed under the terms specified in this repository.
