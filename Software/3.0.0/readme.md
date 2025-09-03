@@ -1,4 +1,4 @@
-This is Version 3.0.0
+**This is Version 3.0.0**
 
 It changes quiet a few things!
 
@@ -30,3 +30,6 @@ All this leads to better testing for the price of up to a few seconds per CHIP.
 | 41258 | 6.2 secs |
 | 54400 | 15.8 secs |
 | 54402 | 15.9 secs |
+
+**Installation**
+To install with the ARDUINO IDE download all *.h, *.cpp and *.ino Files into one Folder that *MUST* be named the same as the INO File. By double clicking the INO File the IDE should open up all the *.h and *.cpp Files. Once they are loaded you can update your RAM Tester as described in the DOCS Section. 
