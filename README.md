@@ -40,7 +40,8 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 | 1 M x 1 | 411000 | !NO! | - | 8ms | 37 sec |
 | 1 M × 4 | 514400 | both | 514402 | 16ms | 16 sec |
 
-1) 4116 requires an adapter board.
+ 1)4116 requires an adapter board.
+
 Note: Above test times include the OLED Display. Without Display, the test durations are approx 1.7 sec shorter.
 
 ---
@@ -55,7 +56,6 @@ Note: Above test times include the OLED Display. Without Display, the test durat
 
 There is a short YouTube video demonstrating the tester in action. <br/>
 [![YouTube Demonstrator Video](https://img.youtube.com/vi/Zpw-VdT7GWA/0.jpg)](https://youtu.be/Zpw-VdT7GWA "Demonstration")<br/>
-*(Note: this video shows a prototype, the current SMD Design can be seen above. Handling without Display remains identical):*  
 
 ---
 
