@@ -1,3 +1,19 @@
+v3.0.1 (2025-09-08)
+- Fixes a bug in the 20Pin Code that caused Pattern 0&1 always result in an OK RAM due to missing Data Port direction change
+
+v3.0.0 (2025-09-03)
+- Large changes in address checks
+- Random Data & Retention Tests are run twice to have all Bits checked in set and reset state
+- New LED Status Codes. The initial codes were planed when there were only a few RAMs to test
+- Added Tests to try and figure out if actually a RAM is inserted - if a RAM is really dead it is still not detected. 
+- Streamlined Error Texts
+- Added Support for 4816 (16k x 1) RAM
+- Added Support for 4116 RAM via DCDC Board
+- Code refactored in separate files to simplify maintenance
+- Fixed a few bugs:
+  - 41256 / 514400 Patterns 0 and 1 only checked the first 256 Cols due to an error. As those are checked with the following Patterns so this is not a major bug
+  - Fixed a Bug in Retention Testing that might lead to chips being detected as working while in fact they are broken
+
 v2.4.2 (2025-07-28)
 - Bugfix for EEPROM wear leveling algorithm. It stopped working after the first EEPROM Cell was full. 
 
