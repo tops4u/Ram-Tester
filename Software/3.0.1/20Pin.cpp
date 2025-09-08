@@ -890,6 +890,7 @@ void __attribute__((hot)) casHandling_20Pin(uint16_t row, uint8_t patNr, boolean
         CAS_LOW20;
         CAS_HIGH20;
         WE_HIGH20;
+        PORTC &= 0xf0;
         DDRC &= 0xf0;  // PC0-PC3 as Inputs
         OE_LOW20;
         CAS_LOW20;
@@ -898,6 +899,7 @@ void __attribute__((hot)) casHandling_20Pin(uint16_t row, uint8_t patNr, boolean
           error(patNr, 2, row, col);
         OE_HIGH20;
         DDRC |= 0x0f;  // Back to Outputs for the next Write
+        PORTC |= pattern_data;  // set the Testpattern back
         WE_LOW20;
         col++;
 
@@ -905,6 +907,7 @@ void __attribute__((hot)) casHandling_20Pin(uint16_t row, uint8_t patNr, boolean
         CAS_LOW20;
         CAS_HIGH20;
         WE_HIGH20;
+        PORTC &= 0xf0;
         DDRC &= 0xf0;  // PC0-PC3 as Inputs
         OE_LOW20;
         CAS_LOW20;
@@ -913,6 +916,7 @@ void __attribute__((hot)) casHandling_20Pin(uint16_t row, uint8_t patNr, boolean
           error(patNr, 2, row, col);
         OE_HIGH20;
         DDRC |= 0x0f;  // Back to Outputs for the next Write
+        PORTC |= pattern_data;  // set the Testpattern back        
         WE_LOW20;
         col++;
       } while (col != 0);
