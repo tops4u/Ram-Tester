@@ -37,7 +37,7 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 | 64 K × 4 | 4464 | – | – | 4ms | 6.6 sec |
 | 256 K × 1 | 41256 | - | – | 4ms | 12 sec |
 | 256 K × 4 | 44256 | both | 44258 | 4ms | 6 sec|
-| 1 M x 1 | 411000 | !NO! | - | 8ms | 37 sec |
+| 1 M x 1 | 411000 | **!NO!** | - | 8ms | 37 sec |
 | 1 M × 4 | 514400 | both | 514402 | 16ms | 16 sec |
 
  1)4116 requires an adapter board.
