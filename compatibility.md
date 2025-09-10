@@ -4,6 +4,7 @@
 ## Computer Systems
 | Computer / Modell (Revision)      | Used Ram Chips |
 | --------------------------------- | --------------------------|
+| BBC Micro (Acorn)                 | HM4816 (16 K×1) DIP-16 |
 | Commodore 16 / 116                | 4416 (16 K×4) DIP-18 |
 | Commodore Plus/4                  | 4416 DIP-18 |
 | Commodore 64 (Breadbin)           | 4164 (64K×1) DIP-16 |
@@ -32,8 +33,8 @@
 | Apple IIGS                        | 41256 DIP-16 |
 | Macintosh 128 K                   | 4164 DIP-16 |
 | Macintosh 512 K                   | 41256 DIP-16 |
-| Macintosh Plus | 41256 DIP-16 |
-| Macintosh Classic | 514256 DIP-20 |
+| Macintosh Plus                   | 41256 DIP-16 |
+| Macintosh Classic               | 514256 DIP-20 |
 | KC 85/3 (DDR)                     | 4164 DIP-16 |
 | Robotron A 7150                   | 41256 DIP-16 |
 | Pravetz 8M (BG)                   | 4164 DIP-16 |
