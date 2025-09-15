@@ -55,7 +55,7 @@ Note: Above test times include the OLED Display. Without Display, the test durat
    * LED-only version: green = pass, red = fail
 
 There is a short YouTube video demonstrating the tester in action. <br/>
-[![YouTube Demonstrator Video](https://img.youtube.com/vi/Zpw-VdT7GWA/0.jpg)](https://youtu.be/Zpw-VdT7GWA "Demonstration")<br/>
+[![YouTube Demonstrator Video](https://img.youtube.com/vi/vsYpcPfiFhY/0.jpg)](https://youtu.be/vsYpcPfiFhY "Demonstration")<br/>
 
 ---
 
