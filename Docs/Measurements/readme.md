@@ -1,7 +1,7 @@
 This contains some measurements made with the SMD Version of the RAM Tester 
 for Documentation Reasons. 
 
-Permanent Short Test Results to test how hot the fuse gets. 
+Permanent Short Test Results to test how hot the fuse gets (Measured directly on top of the Fuse). 
 - 1stGen_ShortTest -> First Versions of the Board with Green PCB
 - 2ndGen_ShortTest -> 2nd Version black Boards marking: no Marking, V2 or V2.1
 
