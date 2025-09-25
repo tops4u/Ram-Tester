@@ -78,11 +78,23 @@ Here is the analytics of this algorithm vs. March-B
 | Coupling Detection   | ✅ By Retention-Delay     | ✅ Systematically    |
 | Real Retention       | ✅ 2-16ms Tests           | ❌ Only µs-Range     |
 
+### Why is it probably better than many other Arduino Based Ram-Testers?
+Compared with many other open source projects:
+- They usually don't test for address line faults. Tests will pass even if you bend one address pin up.
+- They usually don't check multiple rows at a time, since they use slow Arduino read and write commands.
+- Many use simple all 0 and all 1 tests, no patterns or random data tests.
+- No retention tests possible since writing and reading one row alone with Arduino I/O takes more than one second - usual retention times are within a few milliseconds.
+- No checks for broken chips (i.e. shorts to GND).
+- No protection against short circuits on supply lines. Some use off-the-shelf DC-DC converters which supply high currents in short circuit situations.
+- No tests of refresh or static column functionality.
+- Very often limited to 1-bit or 4-bit circuits and no ZIP sockets.
+- They are usually **MUCH** slower.
+
 ---
 ## Build or buy - the choice is yours
 Sales thread on Amibay: [https://www.amibay.com](https://www.amibay.com/threads/memory-tester.2450230/)<br/>
 Product Listing on Tindie: [https://www.tindie.com](https://www.tindie.com/products/38927/)<br/>
-Product Listing on EBAY: [https://www.ebay.ch](https://www.ebay.ch/itm/135957529215)<br/>
+Product Listing on EBAY: [https://www.ebay.ch](https://www.ebay.ch/itm/136500192190)<br/>
 DIY order at PCBWay for Thru-Hole Version: [https://www.pcbway.com](https://www.pcbway.com/project/shareproject/Ram_Tester_ThruHole_Version_93863356.html)<br/>
 Use the provided Gerber Files from this Repo
 
