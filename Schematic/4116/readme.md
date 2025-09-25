@@ -4,7 +4,13 @@ This is the **4116 Adapter**, in case you want to build it yourself.
 
 > **Note:** You need firmware version **3.x.x or higher** to use this adapter!  
 
-Schematics will be published soon.  
+There may be a followup Version with more ESD/EMI consideration. 
+
+### Why is it so complicated and expensive ### 
+The RAM Tester was never originally designed to support 4116 RAM — this feature was added later due to popular demand.
+When designing the adapter, I wanted to make sure it would be both easy to use and safe. That’s why I included LEDs to indicate when all necessary voltages are present, as 4116 RAM can be very sensitive to missing or incorrect voltages.
+I also added latch-up protection for the 7660 chip, which could otherwise lock up and overheat. Instead of simply using an off-the-shelf boost converter — which would have been far cheaper — I decided to design my own. This custom design limits current to 80 mA in case of a short circuit, whereas many off-the-shelf units can deliver up to 2 A, posing a risk of damage.
+So yes, there are cheaper solutions out there, but they often come with trade-offs. It’s entirely up to you whether you want to reuse this design or not.
 
 ---
 
