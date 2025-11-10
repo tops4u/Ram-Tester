@@ -6,7 +6,7 @@ This is the **4116 Adapter**, in case you want to build it yourself.
 
 There may be a followup Version with more ESD/EMI consideration. 
 
-![image](https://github.com/tops4u/Ram-Tester/blob/main/Media/4114_V33.jpg?raw=true)
+![image](https://github.com/tops4u/Ram-Tester/blob/main/Media/4116.jpg?raw=true)
 
 ### Why is it so complicated and expensive ### 
 The RAM Tester was never originally designed to support 4116 RAM — this feature was added later due to popular demand.
