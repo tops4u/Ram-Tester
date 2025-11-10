@@ -14,6 +14,31 @@ When designing the adapter, I wanted to make sure it would be both easy to use a
 I also added latch-up protection for the 7660 chip, which could otherwise lock up and overheat. Instead of simply using an off-the-shelf boost converter — which would have been far cheaper — I decided to design my own. This custom design limits current to 80 mA in case of a short circuit, whereas many off-the-shelf units can deliver up to 2 A, posing a risk of damage.
 So yes, there are cheaper solutions out there, but they often come with trade-offs. It’s entirely up to you whether you want to reuse this design or not.
 
+## BOM
+|Designation|Pcs|Brand|Type|Form|
+|-----------|---|-----|----|----|
+|C1, C2, C3|	3|	Samsung EM	|CL31A475KOHNNNE	C4.7uF|	1206
+|U3|	1	|Texas Instruments	|TLV61046ADBVR	|Boost Converter|	SOT-23-6
+|U1	|1	|Renesas Electronics|ICL7660ACBAZA|	Negative Voltage Converter	|8-SOIC
+|L1|	1	|Laird|	TYA2520104R7M-10	|4.7uH	|1008
+|D2, D3	|2	|Amicc	A-SP192DGHC-C01-4T|	LED Green	|0603
+|R1, R6|2	|Fojan|	FRC0603F5600TS	|R560|	0603
+|R4|	1	|Fojan	|FRC0603F2003TS	|R200k	0603
+|R7|	1	|Fojan|	FRC0603F4703TS	|R470k	|0603
+|C4, C6|	2	|Samsung |EM	|CL31A106KOHNNNE	|C10uF	|1206
+|C5, C7|	2|	Samsung |EM	|CL10B104KO8NNNC	|C100nF	|0603
+|D1|	1	|Toshiba	|CES521,L3F|	Shottky Diode|	SOD-523
+|R11|	1	|Fojan|	FRC0603F1202TS	|R12k|	0603
+|R12	|1	|Fojan	|FRC0603F8872TS	|R88.7k	|0603
+|R8|	1	|Fojan	|FRC0603F2202TS	|R22k|	0603
+|R10|	1	|Fojan|	FRC0603F1003TS|	R100k|	0603
+|Q1	|1	Nexperia|	BC817,215	NPN |Transistor	|SOT-23
+|Q2	|1	Infineon|	BSS84PH6327XTSA2	|P-MOSFET|	SOT-23
+|FB1, FB2, FB3|	3	|Murata Electronics	|BLM18PG101SN1D	|Ferrite Beads	|0603
+|F1|	1	|Yageo|	SMD0603B002TF	|Fuse	|0603
+|D4	|1	|Nexperia|	PDZ13B,115	|Zener Diode	|SOD-323
+|D5	|1|	Nexperia|	PESD5V0S1BAF|	TVS Diode	|SOD-323
+
 ---
 
 ## ⚠️ Important Notice  
