@@ -98,8 +98,8 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 ### Amiga Systems
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
-| Amiga 1000 | 41256 | 16× | 256–512 KB |
-| Amiga 2000 Rev 4.x | 41256 | 16× | Chip RAM |
+| Amiga 1000 | 41256 | 8-16× | 256–512 KB |
+| Amiga 2000 Rev 4.x | 41256 | 16-32× | Chip RAM |
 | Amiga 2000 Rev 6.x | 514256 | 4× | Chip RAM |
 | Amiga 3000 (DIP Chip RAM) | 514256 | 4× | DIP packages |
 | Amiga 3000 ZIP Fast-RAM | 514402 | ZIP-20 | Static column |
