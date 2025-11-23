@@ -19,7 +19,7 @@ Note: The row “16K×1 (5V)” contains CMOS 4116-class devices and 5V-only rep
 | **1M×4 (514402_SC)** | – | – | – | – | – | HM514402A | – | – | – | – | – | – | – | – | – | – | – | µPD424402V | – | M514402-80Z | – | – | – | HYB514402 | – | – | TC514402 | – |
 | **1M×1 (411000)** | – | – | – | MB81C1000 | GS511000 | HM511000 | HY511000 HY51C1000 | – | – | – | – | MT4C1024 | M5M41000 | – | – | – | – | µPD421000 | – | MSM511000 | – | KM41C1000 | LH511000 | HYB511000 | – | TMS511000 | TC511000 | – |
 
-## 41257 nibble mode DRAMs are not tested.
+**41257 DRAMs - Nibble Mode is not tested.**
 
 # With 4116 Adapter
 
@@ -82,7 +82,9 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Oric-1 | 4164 | 8× | |
 | Sinclair ZX Spectrum 48K | 4164 | 8× | |## Commodore (8-bit)
 
-## Commodore 8-Bit Systems
+## Commodore 
+
+### 8-Bit Systems
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
 | Commodore 128 / 128D | 4164 | 16× | 128 KB system RAM |
@@ -93,8 +95,7 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Commodore Plus/4 | 4464 | 2× | 64 KB |
 | Commodore PET 2001/3000/4000 | 4116 | 8×/16× | System RAM |
 
-## Commodore (Amiga)
-
+### Amiga Systems
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
 | Amiga 1000 | 41256 | 16× | 256–512 KB |
@@ -221,7 +222,7 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Snaper 512K | 41256 | varies | |
 | Super 1750 Clone | 44256 / 514256 | ZIP-20 | 512 KB / 1 MB |
 
-## Commodore Amiga – RAM Expansion Cards (Alphabetical)
+## Commodore Amiga – RAM Expansion Cards
 
 | Expansion Board | DRAM Type | Notes |
 |-----------------|-----------|-------|
@@ -261,7 +262,8 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | SupraRAM 2000 | 514256 | 2 MB |
 | SupraRAM 500 | 514256 | 512 KB–1 MB |
 | W.T.S. A500 Pro-RAM | 41256 | 512 KB |
-## Commodore Amiga – Accelerator and Turbo Cards (Alphabetical)
+
+## Commodore Amiga – Accelerator and Turbo Cards
 
 | Accelerator Board | DRAM Type | Notes |
 |-------------------|-----------|-------|
@@ -278,7 +280,7 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | PP&S Mercury 040 | 514400 | 68040 accelerator |
 | Vortex Golden Gate 386/486 | 514256 / 514400 | PC-on-Amiga accelerator |
 
-# ISA Memory Expansion Cards (Alphabetical)
+# ISA Memory Expansion Cards
 
 | Board / Manufacturer | DRAM Type | Notes |
 |----------------------|-----------|-------|
@@ -296,7 +298,7 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Tecmar Captain RAM | 4164 / 41256 | ISA RAM |
 | Wang PC prototype boards | 4164 / 41256 | Rare engineering samples |
 
-# Apple II / IIGS Expansions (Alphabetical)
+# Apple II / IIGS Expansions
 
 | Board | DRAM Type | Notes |
 |-------|-----------|-------|
@@ -307,7 +309,7 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Saturn 128K/256K | 4164 | Apple II expansion |
 | Titan 128K | 4164 | Apple II RAM card |
 
-# Atari 8-bit / ST / TT Expansions (Alphabetical)
+# Atari 8-bit / ST / TT Expansions
 
 | Expansion | DRAM Type | Notes |
 |-----------|-----------|-------|
