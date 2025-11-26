@@ -100,14 +100,14 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 |--------|-----------|---------------|-------|
 | Amiga 1000 | 41256 | 8-16× | 256–512 KB |
 | Amiga 2000 Rev 4.x | 41256 | 16-32× | Chip RAM |
-| Amiga 2000 Rev 6.x | 514256 | 4× | Chip RAM |
-| Amiga 3000 (DIP Chip RAM) | 514256 | 4× | DIP packages |
-| Amiga 3000 ZIP Fast-RAM | 514402 | ZIP-20 | Static column |
+| Amiga 2000 Rev 6.x | 514256 | 8× | Chip RAM |
+| Amiga 3000 (DIP Chip RAM) | 514256 | 8× | DIP packages |
+| Amiga 3000 ZIP Fast-RAM | 514400/-02 | ZIP-20 | Static column |
 | Amiga 500 Rev 3 | 41256 | 16× | 512 KB |
 | Amiga 500 Rev 4.x | 41256 | 16× | 512 KB |
 | Amiga 500 Rev 5 | 41256 | 16× | 512 KB |
 | Amiga 500 Rev 6/6A | 514256 | 4× | 512 KB (256K×4) |
-| Amiga 500+ Rev 8.x | 514256 | varies | 1 MB chip RAM |
+| Amiga 500+ Rev 8.x | 514256 | 8x | 1 MB chip RAM |
 
 ## DEC (Digital Equipment Corporation)
 
