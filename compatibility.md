@@ -25,6 +25,7 @@ Note: The row “16K×1 (5V)” contains CMOS 4116-class devices and 5V-only rep
 
 | Organisation | AMD | Angstrem/Mikron | Fairchild | Fujitsu | GoldStar/LG | Hitachi | Hyundai/Hynix/Nanya | Inmos | Intel | Intersil | ITT | Micron | Mitsubishi | MME (DDR) | MOS Tech | Motorola | Mostek | NEC | National Semi | OKI | Panasonic | Samsung | Sharp | Siemens | Tesla | Texas Instruments | Toshiba | Vitelic |
 |--------------|-----|-----------------|-----------|---------|-------------|---------|---------------------|--------|-------|----------|-----|--------|------------|-----------|----------|----------|--------|-----|---------------|-----|-----------|---------|-------|---------|-------|-------------------|---------|---------|
+|**4K×1 (4027)** | AM9027 | – | F4027 | MB8104 | – | HM4027 | – | – | 2104 | 7027 | ITT4027 | – | M5M4027 | – | – | MCM4027 | MK4027 | µPD404 | MM5280 | MSM4027 | – | KM4027 | – | – | – | TMS4027 | TMM4027 | – |
 | **16K×1 (4116)** | AM9016C | – | F4116 F16K | MB8116 | GM4116 | HM4116 HM4716 | HY4116 | – | 2116 2117 | 4116 | ITT4116 | – | M5M4116 | – | 2690 | MCM4116/B/BP | MK4116 | µPD416 | MM5290 | MSM4116 | MN4116 | KM4116 | LH4116 | HYB4116 | – | TMS4116 | TMM4116 | – |
 
 # DRAM System Compatibility List
@@ -41,6 +42,7 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 ### 8-bit systems (Apple II family)
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
+| Apple II (Rev 0-3) | 4027 / 4116 | 8x or 16x or 24x | 4 KB (using 4027) or 16-48 KB |
 | Apple II / II+ | 4116 | 8× or 16× | 16 KB or 32 KB |
 | Apple II Europlus | 4116 | 8× or 16× | 16 KB or 32 KB |
 | Apple IIc (1984) | 4164 | 8× | 64 KB |
@@ -80,9 +82,9 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 |--------|-----------|---------------|-------|
 | BBC Micro Model B | HM4816 | 8× | 5V-only 4116 replacement |
 | Oric-1 | 4164 | 8× | |
-| Sinclair ZX Spectrum 48K | 4164 | 8× | |## Commodore (8-bit)
+| Sinclair ZX Spectrum 48K | 4164 | 8× | |
 
-## Commodore 
+## Commodore
 
 ### 8-Bit Systems
 | System | DRAM Type | Configuration | Notes |
@@ -93,7 +95,7 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Commodore 64 (breadbin) | 4164 | 8× | 64 KB |
 | Commodore 64C (shortboard) | 4464 | 2× | 64 KB |
 | Commodore Plus/4 | 4464 | 2× | 64 KB |
-| Commodore PET 2001/3000/4000 | 4116 | 8×/16× | System RAM |
+| Commodore PET 2001/3000/4000 | 4116 | 8×/16× | System RAM (Some early expansions used 4027) |
 
 ### Amiga Systems
 | System | DRAM Type | Configuration | Notes |
@@ -137,6 +139,13 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | IBM PC/AT 5170 | 41256 | 8× or more | Parity SIMMs also exist |
 | IBM PC/XT 5160 | 4164 | 8× or more | |
 
+## Tandy / Radio Shack (TRS-80)
+
+| System | DRAM Type | Configuration | Notes |
+|--------|-----------|---------------|-------|
+| TRS-80 Model I (Level I) | 4027 | 8x | 4 KB System RAM |
+| TRS-80 Model I (Level II) | 4116 | 8x | 16 KB System RAM |
+
 ## Other / Eastern Europe / USSR
 
 | System | DRAM Type | Configuration | Notes |
@@ -162,10 +171,13 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 
 | Board / System | DRAM Type | Configuration | Notes |
 |----------------|-----------|---------------|-------|
+| Atari Sprint 2 / 4 | 4027 | varies | Early Video RAM |
+| Atari Super Breakout | 4027 | varies | |
 | BurgerTime | 4164 | varies | Data East |
 | Data East DECO boards | 4164 / 41256 | varies | Board-specific |
 | Defender | 4116 | varies | Williams |
 | Donkey Kong / DK Jr. | 4116 | varies | Nintendo |
+| Exidy Circus | 4027 | varies | |
 | Final Lap | 41256 | varies | Namco |
 | Frogger | 4116 | varies | Sega/Konami |
 | Galaga / Gaplus | 4164 | varies | Namco |
@@ -199,6 +211,7 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Motorola VME MVME-120 | 41256 | VME CPU card |
 | Motorola VME MVME-130 | 514256 | VMEbus cards |
 | NCR POS 2150 | 41256 | POS terminal |
+| S-100 Memory Boards | 4027 | Early 4KB / 8KB / 16KB cards (Altair/IMSAI) |
 | Siemens SIMATIC S5 | 4164 | Early CPU modules |
 | Sun-1 Workstations | 4116 / 4164 | RAM boards |
 | Sun-2 Systems | 41256 | Workstation RAM |
@@ -329,6 +342,9 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 
 # Summary by DRAM Type
 
+## 4027 (4Kx1)
+Predecessor to the 4116. Used in very early home computers (TRS-80 Model I Level I, early Apple II) and late 70s arcade games (Atari, Exidy).
+
 ## 4116 (16K×1)
 Used in early 1980s systems including Apple II, Commodore PET, VIC-20 expansion, TRS-80 Model I/III, many early arcade boards (Pac-Man, Donkey Kong).
 
@@ -355,5 +371,3 @@ Used primarily in Amiga 3000 ZIP fast-RAM.
 
 ## 411000 (1M×1)
 Used in certain Amiga expansions (A2058), some ISA RAM boards, and industrial system RAM.
-
-
