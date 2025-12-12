@@ -1,3 +1,8 @@
+v3.1.1 (2025-12-12)
+- Added RAM Presence check for 4116 Adapter
+- Added 4027 RAM. Needs 4116 Adapter to run (requires -5V / 12V)
+- Fixed minor Typo in the Display Texts
+  
 v3.0.1 (2025-09-08)
 - Fixes a bug in the 20Pin Code that caused Pattern 0&1 always result in an OK RAM due to missing Data Port direction change
 
