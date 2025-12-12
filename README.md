@@ -30,7 +30,7 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 
 | Capacity | DIP | 20-pin ZIP | Static column | Retention Time | Test Time |
 |----------|-----|-----------|---------------|----------------|-----------|
-| 4 K x 1  | 4027 <sup>1)</sup>| - | - | 2m  | 2.9sec |
+| 4 K x 1 | 4027 <sup>1)</sup>| - | - | 2ms  | 2.9sec |
 | 16 K x 1 | 4816 | - | - | 2ms | 2.9sec |
 | 16 K x 1 | 4116 <sup>1)</sup> | - | - | 2ms | 2.9sec |
 | 16 K × 4 | 4416 | – | – | 4ms | 3.9sec |
