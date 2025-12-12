@@ -63,7 +63,7 @@ uint8_t green = 12;  // PB4
 const uint8_t pattern[] = { 0x00, 0xff, 0xaa, 0x55, 0xaa, 0x55 };
 
 // The following RAM Types are currently identified. This table also contains retention timings.
-// Structure: Name, Retention mS, DelayRows, rows, cols, IOBits, staticColumn, nibbleMode, smallType, delays[6], writeTime 
+// Structure: Name, Retention mS, DelayRows, rows, cols, IOBits, staticColumn, nibbleMode, smallType, delays[6], writeTime
 struct RAM_Definition ramTypes[] = {
   { "4164 64Kx1", 2, 1, 256, 256, 1, false, false, true, { 1069, 100, 100, 100, 100, 100 }, 986 },
   { "41256 256Kx1", 4, 1, 512, 512, 1, false, false, false, { 2167, 245, 245, 245, 245, 245 }, 1794 },
@@ -77,7 +77,7 @@ struct RAM_Definition ramTypes[] = {
   { "411000 1Mx1", 8, 1, 1024, 1024, 1, false, false, false, { 4650, 1453, 1453, 1453, 1453, 1453 }, 3312 },
   { "4116 16Kx1", 2, 2, 128, 128, 1, false, false, false, { 520, 530, 46, 46, 46, 46 }, 472 },
   { "4816 16Kx1", 2, 2, 128, 128, 1, false, false, false, { 542, 542, 36, 36, 36, 36 }, 480 },
-  { "4027 4Kx1", 2, 2, 64, 64, 1, false, false, false, {0,0,0,0,0,0}, 0}
+  { "4027 4Kx1", 2, 2, 64, 64, 1, false, false, false, { 762, 762, 472, 472, 472, 472 }, 228 }
 };
 
 // LED blink pattern structure
@@ -99,7 +99,7 @@ const LedPattern ledPatterns[] = {
   { 2, 3 },  // T_411000  - 1Mx1         18-pin
   { 4, 1 },  // T_4116    - 16Kx1 Ada    20-pin via adapter
   { 1, 4 },  // T_4816    - 16Kx1        16-pin
-  { 2, 4 }  // T_4027    - 4Kx1         16-Pin
+  { 4, 2 }   // T_4027    - 4Kx1         16-Pin
 };
 
 
@@ -167,7 +167,7 @@ void initRAM(int RASPin, int CASPin) {
   }
 }
 
-void writeRAMType(void){
+void writeRAMType(void) {
 #ifdef OLED
   display.drawString(0, 4, "Detected:");
   display.drawString(0, 6, ramTypes[type].name);
@@ -419,7 +419,7 @@ void testOK() {
   setupLED();
 
   // Validate type
-  if (type < 0 || type > T_4816) {
+  if (type < 0 || type > T_4027) {
     // Unknown type - steady green
     while (true) {
       setLED(LED_GREEN);

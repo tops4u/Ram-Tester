@@ -118,7 +118,7 @@ static bool ram_present_16Pin(void) {
  * Extended Chip-Detection für 16-Pin DRAMs
  * Unterscheidet zwischen 4164 (64Kx1), 41256 (256Kx1) und 4816 (16Kx1, no A7)
  */
-void sense41256_16Pin() {
+static void sense41256_16Pin() {
   CAS_HIGH16;
 
   // --- SCHRITT 1: A8 Test (41256 vs Rest) ---
@@ -201,7 +201,7 @@ void sense41256_16Pin() {
 // ANGEPASSTE ADDRESS TESTING MIT T_4816 SUPPORT
 //=======================================================================================
 
-void checkAddressing_16Pin(void) {
+static void checkAddressing_16Pin(void) {
   uint16_t max_rows = ramTypes[type].rows;
   uint16_t max_cols = ramTypes[type].columns;
 
@@ -273,11 +273,6 @@ void checkAddressing_16Pin(void) {
     NOP;
     NOP;
     if (((PINC & 0x04) >> 2) != 1) {
-#ifdef DEBUG_ADDRESSING
-      Serial.print("ROW bit ");
-      Serial.print(b);
-      Serial.println(" test failed!");
-#endif
       error(b, 1);
     }
     CAS_HIGH16;
@@ -320,11 +315,6 @@ void checkAddressing_16Pin(void) {
     NOP;
     NOP;
     if (((PINC & 0x04) >> 2) != 0) {
-#ifdef DEBUG_ADDRESSING
-      Serial.print("COL bit ");
-      Serial.print(b);
-      Serial.println(" test failed!");
-#endif
       error(b + 16, 1);
     }
     CAS_HIGH16;
@@ -334,20 +324,11 @@ void checkAddressing_16Pin(void) {
     NOP;
     NOP;
     if (((PINC & 0x04) >> 2) != 1) {
-#ifdef DEBUG_ADDRESSING
-      Serial.print("COL bit ");
-      Serial.print(b);
-      Serial.println(" test failed!");
-#endif
       error(b + 16, 1);
     }
     CAS_HIGH16;
   }
   RAS_HIGH16;
-
-#ifdef DEBUG_ADDRESSING
-  Serial.println("Address testing completed successfully");
-#endif
 }
 
 //=======================================================================================
@@ -394,7 +375,7 @@ void test_16Pin() {
  * Sets row address and activates RAS signal
  * @param row Row address to access (0 to max_rows-1)
  */
-void rasHandling_16Pin(uint16_t row) {
+static void rasHandling_16Pin(uint16_t row) {
   RAS_HIGH16;
   SET_ADDR_PIN16(row);
   RAS_LOW16;
@@ -407,7 +388,7 @@ void rasHandling_16Pin(uint16_t row) {
  * @param cols Number of columns in this RAM type
  * @param patNr Pattern number (0-4): 0=all zeros, 1=all ones, 2,3=walking patterns, 4=pseudo-random
  */
-void writeRow_16Pin(uint16_t row, uint16_t cols, uint8_t patNr) {
+static void writeRow_16Pin(uint16_t row, uint16_t cols, uint8_t patNr) {
   // Prepare Write Cycle
   CAS_HIGH16;
   rasHandling_16Pin(row);
@@ -478,7 +459,7 @@ void writeRow_16Pin(uint16_t row, uint16_t cols, uint8_t patNr) {
  * Refresh a specific row by performing RAS-only cycle
  * @param row Row address to refresh
  */
-void refreshRow_16Pin(uint16_t row) {
+static void refreshRow_16Pin(uint16_t row) {
   rasHandling_16Pin(row);
   RAS_HIGH16;
 }
@@ -491,7 +472,7 @@ void refreshRow_16Pin(uint16_t row) {
  * @param patNr Pattern number (0-4)
  * @param check Error code to report if check fails (2=write error, 3=retention error)
  */
-void checkRow_16Pin(uint16_t cols, uint16_t row, uint8_t patNr, uint8_t check) {
+static void checkRow_16Pin(uint16_t cols, uint16_t row, uint8_t patNr, uint8_t check) {
   register uint8_t pat = pattern[patNr];
   cli();
 

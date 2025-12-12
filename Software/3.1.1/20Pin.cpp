@@ -1,3 +1,4 @@
+#include "Arduino.h"
 #include "20Pin.h"
 
 //=======================================================================================
@@ -58,9 +59,7 @@ bool test_4116(void) {
   DDRC &= ~((1 << PC2) | (1 << PC3));
   PORTC &= ~((1 << PC2) | (1 << PC3));
 
-  for (volatile int i = 0; i < 1000; i++)
-    ;
-
+  delayMicroseconds(5);
   if (!(PINB & (1 << PB4)) || !(PINB & (1 << PB2))) return false;
 
   uint16_t adc_pc2 = adc_read(2);
@@ -76,29 +75,21 @@ bool test_4116(void) {
 
 /**
  * Distinguish between 4116 and 4027 by testing A6/_CS pin
- * 4116: A6 is address input (reads back as 1 when A6=1)
- * 4027: Pin 13 is _CS (chip disabled when high, reads as 0)
+ * Write a 1 to address 0/0 
+ * If Readback is 1 then RAM is present
+ * Set A6/_CS High and readback again if 
  * @return true if 4027 detected, false if 4116
  */
 static bool detect_4027(void) {
   DDRC = 0b00011110;
+  // Write 1 to address R=0, C=0
+  PORTD = 0x00;
   RAS_HIGH20;
   CAS_HIGH20;
   WE_HIGH20;
-  _delay_us(1);
-
-  // Write '1' to address with A6=1 (pin 13 high)
-  RAS_HIGH20;
-  _delay_us(1);
-  PORTD = 0x7F;
-  _delay_us(1);
   RAS_LOW20;
-  _delay_us(1);
-
   SET_DIN_4116(1);
   WE_LOW20;
-  PORTD = 0x7F;
-  _delay_us(1);
   CAS_LOW20;
   _delay_us(1);
   CAS_HIGH20;
@@ -106,37 +97,58 @@ static bool detect_4027(void) {
   RAS_HIGH20;
   _delay_us(1);
 
-  // Read back with A6=1
-  DDRC &= 0xF0;
-  PORTC |= 0x01;
-  _delay_us(1);
-
-  RAS_HIGH20;
-  _delay_us(1);
-  PORTD = 0x7F;
-  _delay_us(1);
+  // Read back if we Read 1 - a Ram Chip is present
   RAS_LOW20;
+  CAS_LOW20;
   _delay_us(1);
-  PORTD = 0x7F;
+  if (GET_DOUT_4116() == 0)
+    // NO Chip Present
+    error(0, 0);
+  CAS_HIGH20;
+  RAS_HIGH20;
+  PORTD = 0x40;  // Set CS/A6 High
+  _delay_us(1);
+  SET_DIN_4116(1);
+  WE_LOW20;
+  RAS_LOW20;
   _delay_us(1);
   CAS_LOW20;
   _delay_us(1);
-
-  uint8_t result = (PINC & 0x01);
-
+  CAS_HIGH20;
+  SET_DIN_4116(0);
+  PORTD = 0x41;
+  CAS_LOW20;
+  _delay_us(1);
   CAS_HIGH20;
   RAS_HIGH20;
+  WE_HIGH20;
+  PORTD = 0x40;
   _delay_us(1);
-
-  return (result == 0);
+  RAS_LOW20;
+  _delay_us(1);
+  CAS_LOW20;
+  _delay_us(1);
+  if (GET_DOUT_4116() == 1) {
+    CAS_HIGH20;
+    PORTD = 0x41;
+    CAS_LOW20;
+    _delay_us(1);
+    if (GET_DOUT_4116() == 0) {
+      CAS_HIGH20;
+      RAS_HIGH20;
+      return false;  // Disabling CS preserved the 1 since ram was inactive during last write
+    }
+  }
+  CAS_HIGH20;
+  RAS_HIGH20;
+  return true;
 }
 
 /**
  * Main test function for 4116/4027 RAM
  */
 void test_4116_logic(void) {
-  bool is_4027 = detect_4027();
-  type = is_4027 ? T_4027 : T_4116;
+  type = detect_4027() ? T_4027 : T_4116;
 
 #ifdef OLED
   display.drawString(1, 4, "Detected:");

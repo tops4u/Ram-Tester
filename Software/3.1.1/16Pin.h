@@ -73,13 +73,13 @@ extern const struct port_config16_t PROGMEM lut_combined[512];
  * @return void
  */
 void test_16Pin(void);
-void sense41256_16Pin(void);
-void checkAddressing_16Pin(void);
+static void sense41256_16Pin(void);
+static void checkAddressing_16Pin(void);
 /**
  * ram_present_16Pin — see implementation for details.
  * @return 
  */
-bool ram_present_16Pin(void);
+static bool ram_present_16Pin(void);
 
 // Address and data handling
 /**
@@ -88,7 +88,7 @@ bool ram_present_16Pin(void);
  * @param row 
  * @return void
  */
-void rasHandling_16Pin(uint16_t row);
+static void rasHandling_16Pin(uint16_t row);
 
 // Write/Read functions
 /**
@@ -99,9 +99,9 @@ void rasHandling_16Pin(uint16_t row);
  * @param patNr 
  * @return void
  */
-void writeRow_16Pin(uint16_t row, uint16_t cols, uint8_t patNr);
-void refreshRow_16Pin(uint16_t row);
-void checkRow_16Pin(uint16_t cols, uint16_t row, uint8_t patNr, uint8_t check);
+static void writeRow_16Pin(uint16_t row, uint16_t cols, uint8_t patNr);
+static void refreshRow_16Pin(uint16_t row);
+static void checkRow_16Pin(uint16_t cols, uint16_t row, uint8_t patNr, uint8_t check);
 
 // RAM presence tests (static - internal to 16Pin.cpp)
 // static bool ram_present_16pin(void); // declared in .cpp file
