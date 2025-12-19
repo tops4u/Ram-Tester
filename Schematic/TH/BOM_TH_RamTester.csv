@@ -1,0 +1,21 @@
+Id,Designator,Footprint,Quantity,Designation
+1,"R16,R13,R20,R19,R17,R9,R8,R22,R12,R10,R7,R18,R15,R14,R21,R24,R23,R11",R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal,18,47R
+2,R1,R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal,1,100R
+3,C5,CP_Radial_D4.0mm_P2.00mm,1,10uF
+4,Display,PinHeader_1x04_P2.54mm_Vertical,1,1306 I2C 0.96”
+5,"C6,C7,C1",C_Disc_D4.3mm_W1.9mm_P5.00mm,3,100nF
+6,"R4,R5,R3",R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal,3,1M
+7,R6,R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal,1,150R
+8,"C3,C2",C_Disc_D4.3mm_W1.9mm_P5.00mm,2,15pF
+9,D1,LED_D5.0mm-3,1,LED_Dual_AAK
+10,U1,DIP-28_W7.62mm,1,ATmega328-P
+11,"Q1,Q2",TO-92_Inline,2,2N7000
+12,SW1,SW_DIP_SPSTx03_Slide_9.78x9.8mm_W7.62mm_P2.54mm,1,SW_DIP_x03
+13,SW2,SW_PUSH_6mm_H5mm,1,SW_Push
+14,F1,Fuse_Littelfuse_395Series,1,0.5A
+15,R2,R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal,1,1k
+16,Y1,Crystal_HC49-U_Vertical,1,16MHz
+17,J1,MicroUSB PowerOnly,1,Conn_01x02_Pin
+18,J2,PinHeader_2x03_P2.54mm_Vertical,1,ICSP
+19,U3,ZIP-20,1,20Pin ZIF Socket
+20,U2,DIP-20_W7.62mm_LongPads,1,2x 10pin f Header
