@@ -1,6 +1,9 @@
 # Vintage DRAM Tester  
 Fast – Precise – Open for many 8-/16-bit systems like C64, C128, Amigas, Atari 800XL, 1040ST and others, Apple IIe, Spektrum and many more
 
+## What this project is
+A fast, open-source DIY DRAM tester for vintage RAM chips used in C64, Amiga, Atari, and other retro computers. Tests memory thoroughly in seconds and supports a wide range of chip types with optional OLED feedback.
+
 **As featured on:** 
 
 - ***Hackaday*** (Dec 2025): "Cheap and Aggressive DRAM Chip Tester"
