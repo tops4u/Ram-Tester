@@ -66,7 +66,7 @@ The onboard LEDs only indicate whether there is a short circuit on the **−5 V*
 - If a short is detected, **remove the RAM immediately**.  
 - The adapter board can tolerate a permanent short:  
   - Max current: **−30 mA** on the −5 V line  
-  - Max current: **≈80 mA** on the 12 V line  
+  - Max current: **≈80 mA** on the 12 V line - Version 3.4 introduced an additional 30mA resetable Fuse. 
 
 ⚠️ However, this still results in more than **1 W of power dissipation**, which will heat up the components significantly.  
 
