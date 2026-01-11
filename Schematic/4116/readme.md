@@ -1,5 +1,10 @@
 # 4116 Adapter Documentation
 
+Assembly Video for the RAM Tester SMD Kit:<br/>
+
+[![YouTube Assembly Video](https://i.ytimg.com/vi/SPN98FYMu7Y/0.jpg)](https://youtu.be/SPN98FYMu7Y "Assembly")<br/>
+
+
 This is the **4116 Adapter**, in case you want to build it yourself.  
 
 > **Note:** You need firmware version **3.x.x or higher** to use this adapter!  
