@@ -31,6 +31,7 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 | 20-pin ZIP socket | Direct test of 20-pin ZIP DRAMs without an adapter |
 | Optional OLED display or LED blink codes | Full text feedback or minimal hardware setup |
 | Open hardware and firmware | KiCad, Gerber files and Arduino source under an open licence |
+| Self Test Mode | Check the HW for any defects like short circuit, broken soldering, etc |
 
 ---
 
@@ -38,16 +39,16 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 
 | Capacity | DIP | 20-pin ZIP | Static column | Retention Time | Test Time |
 |----------|-----|-----------|---------------|----------------|-----------|
-| 4 K x 1 | 4027 <sup>1)</sup>| - | - | 2ms  | 2.9sec |
-| 16 K x 1 | 4816 | - | - | 2ms | 2.9sec |
-| 16 K x 1 | 4116 <sup>1)</sup> | - | - | 2ms | 2.9sec |
-| 16 K × 4 | 4416 | – | – | 4ms | 3.9sec |
-| 64 K × 1 | 4164 | - | – | 2ms | 4.6 sec |
-| 64 K × 4 | 4464 | – | – | 4ms | 6.6 sec |
-| 256 K × 1 | 41256 | - | – | 4ms | 12 sec |
-| 256 K × 4 | 44256 | both | 44258 | 4ms | 6 sec|
-| 1 M x 1 | 411000 | **!NO!** | - | 8ms | 37 sec |
-| 1 M × 4 | 514400 | both | 514402 | 16ms | 16 sec |
+| 4 K x 1 | 4027 <sup>1)</sup>| - | - | 2ms  | 1.4sec |
+| 16 K x 1 | 4816 | - | - | 2ms | 1.9sec |
+| 16 K x 1 | 4116 <sup>1)</sup> | - | - | 2ms | 1.7sec |
+| 16 K × 4 | 4416 | – | – | 4ms | 2.4sec |
+| 64 K × 1 | 4164 | - | – | 4ms | 3.9sec |
+| 64 K × 4 | 4464 | – | – | 4ms | 6.4 sec |
+| 256 K × 1 | 41256 | - | – | 4ms | 12.2sec |
+| 256 K × 4 | 44256 | both | 44258 | 4ms | 6.5 sec|
+| 1 M x 1 | 411000 | **!NO!** | - | 8ms | 39 sec |
+| 1 M × 4 | 514400 | both | 514402 | 16ms | 16.3 sec |
 
  <sup>1)</sup>requires the 4116 adapter board.
 
@@ -75,7 +76,8 @@ There is a short YouTube video demonstrating the tester in action. <br/>
 3. Addressline or decoder faults
 4. Stuck Cells or Crosstalk by using various patterns
 5. Random patterns combined with retention time checks
-6. All of the above uses Fast Page Mode or Static Column control depending on RAM Chip type
+6. CAS-before-RAS Refresh Timer Function
+7. All of the above uses Fast Page Mode or Static Column control depending on RAM Chip type
 
 ### So why no MARCH-B?
 Here is the analytics of this algorithm vs. March-B
