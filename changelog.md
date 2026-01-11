@@ -1,3 +1,10 @@
+v 4.0 (2026-01-11)
+- *BREAKING*: 4164 RAMs are now tested with 4ms Retention time. There are few 2ms 4164 around and most Computers will need the 4ms Part.
+- Added QR Code to help you find the GitHub Docs Page in case DIP Switches are invalid
+- Added Selftest/Healthcheck Mode. When all DIP Switches are *OFF* it starts automatically. Check Documentation on how to use
+- Added CBR (Cas-before-Ras) Timer Test. At the End for RAMS that have a Refresh Timer, it is now tested
+- *Preliminary Support* for 4532/3732 RAMs. This is **UNTESTED** and most probably still buggy. All other RAM checks should be fine
+
 v3.1.1 (2025-12-12)
 - Added RAM Presence check for 4116 Adapter
 - Added 4027 RAM. Needs 4116 Adapter to run (requires -5V / 12V)
