@@ -75,6 +75,3 @@ If the Self-Test reports an error, check the specific components listed below:
     * If the test does not end even after touching all contacts, a signal is missing.
     * *Action:* Check for bad soldering points, a broken PCB trace, or a defective socket contact.
 
-Assembly Video for the RAM Tester SMD Kit:<br/>
-
-[![YouTube Assembly Video](https://i.ytimg.com/vi/SPN98FYMu7Y/0.jpg)](https://youtu.be/SPN98FYMu7Y "Assembly")<br/>
