@@ -1,4 +1,9 @@
-v 4.0 (2026-01-11)
+**Version History**
+
+v4.0.1 (2026-01-26)
+- Re-Enabled In-Circuit Testing of 4164/41256 when Din is hardwired to Dout. Din will enter High Impedanze when Dout is read back.
+
+v4.0 (2026-01-11)
 - *BREAKING*: 4164 RAMs are now tested with 4ms Retention time. There are few 2ms 4164 around and most Computers will need the 4ms Part.
 - Added QR Code to help you find the GitHub Docs Page in case DIP Switches are invalid
 - Added Selftest/Healthcheck Mode. When all DIP Switches are *OFF* it starts automatically. Check Documentation on how to use
