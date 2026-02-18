@@ -39,7 +39,7 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 ## Supported DRAM types (Speed with current Firmware Version)
 
 | Capacity | DIP | 20-pin ZIP | Static column | Nibble Mode | Retention Time | Test Time |
-|----------|-----|-----------|---------------|----------------|-----------|
+|----------|-----|------------|---------------|-------------|----------------|-----------|
 | 4 K x 1 | 4027 <sup>1)</sup>| - | - | - | 2ms  | 1.3sec |
 | 16 K x 1 | 4816 | - | - | - | 2ms | 1.6sec |
 | 16 K x 1 | 4116 <sup>1)</sup> | - | - | - | 2ms | 1.6sec |
