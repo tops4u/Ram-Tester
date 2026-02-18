@@ -28,6 +28,7 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 | Most tests are <= 10s | Rapid diagnosis on the workbench or at retro repair events |
 | Retention-time measurement | Detects weak chips by checking it meets the min retention times |
 | Static-column support | Reliable testing of 44258, 514402 static column functions|
+| Nibble Mode support | Testing 41257 RAM with nibble Mode access |
 | 20-pin ZIP socket | Direct test of 20-pin ZIP DRAMs without an adapter |
 | Optional OLED display or LED blink codes | Full text feedback or minimal hardware setup |
 | Open hardware and firmware | KiCad, Gerber files and Arduino source under an open licence |
@@ -35,20 +36,20 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 
 ---
 
-## Supported DRAM types 
+## Supported DRAM types (Speed with current Firmware Version)
 
-| Capacity | DIP | 20-pin ZIP | Static column | Retention Time | Test Time |
+| Capacity | DIP | 20-pin ZIP | Static column | Nibble Mode | Retention Time | Test Time |
 |----------|-----|-----------|---------------|----------------|-----------|
-| 4 K x 1 | 4027 <sup>1)</sup>| - | - | 2ms  | 1.4sec |
-| 16 K x 1 | 4816 | - | - | 2ms | 1.9sec |
-| 16 K x 1 | 4116 <sup>1)</sup> | - | - | 2ms | 1.7sec |
-| 16 K × 4 | 4416 | – | – | 4ms | 2.4sec |
-| 64 K × 1 | 4164 | - | – | 4ms | 3.9sec |
-| 64 K × 4 | 4464 | – | – | 4ms | 6.4 sec |
-| 256 K × 1 | 41256 | - | – | 4ms | 12.2sec |
-| 256 K × 4 | 44256 | both | 44258 | 4ms | 6.5 sec|
-| 1 M x 1 | 411000 | **!NO!** | - | 8ms | 39 sec |
-| 1 M × 4 | 514400 | both | 514402 | 16ms | 16.3 sec |
+| 4 K x 1 | 4027 <sup>1)</sup>| - | - | - | 2ms  | 1.3sec |
+| 16 K x 1 | 4816 | - | - | - | 2ms | 1.6sec |
+| 16 K x 1 | 4116 <sup>1)</sup> | - | - | - | 2ms | 1.6sec |
+| 16 K × 4 | 4416 | – | – | - | 4ms | 4.2sec |
+| 64 K × 1 | 4164 | - | – | - | 4ms | 2.8sec |
+| 64 K × 4 | 4464 | – | – | - | 4ms | 6.4sec |
+| 256 K × 1 | 41256 | - | – | 41257 | 4ms | 7.9sec |
+| 256 K × 4 | 44256 | both | 44258 | - | 4ms | 4.5sec|
+| 1 M x 1 | 411000 | **!NO!** | - | - | 8ms | 26.1sec |
+| 1 M × 4 | 514400 | both | 514402 | - | 16ms | 12.8sec |
 
  <sup>1)</sup>requires the 4116 adapter board.
 

@@ -20,6 +20,7 @@ Es ist wahrscheinlich die schnellste Arduino-Lösung, die zudem **Static-Column-
 | Die meisten Tests dauern ≤ 10s | Schnelle Diagnose auf der Werkbank oder bei Retro-Reparatur-Events |
 | Messung der Retentionszeit | Erkennt schwache Chips, indem überprüft wird, ob die minimale Haltezeit eingehalten wird |
 | Unterstützung für Static Column | Zuverlässige Prüfung von 44258-, 514402-Static-Column-Funktionen |
+| Nibble Modus Unterstützung | Nibble Modus Test für 41257 RAM |
 | 20-poliger ZIP-Sockel | Direkter Test von 20-poligen ZIP-DRAMs ohne Adapter |
 | Optionales OLED-Display oder LED-Blinkcodes | Vollständige Textausgabe oder minimale Hardwarekonfiguration |
 | Offene Hardware und Firmware | KiCad-, Gerber-Dateien und Arduino-Quellcode unter offener Lizenz |
@@ -28,17 +29,18 @@ Es ist wahrscheinlich die schnellste Arduino-Lösung, die zudem **Static-Column-
 
 ## Unterstützte DRAM-Typen 
 
-| Kapazität | DIP | 20-pol. ZIP | Static Column | Retentionszeit | Testzeit |
-|------------|-----|-------------|----------------|----------------|-----------|
-| 16 K x 1 | 4816 | - | - | 2ms | 2,9s |
-| 16 K x 1 | 4116 1) | - | - | 2ms | 2,9s |
-| 16 K × 4 | 4416 | – | – | 4ms | 3,9s |
-| 64 K × 1 | 4164 | - | – | 2ms | 4,6s |
-| 64 K × 4 | 4464 | – | – | 4ms | 6,6s |
-| 256 K × 1 | 41256 | - | – | 4ms | 12s |
-| 256 K × 4 | 44256 | beide | 44258 | 4ms | 6s |
-| 1 M x 1 | 411000 | **!NEIN!** | - | 8ms | 37s |
-| 1 M × 4 | 514400 | beide | 514402 | 16ms | 16s |
+| Kapazität | DIP | 20-pol. ZIP | Static Column | Nibble Modus | Retentionszeit | Testzeit |
+|----------|-----|-----------|---------------|----------------|-----------|
+| 4 K x 1 | 4027 <sup>1)</sup>| - | - | - | 2ms  | 1.3sec |
+| 16 K x 1 | 4816 | - | - | - | 2ms | 1.6sec |
+| 16 K x 1 | 4116 <sup>1)</sup> | - | - | - | 2ms | 1.6sec |
+| 16 K × 4 | 4416 | – | – | - | 4ms | 4.2sec |
+| 64 K × 1 | 4164 | - | – | - | 4ms | 2.8sec |
+| 64 K × 4 | 4464 | – | – | - | 4ms | 6.4sec |
+| 256 K × 1 | 41256 | - | – | 41257 | 4ms | 7.9sec |
+| 256 K × 4 | 44256 | both | 44258 | - | 4ms | 4.5sec|
+| 1 M x 1 | 411000 | **!NO!** | - | - | 8ms | 26.1sec |
+| 1 M × 4 | 514400 | both | 514402 | - | 16ms | 12.8sec |
 
 1) 4116 benötigt eine Adapterplatine.
 
