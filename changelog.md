@@ -1,5 +1,11 @@
 **Version History**
 
+v4.0-5 (2026-02-16)
+- *BREAKING*: Firmware now uses the before unused Bootloader space - this changes the Upgrade/Install procedure! Check the Docs!
+- Vast speed improvements for most RAM Types, less than 45% of the previous Testtime!
+- 41257 Nibble Mode RAM Detection and Test Patterns 1-6 implemented, Retention Tests to be done
+- Fixed false detection of 3732 RAM Sub-Type, yet Tests 1-4 are ok, 5-6 are still buggy and no reliable retention testing.
+
 v4.0.1 (2026-01-26)
 - Re-Enabled In-Circuit Testing of 4164/41256 when Din is hardwired to Dout. Din will enter High Impedanze when Dout is read back.
 
