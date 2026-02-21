@@ -78,7 +78,7 @@ There is a short YouTube video demonstrating the tester in action. <br/>
 4. Stuck Cells or Crosstalk by using various patterns
 5. Random patterns combined with retention time checks
 6. CAS-before-RAS Refresh Timer Function
-7. All of the above uses Fast Page Mode or Static Column control depending on RAM Chip type
+7. All of the above uses Fast Page Mode, Static Column or Nibble Mode control depending on RAM Chip type
 
 ### So why no MARCH-B?
 Here is the analytics of this algorithm vs. March-B
