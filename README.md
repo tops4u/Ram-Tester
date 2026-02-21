@@ -53,7 +53,7 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 
  <sup>1)</sup>requires the 4116 adapter board.
 
-Note: Above test times include the OLED Display. Without Display, the test durations are approx 1.7 sec shorter.
+Note: Above test times include the OLED Display. Without Display, the test durations are approx 1 sec shorter.
 
 ---
 
