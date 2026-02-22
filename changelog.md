@@ -1,6 +1,10 @@
 **Version History**
 
-v4.0-5 (2026-02-16)
+v4.0.6 (2026-02-22)
+- Fixed and verified implementation for MSM3732-H / needs checking with real HW for MSM3732-L and TMS4532
+- Todo: Retention Tuning for 3732 / 4532 /41257
+
+v4.0.5 (2026-02-16)
 - *BREAKING*: Firmware now uses the before unused Bootloader space - this changes the Upgrade/Install procedure! Check the Docs!
 - Vast speed improvements for most RAM Types, less than 45% of the previous Testtime!
 - 41257 Nibble Mode RAM Detection and Test Patterns 1-6 implemented, Retention Tests to be done
