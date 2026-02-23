@@ -6,7 +6,7 @@
 // -----------------------------------------------------------------------------------------
 // ---- UNCOMMENT FOR 2-PAGE BUFFER: FASTER DISPLAY (+128 BYTES RAM) -----------------------
 // ---- REQUIRES PATCHED U8g2 LIBRARY (see u8g2_i2c_speedfix.patch) ------------------------
-#define OLED_2PAGE
+// #define OLED_2PAGE
 // -----------------------------------------------------------------------------------------
 
 #ifndef COMMON_H
