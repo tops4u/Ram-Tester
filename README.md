@@ -44,17 +44,19 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 | 16 K x 1 | 4816 | - | - | - | 2ms | 1.6sec |
 | 16 K x 1 | 4116 <sup>1)</sup> | - | - | - | 2ms | 1.6sec |
 | 16 K × 4 | 4416 | – | – | - | 4ms | 4.2sec |
-| 32 K x 1 | 3732 | - | - | - | 4ms | <sup>2)</sup> |
+| 32 K x 1 | 3732 <sup>2)</sup> | - | - | - | 4ms | 2.8sec |
+| 32 K x 1 | 4532 <sup>3)</sup> | - | - | - | 4ms | 1.9sec |
 | 64 K × 1 | 4164 | - | – | - | 4ms | 2.8sec |
 | 64 K × 4 | 4464 | – | – | - | 4ms | 6.4sec |
-| 256 K × 1 | 41256 | - | – | 41257 | 4ms | 7.9sec |
+| 256 K × 1 | 41256 | - | – | 41257 | 4ms | 7.4sec |
 | 256 K × 4 | 44256 | both | 44258 | - | 4ms | 4.5sec|
 | 1 M x 1 | 411000 | **!NO!** | - | - | 8ms | 26.1sec |
 | 1 M × 4 | 514400 | both | 514402 | - | 16ms | 12.8sec |
 
-<sup>1)</sup>requires the 4116 adapter board.
-<sup>2)</sup>currently only -H Type verified with real RAM HW, retention Test not tuned yet.
-
+ <sup>1)</sup>requires the 4116 adapter board.<br/> 
+ <sup>2)</sup>currently only -H Type verified with real RAM HW<br/>
+ <sup>3)</sup>simulation only due to current unavailability of real RAM Chip<br/>
+ 
 Note: Above test times include the OLED Display. Without Display, the test durations are approx 1 sec shorter.
 
 ---
