@@ -1,5 +1,13 @@
 **Version History**
 
+v4.1.0 (2026-02-24)
+- Fixed a bug in the handling of delays for last rows during retention testing
+- Adapted 514256/-258 Retention times 4 -> 8ms
+- Implemented all logic and retention testing for 3732 and 4532 RAM. Yet 3732-L and 4532 are not yet tested with physical RAMs
+- Some minor speed improvements
+- Minor adjustments to retention test delays
+- Patch for u8g2 Lib for using Soft I2C - if applied you may uncomment #define OLED_2PAGE in common.h
+
 v4.0.6 (2026-02-22)
 - Fixed and verified implementation for MSM3732-H / needs checking with real HW for MSM3732-L and TMS4532
 - Todo: Retention Tuning for 3732 / 4532 /41257
