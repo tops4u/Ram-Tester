@@ -1,4 +1,4 @@
-# Vintage DRAM Tester  
+# Vintage DRAM Tester for 15 different RAM Types
 Fast – Precise – Open for many 8-/16-bit systems like C64, C128, Amigas, Atari 800XL, 1040ST and others, Apple IIe, Spektrum and many more
 
 ## What this project is
