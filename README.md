@@ -55,7 +55,7 @@ It is probably the fastest Arduino solution which also covers **static-column DR
 
  <sup>1)</sup>requires the 4116 adapter board.<br/> 
  <sup>2)</sup>currently only -H Type verified with real RAM HW<br/>
- <sup>3)</sup>simulation only due to current unavailability of real RAM Chip<br/>
+ <sup>3)</sup>only verified by simulation with 4164 due to current unavailability of real RAM Chip<br/>
  
 Note: Above test times include the OLED Display. Without Display, the test durations are approx 1 sec shorter.
 
