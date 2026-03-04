@@ -10,7 +10,7 @@ Results from stress tests to observe how hot the fuse becomes (temperature measu
 
 - **1stGen_ShortTest** → First board revisions with green PCBs  
 - **2ndGen_ShortTest** → Second revision with black PCBs, markings: none, *V2* or *V2.1*  
-
+- **3rdGen_ShortTest** → Third revision with black PCBs, marking 3.0 or 3.1 on the back
 ---
 
 ## 4116 Boards  
