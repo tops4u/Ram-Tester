@@ -1,7 +1,9 @@
 # RAM Tester: Operation Manual
 
 ## Capabilities
-Check whether your firmware supports the testing of half-good 4164 RAMs. Check the FW Version (dial an invalid DIP Switch configuration like all off or multiple on), then the Tester displays the Firmware version. If it is written in black on a white background and has <code>32</code> as a suffix - Support is active for MSM3732 and TMS4532. If it is white text on black and does only show the Version String like <code>Ver.:4.2.3</code> without <code>32</code> at the end, then the active Firmware does not support those but instead has clear defect messages for 4164 RAM. 
+Check whether your firmware supports the testing of half-good 4164 RAMs. Check the FW Version (dial an invalid DIP Switch configuration like all off or multiple on), then the Tester displays the Firmware version. If it is written in black on a white background and has <code>32</code> as a suffix - Support is active for MSM3732 and TMS4532. If it is white text on black and does only show the Version String like <code>Ver.:4.2.3</code> without <code>32</code> at the end, then the active Firmware does not support those. For details on the 32K Mode check the Docs Section. 
+
+**Current Firmware Release is 4.2.3**. If your Firmware is below, you may want to consider updating it. 
 
 ## 1. Basic Operation
 Follow these steps to operate the tester correctly.
@@ -26,7 +28,7 @@ Follow these steps to operate the tester correctly.
 If the tester reports an error, refer to the list below to diagnose the issue.
 
 ### Hardware Errors
-* **Defect or no RAM** The Ram does work to provide simple functions so it can't be detected or identified.
+* **Defect or no RAM:** The RAM does work to provide simple functions so it can't be detected or identified.
 * **GND Short:** A pin that should not have a short-circuit to ground is shorted.
     * *Note:* Pin numbers displayed correspond to the **ZIF Socket**.
 * **Addressline Error:** The tester is unable to address the memory cells.
