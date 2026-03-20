@@ -1,7 +1,7 @@
 # RAM Tester: Operation Manual
 
 ## Capabilities
-Check whether your firmware supports the testing of half-good 4164 RAMs. Check the FW Version (dial an invalid DIP Switch configuration like all off or multiple on), then the Tester displays the Firmware version. If it is written in black on a white background and has <code>32</code> as a suffix - Support is active for MSM3732 and TMS4532. If it is white text on black and does only show the Version String like <code>Ver.:4.2.3</code> without <code>32</code> at the end, then the active Firmware does not support those. For details on the 32K Mode check the Docs Section. 
+Check whether your firmware supports the testing of half-good 4164 RAMs. Check the FW Version (dial an invalid DIP Switch configuration like all off or multiple on), then the Tester displays the Firmware version. If it is written in black on a white background and has <code>32</code> as a suffix - Support is active for MSM3732 and TMS4532. If it is white text on black and does only show the Version String like <code>Ver.:4.2.3</code> without <code>32</code> at the end, then the active Firmware does not support those. For details on the 32K Mode check the 32K-Option Section. 
 
 **Current Firmware Release is 4.2.3**. If your Firmware is below, you may want to consider updating it. 
 
