@@ -57,8 +57,6 @@
  */
 
 #include "common.h"
-#include <string.h>
-#include <stdio.h>
 
 //=======================================================================================
 // DISPLAY INITIALIZATION
@@ -95,7 +93,10 @@ U8G2_SSD1306_128X64_NONAME_1_SW_I2C display(U8G2_R0, /*clock=*/13, /*data=*/12, 
  * -1 indicates no RAM type detected yet (initial state)
  */
 int type = -1;
+#ifdef ENABLE_32K
 const __FlashStringHelper *typeSuffix = NULL;
+uint8_t halfGoodBlink = 0;  // 0=normal, 1=4532(1G-5O), 2=3732(1G-6O), 3=ambig(5O+6O)
+#endif
 
 /**
  * DIP Switch Configuration Mode
@@ -106,7 +107,7 @@ const __FlashStringHelper *typeSuffix = NULL;
  *   Pin  2 (D2) contributes Mode_16Pin (1) if HIGH
  *
  * Valid modes:
- *   Mode_16Pin (2): Tests 16-pin DRAMs (4164, 41256, 41257, 4816, 4532-L/H)
+ *   Mode_16Pin (2): Tests 16-pin DRAMs (4164, 41256, 41257, 4816, TMS4532, MSM3732)
  *   Mode_18Pin (3): Tests 18-pin DRAMs (4416, 4464, 411000)
  *   Mode_20Pin (5): Tests 20-pin DRAMs (514256, 514258, 514400, 514402, 4116, 4027)
  *
@@ -144,7 +145,8 @@ const uint8_t pattern[] = { 0x00, 0xff, 0xaa, 0x55, 0xaa, 0x55 };
  * Saves approximately 370 bytes compared to RAM storage.
  * Referenced by ramTypes[].name pointers.
  */
-const char ramType_4164[] PROGMEM = "4164 64Kx1";
+const char ramType_4164[] PROGMEM = "4164 64Kx1 4ms";
+const char ramType_4164_2ms[] PROGMEM = "4164 64Kx1 2ms";
 const char ramType_41256[] PROGMEM = "41256 256Kx1";
 const char ramType_41257[] PROGMEM = "41257 256Kx1-NM";
 const char ramType_4416[] PROGMEM = "4416 16Kx4";
@@ -157,8 +159,21 @@ const char ramType_411000[] PROGMEM = "411000 1Mx1";
 const char ramType_4116[] PROGMEM = "4116 16Kx1";
 const char ramType_4816[] PROGMEM = "4816 16Kx1";
 const char ramType_4027[] PROGMEM = "4027 4Kx1";
-const char ramType_4532[] PROGMEM = "TMS4532 32Kx1";
-const char ramType_3732[] PROGMEM = "MSM3732 32Kx1";
+
+#ifdef ENABLE_32K
+// PROGMEM suffix strings for half-good chip display
+// When typeSuffix is set, printTestOK uses it as the display string (not ramTypes name)
+// Definitive (2 quadrants in a row/col pair):
+const char qs_4532_4[] PROGMEM = "4532-4 32K";
+const char qs_4532_3[] PROGMEM = "4532-3 32K";
+const char qs_3732_H[] PROGMEM = "3732-H 32K";
+const char qs_3732_L[] PROGMEM = "3732-L 32K";
+// Ambiguous (single quadrant — could be either type):
+const char qs_Q1[] PROGMEM = "3732-H/4532-4 32K";
+const char qs_Q2[] PROGMEM = "3732-L/4532-4 32K";
+const char qs_Q3[] PROGMEM = "3732-H/4532-3 32K";
+const char qs_Q4[] PROGMEM = "3732-L/4532-3 32K";
+#endif
 
 //=======================================================================================
 // RAM TYPE DEFINITIONS WITH TIMING PARAMETERS
@@ -199,8 +214,8 @@ struct RAM_Definition ramTypes[] = {
   { ramType_4164, 4, 2, 256, 256, RAM_FLAG_SMALL_TYPE, { 55, 55, 13, 13, 13, 13 }, 39 },
   { ramType_41256, 4, 1, 512, 512, 0, { 104, 20, 20, 20, 20, 20 }, 75 },
   { ramType_41257, 4, 1, 512, 512, RAM_FLAG_NIBBLE_MODE, { 0, 0, 0, 0, 0, 0 }, 4 },
-  { ramType_4416, 4, 4, 256, 64, RAM_FLAG_SMALL_TYPE, { 30, 30, 30, 30, 11, 11 }, 21 },
-  { ramType_4464, 4, 1, 256, 256, 0, { 122, 48, 48, 48, 48, 48 }, 77 },
+  { ramType_4416, 4, 4, 256, 64, RAM_FLAG_SMALL_TYPE, { 27, 28, 27, 27, 9, 9 }, 16 },
+  { ramType_4464, 4, 1, 256, 256, 0, { 98, 24, 24, 24, 24, 24 }, 38 },
   { ramType_514256, 8, 5, 512, 512, RAM_FLAG_SMALL_TYPE, { 47, 47, 47, 47, 47, 11 }, 34 },
   { ramType_514258, 8, 5, 512, 512, RAM_FLAG_STATIC_COLUMN | RAM_FLAG_SMALL_TYPE, { 47, 47, 47, 47, 47, 10 }, 34 },
   { ramType_514400, 16, 5, 1024, 1024, 0, { 96, 96, 96, 96, 96, 24 }, 64 },
@@ -209,8 +224,7 @@ struct RAM_Definition ramTypes[] = {
   { ramType_4116, 2, 2, 128, 128, 0, { 30, 30, 6, 6, 6, 6 }, 24 },
   { ramType_4816, 2, 2, 128, 128, 0, { 30, 30, 7, 7, 7, 7 }, 24 },
   { ramType_4027, 2, 2, 64, 64, 0, { 40, 40, 27, 27, 27, 27 }, 12 },
-  { ramType_4532, 4, 2, 128, 256, RAM_FLAG_SMALL_TYPE, { 55, 55, 13, 13, 13, 13 }, 39 },  // 4532 only has half valid Row side so 128Rows
-  { ramType_3732, 4, 2, 256, 256, RAM_FLAG_SMALL_TYPE, { 55, 55, 13, 13, 13, 13 }, 39 }   // 3732 only has half valid Col side but -L or -H code tests both but ignores half
+  { ramType_4164_2ms, 2, 1, 256, 256, RAM_FLAG_SMALL_TYPE, { 51, 9, 9, 9, 9, 9 }, 39 }  // 4164 with 2ms retention — timing values need calibration
 };
 
 //=======================================================================================
@@ -244,9 +258,12 @@ typedef struct {
  *
  * Complete Pattern List (see main .ino file header for full reference):
  *   1G-1O: 4164    | 1G-2O: 41256   | 1G-3O: 41257   | 1G-4O: 4816
- *   1G-5O: TMS4532 | 1G-6O: MSM3732  | 2G-1O: 4416    | 2G-2O: 4464
- *   2G-3O: 411000  | 3G-1O: 514256  | 3G-2O: 514400  | 3G-3O: 514258
- *   3G-4O: 514402  | 4G-1O: 4116    | 4G-2O: 4027
+ *   2G-1O: 4416    | 2G-2O: 4464    | 2G-3O: 411000
+ *   3G-1O: 514256  | 3G-2O: 514400  | 3G-3O: 514258  | 3G-4O: 514402
+ *   4G-1O: 4116    | 4G-2O: 4027
+ *
+ *   Half-good chips (via halfGoodBlink, not in this table):
+ *   1G-5O: TMS4532 | 1G-6O: MSM3732 | 1G-5O+1G-6O: ambiguous
  */
 const LedPattern ledPatterns[] = {
   { 1, 1 },  // T_4164    - 64Kx1        16-pin
@@ -262,8 +279,10 @@ const LedPattern ledPatterns[] = {
   { 4, 1 },  // T_4116    - 16Kx1        20-pin via adapter
   { 1, 4 },  // T_4816    - 16Kx1        16-pin
   { 4, 2 },  // T_4027    - 4Kx1         20-pin via adapter
-  { 1, 5 },  // T_4532    - TMS4532 32Kx1 16-pin (RAS-split half-good 4164)
-  { 1, 6 }   // T_3732    - MSM3732 32Kx1 16-pin (CAS-split half-good 4164)
+  // TMS4532 (1G-5O) and MSM3732 (1G-6O) have no ledPatterns[] entries.
+  // Their blink codes are driven by halfGoodBlink, set during quadrant evaluation.
+  // Ambiguous (single quadrant): plays 1G-5O then 1G-6O sequentially.
+  { 1, 1 }  // T_4164_2MS[13] - 4164 with 2ms retention (same LED as 4164)
 };
 
 //=======================================================================================
@@ -364,9 +383,6 @@ uint16_t adc_read(uint8_t channel) {
  * @param adc_value 10-bit ADC reading (0-1023)
  * @return Voltage in volts (0.0 - 5.0V with AVcc reference)
  */
-float adc_to_voltage(uint16_t adc_value) {
-  return (float)adc_value * ADC_VREF / ADC_RESOLUTION;
-}
 
 //=======================================================================================
 // DRAM INITIALIZATION
@@ -529,6 +545,49 @@ void checkGNDShort4Port(const uint8_t *portb, const uint8_t *portc, const uint8_
     // Check PORTD bit i
     if (portd[i] != EOL && portd[i] != NC && ((PIND & mask) == 0)) {
       error(portd[i], 4);  // Ground short on pin portd[i]
+    }
+  }
+}
+
+//=======================================================================================
+// ADDRESS PIN SHORT DETECTION
+//=======================================================================================
+
+
+void checkAddressShorts(uint8_t mB, uint8_t mC, uint8_t mD) {
+  DDRB &= ~mB;
+  DDRC &= ~mC;
+  DDRD &= ~mD;
+  PORTB |= mB;
+  PORTC |= mC;
+  PORTD |= mD;
+  delayMicroseconds(5);
+  for (uint8_t p = 0; p < 3; p++) {
+    volatile uint8_t *base;
+    uint8_t mask;
+    if (p == 0) {
+      base = &PIND;
+      mask = mD;
+    } else if (p == 1) {
+      base = &PINB;
+      mask = mB;
+    } else {
+      base = &PINC;
+      mask = mC;
+    }
+    for (uint8_t bm = 1; bm; bm <<= 1) {
+      if (!(mask & bm)) continue;
+      *(base + 1) |= bm;
+      *(base + 2) &= ~bm;
+      delayMicroseconds(2);
+      uint8_t eB = mB, eC = mC, eD = mD;
+      if (p == 0) eD &= ~bm;
+      else if (p == 1) eB &= ~bm;
+      else eC &= ~bm;
+      if ((PINB & eB) != eB || (PINC & eC) != eC || (PIND & eD) != eD)
+        error(0, 6);
+      *(base + 1) &= ~bm;
+      *(base + 2) |= bm;
     }
   }
 }
@@ -707,9 +766,7 @@ void setupLED() {
  * @note OLED display only updates when OLED is defined in common.h
  * @note After displaying error, calls setupLED() to prepare for blinking
  */
-void error(uint8_t code, uint8_t error, int16_t row, int16_t col) {
-  (void)row;
-  (void)col;
+void error(uint8_t code, uint8_t error) {
 #ifdef OLED
   switch (error) {
     case 0:  // No RAM detected in socket
@@ -732,12 +789,23 @@ void error(uint8_t code, uint8_t error, int16_t row, int16_t col) {
       display.setCursor(15, 54);
       display.print(F("Addressline A"));
       if (code < 16) {
-        display.print(code);  // Row
+        display.print(code);  // Row address line A0-A15
       } else if (code <= 32) {
-        display.print(code >> 4);  // Col
+        display.print(code - 16);  // Col address line A0-A15
       } else {
-        display.print(F("?"));  // Decoder
+        display.print(F("?"));  // Decoder error
       }
+      OLED_END();
+      break;
+
+    case 6:  // Address line short (two address lines shorted together)
+      OLED_BEGIN()
+      display.setFont(custom_embedded_icons);
+      display.setCursor(50, 33);
+      display.print(F("C"));
+      display.setFont(M_Font);
+      display.setCursor(3, 54);
+      display.print(F("Short Addressline!"));
       OLED_END();
       break;
 
@@ -808,6 +876,10 @@ void error(uint8_t code, uint8_t error, int16_t row, int16_t col) {
       redBlinks = 3;
       orangeCount = (code > 0 && code <= 20) ? code : 0;
       break;
+    case 6:  // Address line short - 3 red, no orange (distinct from ground short)
+      redBlinks = 3;
+      orangeCount = 0;
+      break;
     case 5:  // Refresh timeout - 2 red, 8 orange
       redBlinks = 2;
       orangeCount = 8;
@@ -872,17 +944,26 @@ void ConfigFail() {
 // SUCCESS INDICATION
 //=======================================================================================
 
-
 void printTestOK(String s) {
-  if (typeSuffix) s += typeSuffix;
-  int pos = 64 - (s.length() * 3.5);
+#ifdef ENABLE_32K
+  if (typeSuffix) s = typeSuffix;  // Half-good: replace base name with chip identification
+#endif
+  int pos = 64 - (s.length() * 7 / 2);  // Center text (integer math, avoids float lib)
   OLED_BEGIN()
-  display.setFont(M_Font);
-  display.setCursor(pos, 54);
-  display.print(s);
   display.setFont(custom_check_icons);
   display.setCursor(50, 33);
   display.print(F("A"));  // Checkmark icon
+  display.setFont(M_Font);
+#ifdef ENABLE_32K
+  if (typeSuffix) {
+    // Half-good chip: inverted bar (white background, black text) for visual emphasis
+    display.drawBox(0, 42, 128, 16);  // Full-width white bar
+    display.setDrawColor(0);          // Black text on white bar
+  }
+#endif
+  display.setCursor(pos, 54);
+  display.print(s);
+  display.setDrawColor(1);  // Restore normal draw color
   OLED_END();
 }
 
@@ -909,9 +990,10 @@ void printTestOK(String s) {
  *
  * Complete Pattern Reference:
  *   1G-1O: 4164    | 1G-2O: 41256   | 1G-3O: 41257   | 1G-4O: 4816
- *   1G-5O: TMS4532 | 1G-6O: MSM3732  | 2G-1O: 4416    | 2G-2O: 4464
- *   2G-3O: 411000  | 3G-1O: 514256  | 3G-2O: 514400  | 3G-3O: 514258
- *   3G-4O: 514402  | 4G-1O: 4116    | 4G-2O: 4027
+ *   2G-1O: 4416    | 2G-2O: 4464    | 2G-3O: 411000
+ *   3G-1O: 514256  | 3G-2O: 514400  | 3G-3O: 514258  | 3G-4O: 514402
+ *   4G-1O: 4116    | 4G-2O: 4027
+ *   Half-good (halfGoodBlink): 1G-5O: TMS4532 | 1G-6O: MSM3732 | both: ambig
  *
  * Timing Constants:
  *   BLINK_ON_MS:     100ms - Blink on duration
@@ -920,7 +1002,7 @@ void printTestOK(String s) {
  *   PATTERN_PAUSE_MS: 1000ms - Delay before repeating full pattern
  *
  * Error Handling:
- *   If type is invalid (< 0 or > T_3732), falls back to steady green blink
+ *   If type is invalid (< 0 or > T_4164_2MS), falls back to steady green blink
  *   (1 second on, 1 second off) to indicate unknown but successful test.
  *
  * @note Function never returns - enters infinite LED blink loop
@@ -937,7 +1019,7 @@ void testOK() {
   setupLED();  // Prepare LED pins for success pattern
 
   // Validate detected type
-  if (type < 0 || type > T_3732) {
+  if (type < 0 || type > T_4164_2MS) {
     // Unknown type - fallback to steady green blink
     while (true) {
       setLED(LED_GREEN);
@@ -947,14 +1029,32 @@ void testOK() {
     }
   }
 
+  uint8_t g1 = ledPatterns[type].green_blinks;
+  uint8_t o1 = ledPatterns[type].orange_blinks;
+#ifdef ENABLE_32K
+  // halfGoodBlink overrides: 1=4532(1G-5O), 2=3732(1G-6O), 3=ambig(1G-5O then 1G-6O)
+  uint8_t o2 = 0;
+  if (halfGoodBlink) {
+    g1 = 1;
+    o1 = (halfGoodBlink & 1) ? 5 : 6;  // 1→5(4532), 2→6(3732), 3→5(ambig 1st)
+    if (halfGoodBlink == 3) o2 = 6;    // ambiguous: append 1G-6O as 2nd pattern
+  }
+#endif
+
   // Main success pattern loop
   while (true) {
-    // GREEN blinks indicate TEST PASSED
-    blinkLED_color(LED_GREEN, ledPatterns[type].green_blinks, BLINK_ON_MS, BLINK_OFF_MS);
+    blinkLED_color(LED_GREEN, g1, BLINK_ON_MS, BLINK_OFF_MS);
     delay(INTER_BLINK_MS);
-
-    // ORANGE blinks indicate SPECIFIC RAM TYPE
-    blinkLED_color(LED_ORANGE, ledPatterns[type].orange_blinks, BLINK_ON_MS, BLINK_OFF_MS);
+    blinkLED_color(LED_ORANGE, o1, BLINK_ON_MS, BLINK_OFF_MS);
+#ifdef ENABLE_32K
+    if (o2) {
+      // Ambiguous half-good: play second pattern (1G-6O = could also be 3732)
+      delay(PATTERN_PAUSE_MS);
+      blinkLED_color(LED_GREEN, 1, BLINK_ON_MS, BLINK_OFF_MS);
+      delay(INTER_BLINK_MS);
+      blinkLED_color(LED_ORANGE, o2, BLINK_ON_MS, BLINK_OFF_MS);
+    }
+#endif
     delay(PATTERN_PAUSE_MS);
   }
 }
@@ -969,10 +1069,21 @@ void printQRandVersion(String s) {
   display.setCursor(0, 52);
   display.print(s);
   display.setFont(S_Font);
+#ifdef ENABLE_32K
+  // 32K Check enable: inverted bar (white background, black text) for Version to indicate Flag
+  display.drawBox(0, 56, 64, 8);  // Half-width white bar
+  display.setDrawColor(0);        // Black text on white bar
   display.setCursor(0, 63);
-  display.print(F("Version:"));
-  display.setCursor(40, 63);
+  display.print(F("Ver.:"));  
   display.print(version);
+  display.print(F(" 32"));
+  display.setDrawColor(1);
+#endif
+#ifndef ENABLE_32K
+  display.setCursor(7, 63);
+  display.print(F("Ver.:"));
+  display.print(version);
+#endif
   OLED_END();
 }
 
@@ -1043,7 +1154,7 @@ void selfCheckError(String text) {
   display.setFont(M_Font);
   display.setCursor(10, 48);
   display.print(F("Self Test Fail!"));
-  int pos = 64 - (text.length() * 3.5);  // Center text horizontally
+  int pos = 64 - (text.length() * 7 / 2);  // Center text (integer math)
   display.setCursor(pos, 64);
   display.print(text);
   OLED_END();

@@ -5,8 +5,8 @@ RAM Tester Program for RAM Tester PCB
 
 Author:   Andreas Hoffmann
 Project:  github.com/tops4u/ram-tester
-Version:  4.1.0
-Date:     23.02.2026
+Version:  4.2.3
+Date:     19.03.2026
 
 This software is published under GPL 3.0. Respect the license terms.
 Project hosted at: https://github.com/tops4u/Ram-Tester/
@@ -33,8 +33,9 @@ The goal was to make it work lightning fast!
    1 GREEN, 2 ORANGE : 41256  (256Kx1, 16-pin)
    1 GREEN, 3 ORANGE : 41257  (256Kx1 Nibble Mode, 16-pin)
    1 GREEN, 4 ORANGE : 4816   (16Kx1, 16-pin)
-   1 GREEN, 5 ORANGE : 4532-L (32Kx1 Lower Half, 16-pin, half-good chip)
-   1 GREEN, 6 ORANGE : 4532-H (32Kx1 Upper Half, 16-pin, half-good chip)
+   1 GREEN, 5 ORANGE : TMS4532  (32Kx1, 16-pin, half-good 4164, -3/-4 on OLED)
+   1 GREEN, 6 ORANGE : MSM3732  (32Kx1, 16-pin, half-good 4164, -L/-H on OLED)
+   1G-5O then 1G-6O  : Ambiguous (single quadrant, could be TMS4532 or MSM3732)
 
    2 GREEN, 1 ORANGE : 4416   (16Kx4, 18-pin)
    2 GREEN, 2 ORANGE : 4464   (64Kx4, 18-pin)
@@ -56,6 +57,7 @@ The goal was to make it work lightning fast!
    1 RED, n ORANGE blinks        : Address line error (n = address line number 0-15)
    2 RED, 1-6 ORANGE blinks      : Pattern error (1-5 = pattern 0-4, 6 = random test)
    2 RED, 7 ORANGE blinks        : Retention error (data not held during refresh)
+   3 RED, 0 ORANGE blinks        : Address line short (two address lines shorted)
    3 RED, n ORANGE blinks        : Ground short (n = pin number)
 
 ---------------------------------------------------------------------------------------
@@ -70,7 +72,7 @@ Test Methodology:
 - DRAMs with 4-bit data bus tested column-by-column with patterns: 0b0000, 0b1111, 0b1010, 0b0101
 - Program tests data retention times (not access times or voltage levels)
 - Address decoding and crosstalk verified using pseudo-randomized data patterns
-- Special handling for 4532 chips (half-functional 4164 variants)
+- Special handling for 3732 & 4532 chips (half-functional 4164 variants)
 
 Test Patterns (in order):
   0. 0x00 - All zeros (stuck-at-0 test)
@@ -136,6 +138,17 @@ Version History:
 - 4.1.0       Retention Tests tuned for TMS4532 and MSM3732. 
               TMS4532 simulated by 4164 RAM - but real HW test is still open
               Minor Bugfix for 16Pin Logic, delay fault when testing last Row in Retention Tests 
+- 4.1.1       Minor Fix in 18Pin Retention Timing Logic
+              Added explicit Addressline - Short detection. This detects if address lines have shorts with another adresseline.
+              Added 4164 4ms vs 2ms Tests. If a 4164 fails the 4ms Test, it is retested with 2ms. This is clearly indicated in the Display.
+              Fixed wrong retention times for MSM3732! Was 4ms instead of 2ms.
+- 4.2.1       Fixed 4532 behaviour and in consequencec the 3732 to match. Now errors are assigned to quadrants. Depending on how many
+              faults are detected an which quadrants are affected the RAM will be classified into one of 10 categories. 4x one of the 4 Subtypes
+              4x combinations of subtypes, a plain 4164 or simply a defect chip. 
+- 4.2.2       Minor Text changes
+              Minor Edge Case fix for TMS4532
+              Adapted Blink Codes for MSM3732/TMS4532
+- 4.2.3       Modifiy Version String depending on ENABLE_32K
 
 Disclaimer:
 This project is for hobbyist use. There are no guarantees regarding its fitness for a specific purpose
@@ -144,7 +157,7 @@ or its error-free operation. Use it at your own risk.
 ----------------------------- COPYRIGHT INFORMATION -----------------------------
 
  * This project uses components of the Arduino platform, licensed under the LGPL 2.1:
- * - Arduino Core (Arduino.h, EEPROM.h)
+ * - Arduino Core (Arduino.h)
  * -----------------------------
  * It also uses avr-libc (avr/pgmspace.h, avr/io.h), licensed under a BSD-style license.
  * -----------------------------
@@ -209,7 +222,7 @@ or its error-free operation. Use it at your own risk.
  * - Pin 2 (D2): 16-pin mode if HIGH
  *
  * Valid configurations (only one pin should be HIGH):
- * - Mode_16Pin (2): Tests 4164, 41256, 41257, 4816, 4532-L, 4532-H
+ * - Mode_16Pin (2): Tests 4164, 41256, 41257, 4816, TMS4532, MSM3732
  * - Mode_18Pin (3): Tests 4416, 4464, 411000
  * - Mode_20Pin (5): Tests 514256, 514258, 514400, 514402, 4116, 4027
  *
@@ -263,17 +276,14 @@ void setup() {
   PORTC |= 0b00111111;  // Enable pullups on PC0-PC5
   PORTD = 0xff;         // Enable pullups on all PORTD pins
 
-  // Turn on LED on PB5 (pin 13) to indicate tester is active
-  // This prevents user confusion as it will show yellow (red+green) during test
-  digitalWrite(LED_RED_PIN, ON);
-
   // Allow time for pullup resistors to charge pins to HIGH state
   // Check for any pins shorted to ground (would remain LOW with pullup enabled)
   checkGNDShort();  // Calls error() if short detected, never returns
 
   // DRAM startup delay as specified in datasheets
   // Most DRAMs require 200μs minimum after power-up before initialization
-  delayMicroseconds(200);
+  // delayMicroseconds(200);
+  // no longer needed all code before starting the INIT probably takes a lot more than 200us.
 
   // Generate pseudo-random test data table at startup
   // Saves 188 bytes flash compared to pre-populated table

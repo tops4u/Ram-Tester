@@ -1,5 +1,10 @@
 **Version History**
 
+v4.2.3 (2026-03-20)
+- Fixed the Logic for MSM3732 and TMS4532, which is now also verified -> Please check the Docs on this!
+- Added Addressline Short-Circuit test before actually testing RAM. This checks Addresslines against each other
+- Added Fallback Retention Testing for 4164 RAM. If the RAM fails with 4ms Tests, the test is repeated with a 2ms test. The Result will show which retention Time is met by writing "4164 64K x 1 4ms" or suffix "2ms". 
+
 v4.1.0 (2026-02-24)
 - Fixed a bug in the handling of delays for last rows during retention testing
 - Adapted 514256/-258 Retention times 4 -> 8ms

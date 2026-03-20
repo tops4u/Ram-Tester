@@ -1,7 +1,13 @@
 Current Firmwares:
 - 2.1.x   Legacy Versions prior to Displays
-- 3.x.x   Current Head Versions - if in doubt use these
-- 4.1.0   Current Firmware with fixed bugs. 3732-L implemented buy untested with physical RAM. 4532 implemented only tested with 4164 and simulated detection. 
+- 4.2.x   Current Firmware. Includes verified implementation of 3732/4532 Logic. Please read below! 
+
+** New with 4.2.x **
+You may have seen that currently there are two HEX Files for the 4.2.x Release. This is due to the fact that the implementation of the MSM3732 and TMS4532 have some consequences. Those are basically 4164 RAM with some defects (ranging from simple 1bit errors to complete rows or columns that don't work). For an automatic detection of the RAM it needs to be tested. As said before it is basically a partially broken 4164 RAM, detecting a sane 4164 is no longer possible this way. So similarly broken 4164 RAM would exhibit the same pattern and are thus also identified as one of those RAM types. If you think that you will never test any of those RAMs you may use the Version without 32K in the Name, which has this logic deactivated. Defective 4164 will then be shown as faulty as any 3732 or 4532 would. 
+
+In order to rise the users awareness that if a 4164 is inserted and then identified as 3732 and/or 4532 the Text of those RAM Types is inverted on the Display. To Check if your Firmware has 32K Support, you can check the Version of the Firmware. Firmware without 32K is writen white text on black background like "Ver.:4.3.2" while Firmware that has 32K Support enabled will be written black text on white background and has the suffix 32 like "Ver.:4.3.2 32". 
+
+If you compile the Firmware yourself by uploading it via the Arduino IDE, you may decide if you want to disable the 32K Logic, by commenting out the macro #define ENABLE_32k in the file common.h in the first few lines.
 
 The Assembly Test was used to check if the Soldering was ok, with the built in Selftest of 4.x this is more or less obsolete.
 

@@ -294,6 +294,14 @@ static inline uint8_t read18Pin(uint16_t row, uint8_t col) {
 }
 
 void checkAddressing_18Pin() {
+  checkAddressShorts(0x14, 0x00, 0xFC);
+
+  // Restore I/O direction: checkAddressShorts leaves address pins as inputs with pull-ups
+  DDRB = 0b00111111;
+  PORTB = 0b00100010;  // RAS=HIGH
+  DDRD = 0b11100111;
+  PORTD = 0x00;
+
   // Derive bit counts (rows/cols assumed power-of-two from ramTypes)
   uint16_t rows = ramTypes[type].rows;
   uint16_t cols = ramTypes[type].columns;
@@ -528,13 +536,14 @@ void writeRow_18Pin(uint8_t row, uint8_t patNr, uint16_t width) {
   if (row == ramTypes[type].rows - 1) {  // Last Row written, we have to check the last n Rows as well.
     // Retention testing the last rows, they will no longer be written only read back. Simulate the write time to get a correct retention time test.
     for (int8_t x = ramTypes[type].delayRows; x >= 0; x--) {
+      delayMicroseconds(ramTypes[type].writeTime * 20);
+      delayMicroseconds(ramTypes[type].delays[5] * 20);
       rasHandling_18Pin(row - x);
       checkRow_18Pin(width, row - x, patNr, init_shift, 3);
-      delayMicroseconds(ramTypes[type].writeTime * 20);  // Simulate writing even if it is no longer done for the last rows
-      delayMicroseconds(ramTypes[type].delays[5] * 20);
     }
     return;
   } else if (row >= ramTypes[type].delayRows) {
+    delayMicroseconds(ramTypes[type].delays[5] * 20);
     rasHandling_18Pin(row - ramTypes[type].delayRows);
     checkRow_18Pin(width, row - ramTypes[type].delayRows, patNr, init_shift, 3);
   } else
@@ -564,7 +573,7 @@ void checkRow_18Pin(uint16_t width, uint8_t row, uint8_t patNr, uint8_t init_shi
       CAS_HIGH18;
       if ((getData18Pin()) != pat) {
         sei();
-        error(patNr, errorNr, row, col);
+        error(patNr, errorNr);
       }
     }
   else
@@ -574,7 +583,7 @@ void checkRow_18Pin(uint16_t width, uint8_t row, uint8_t patNr, uint8_t init_shi
       CAS_HIGH18;
       if (getData18Pin() != randomTable[mix8(col, row)]) {
         sei();
-        error(patNr, errorNr, row, col);
+        error(patNr, errorNr);
       }
     }
   sei();
@@ -711,6 +720,14 @@ static inline uint8_t read_addr_alt_18Pin(uint16_t row, uint16_t col) {
 }
 
 void checkAddressing_18Pin_Alt() {
+  checkAddressShorts(0x15, 0x00, 0x7F);
+
+  // Restore I/O direction: checkAddressShorts leaves address pins as inputs with pull-ups
+  DDRB = (DDRB & 0xE0) | 0x1D;
+  DDRC = (DDRC & 0xE0) | 0x17;
+  DDRD = (DDRD & 0x18) | 0xE7;
+  PORTD = 0x00;
+
   uint16_t rows = ramTypes[type].rows;
   uint16_t cols = ramTypes[type].columns;
   uint8_t rowBits = countBits(rows - 1);
@@ -913,7 +930,7 @@ static void fastPatternTest_18Pin_Alt(uint8_t patNr) {
             sei();
             RAS_HIGH_18PIN_ALT;
             uint16_t col = reconstructCol_18Pin_Alt(pd_lut[pd_i], pb_base | pb_val, pc_r[pc_i]);
-            error(patNr + 1, 2, row, col);
+            error(patNr + 1, 2);
             return;
           }
         }
@@ -991,17 +1008,17 @@ void writeRow_18Pin_Alt(uint16_t row, uint8_t patNr) {
   RAS_HIGH_18PIN_ALT;
 
   refreshRow_18Pin_Alt(row);
-  // Retention testing (analog to other RAMs)
+  // Retention testing (analog to 16Pin pattern: delay BEFORE check)
   if (row == ramTypes[type].rows - 1) {                       // Last row
-    for (int8_t x = ramTypes[type].delayRows; x >= 0; x--) {  // Check last 5 rows
-      checkRow_18Pin_Alt(row - x, patNr, 3);
-      delayMicroseconds(ramTypes[type].writeTime * 20);  // Simulate writing even if it is no longer done for the last rows
+    for (int8_t x = ramTypes[type].delayRows; x >= 0; x--) {  // Check last n rows
+      delayMicroseconds(ramTypes[type].writeTime * 20);
       delayMicroseconds(ramTypes[type].delays[ramTypes[type].delayRows] * 20);
+      checkRow_18Pin_Alt(row - x, patNr, 3);
     }
     return;
   } else if (row >= ramTypes[type].delayRows) {
-    checkRow_18Pin_Alt(row - ramTypes[type].delayRows, patNr, 3);
     delayMicroseconds(ramTypes[type].delays[ramTypes[type].delayRows] * 20);
+    checkRow_18Pin_Alt(row - ramTypes[type].delayRows, patNr, 3);
     return;
   }
   delayMicroseconds(ramTypes[type].delays[row] * 20);
@@ -1052,7 +1069,7 @@ void checkRow_18Pin_Alt(uint16_t row, uint8_t patNr, uint8_t errorNr) {
           CAS_HIGH_18PIN_ALT;
           sei();
           RAS_HIGH_18PIN_ALT;
-          error(patNr + 1, errorNr, row, col);
+          error(patNr + 1, errorNr);
           return;
         }
         CAS_HIGH_18PIN_ALT;

@@ -114,12 +114,10 @@ bool test_4116(void) {
   if (!(PINB & (1 << PB4)) || !(PINB & (1 << PB2))) return false;
 
   uint16_t adc_pc2 = adc_read(2);
-  float voltage_pc2 = adc_to_voltage(adc_pc2);
-  if (voltage_pc2 < (TARGET_VOLTAGE - VOLTAGE_TOLERANCE) || voltage_pc2 > (TARGET_VOLTAGE + VOLTAGE_TOLERANCE)) return false;
+  if (adc_pc2 < ADC_4116_LOW || adc_pc2 > ADC_4116_HIGH) return false;
 
   uint16_t adc_pc3 = adc_read(3);
-  float voltage_pc3 = adc_to_voltage(adc_pc3);
-  if (voltage_pc3 < (TARGET_VOLTAGE - VOLTAGE_TOLERANCE) || voltage_pc3 > (TARGET_VOLTAGE + VOLTAGE_TOLERANCE)) return false;
+  if (adc_pc3 < ADC_4116_LOW || adc_pc3 > ADC_4116_HIGH) return false;
 
   return true;
 }
@@ -313,7 +311,7 @@ void writeCellVerify_4116(uint8_t col, uint8_t pat, uint8_t row) {
   WE_HIGH20;
   if (((readCell_4116(col) ^ pat) & 0x01) != 0) {
     sei();
-    error(pat, 2, row, col);
+    error(pat, 2);
   }
   WE_LOW20;
 }
@@ -412,7 +410,7 @@ void checkRow_4116(uint8_t row, uint8_t patNr, uint8_t errorNr) {
     CAS_HIGH20;
     if ((GET_DOUT_4116() ^ expected) != 0) {
       sei();
-      error(patNr + 1, errorNr, row, col);
+      error(patNr + 1, errorNr);
     }
     if (patNr < 4) pat = rotate_left(pat);
   }
@@ -454,7 +452,7 @@ void verifyAddressTest_4116(uint8_t row, uint8_t col, uint8_t expected, uint8_t 
     RAS_HIGH20;
     NOP;
     NOP;  // tRP (extra for 4027)
-    error(bitNum, 1, row, col);
+    error(bitNum, 1);
   }
 
   RAS_HIGH20;
@@ -499,6 +497,11 @@ void testAddressBit_4116(uint8_t base_addr, uint8_t peer_addr,
  * Address testing for 4116/4027 RAM
  */
 void checkAddressing_4116(void) {
+  checkAddressShorts(0x00, 0x00, (type == T_4027) ? 0x3F : 0x7F);
+
+  // Restore I/O direction: checkAddressShorts leaves address pins as inputs with pull-ups
+  DDRD = 0xFF;
+  PORTD = 0x00;
   DDRC = 0b00011110;
   uint16_t max_rows = ramTypes[type].rows;
   uint16_t max_cols = ramTypes[type].columns;
@@ -688,6 +691,11 @@ static inline uint8_t read20Pin(uint16_t row, uint16_t col) {
  * @note Row errors report bit 0-9, column errors report bit 16-25
  */
 void checkAddressing_20Pin() {
+  checkAddressShorts(0x10, (type == T_514400 || type == T_514402) ? 0x10 : 0x00, 0xFF);
+
+  // Restore I/O direction: checkAddressShorts leaves address pins as inputs with pull-ups
+  configureIO_20Pin();
+
   // Bit counts from current RAM type
   uint16_t rows = ramTypes[type].rows;
   uint16_t cols = ramTypes[type].columns;
@@ -968,7 +976,7 @@ static void fastPatternTest_20Pin(uint8_t patNr) {
           sei();
           RAS_HIGH20;
           OE_HIGH20;
-          error(patNr, 2, row, ((uint16_t)msb << 8) | col);
+          error(patNr, 2);
         }
         PORTD = col++;
         CAS_LOW20;
@@ -977,7 +985,7 @@ static void fastPatternTest_20Pin(uint8_t patNr) {
           sei();
           RAS_HIGH20;
           OE_HIGH20;
-          error(patNr, 2, row, ((uint16_t)msb << 8) | col);
+          error(patNr, 2);
         }
       } while (col != 0);
     }
@@ -1133,7 +1141,7 @@ void checkRow_20Pin(uint8_t patNr, uint16_t row, uint8_t errNr, boolean is_stati
         uint16_t v = col ^ row_mix;
         if ((pin_data ^ randomTable[(uint8_t)(v ^ (v >> 8))]) != 0) {
           sei();
-          error(patNr, errNr, row, col);
+          error(patNr, errNr);
         }
         col++;
 
@@ -1144,7 +1152,7 @@ void checkRow_20Pin(uint8_t patNr, uint16_t row, uint8_t errNr, boolean is_stati
         v = col ^ row_mix;
         if ((pin_data ^ randomTable[(uint8_t)(v ^ (v >> 8))]) != 0) {
           sei();
-          error(patNr, errNr, row, col);
+          error(patNr, errNr);
         }
         col++;
       } while (col != 0);
@@ -1160,7 +1168,7 @@ void checkRow_20Pin(uint8_t patNr, uint16_t row, uint8_t errNr, boolean is_stati
         uint16_t v = col ^ row_mix;
         if ((pin_data ^ randomTable[(uint8_t)(v ^ (v >> 8))]) != 0) {
           sei();
-          error(patNr, errNr, row, col);
+          error(patNr, errNr);
         }
       } while (++col != 0);
     }

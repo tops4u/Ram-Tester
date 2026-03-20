@@ -12,7 +12,8 @@
 // - 41256 (256Kx1, 512 rows x 512 cols, 4ms refresh)
 // - 41257 (256Kx1 Nibble Mode, 512 rows x 512 cols, 4ms refresh)
 // - 4816 (16Kx1, 128 rows x 128 cols, 2ms refresh, no -5V/+12V)
-// - 4532-L/H (32Kx1 half-functional, 128 rows x 256 cols, 2ms refresh)
+// - TMS4532 (32Kx1, RAS-split half-good 4164, 128 rows x 256 cols, 4ms refresh)
+// - MSM3732 (32Kx1, CAS-split half-good 4164, 256 rows x 256 cols, 4ms refresh, -L/-H)
 //
 //=======================================================================================
 
@@ -142,25 +143,14 @@ static void run_16Pin_tests();
 static void refreshTimeTest_16Pin();  // Refresh time test for 41256
 static void detect41257_16Pin();      // Nibble mode detection after 41256 sensing
 
-/**
- * Main entry point for 16-pin DRAM testing
- *
- * This function orchestrates the complete test sequence:
- * 1. Configures I/O pins for 16-pin DRAM interface
- * 2. Checks if RAM is present in socket
- * 3. Determines chip type (4164/41256/41257/4816/4532)
- * 4. Verifies all address lines function correctly
- * 5. Runs comprehensive pattern and retention tests
- * 6. T_3732 is reclassified from T_4164 during pattern tests (col-half errors)
- *    T_4532 is always detected in sense41256_16Pin() before testing begins
- *
- * I/O Configuration:
- * - DDRB: PB0-PB5 as outputs (address lines, RAS, WE, LED)
- * - DDRC: PC0-PC4 as mixed I/O (address, CAS, data in/out)
- * - DDRD: PD0-PD2, PD6-PD7 as outputs (address lines)
- *
- * The function never returns - ends with testOK() or error() which loop infinitely.
- */
+#ifdef ENABLE_32K
+// Quadrant error tracking for TMS4532/MSM3732 detection
+// Bits 0-3 = Q1-Q4: qbit = ((row>=128)?2:0) | ((col>=128)?1:0)
+static uint8_t quadrantErrors;            // Accumulated quadrant error bitmap
+static uint8_t quadrantErrorsAfterPat03;  // Snapshot after patterns 0-3 (before retention)
+#endif
+static uint8_t retryActive;               // 0=normal, 1=retry armed (T_4164 4ms), 2=failure intercepted
+
 void test_16Pin() {
   // Configure I/O for 16-pin DRAM interface
   // DDRB: Set PB0-PB5 as outputs (A3, A4, A6, WE, RAS, LED)
@@ -182,7 +172,7 @@ void test_16Pin() {
     error(0, 0);  // No RAM detected - trigger error display
 
   // Determine chip type by testing address lines A7 and A8
-  // Detects: T_41256, T_4164, T_4816, T_4532 (TMS), T_3732 (OKI)
+  // Detects: T_41256, T_4164, T_4816 (4532/3732 detected via quadrant errors)
   sense41256_16Pin();
 
   // If 41256 detected, check for nibble mode (41257)
@@ -190,9 +180,13 @@ void test_16Pin() {
     detect41257_16Pin();
   }
 
-  // Display chip type on OLED
-  if (type == T_4164) writeRAMType((const __FlashStringHelper *)F("4164/3732(?)"));
-  else writeRAMType((const __FlashStringHelper *)ramTypes[type].name);
+#ifdef ENABLE_32K
+  // Display chip type on OLED (4164 shown initially; half-good identified after tests)
+  if (type == T_4164)
+    writeRAMType((const __FlashStringHelper *)F("4164 or 32Kx1"));
+  else
+#endif
+    writeRAMType((const __FlashStringHelper *)ramTypes[type].name);
 
   // Restore I/O configuration after chip sensing
   DDRB = 0b00111111;
@@ -202,16 +196,53 @@ void test_16Pin() {
   checkAddressing_16Pin();
 
   // Run comprehensive pattern tests
-  // T_4532 is already known from detection; T_3732 is reclassified inside if col-half errors appear
   run_16Pin_tests();
 
+#ifdef ENABLE_32K
+  // ===== QUADRANT EVALUATION (T_4164/T_4164_2MS) =====
+  // qbit = ((row>=128)?2:0) | ((col>=128)?1:0)  →  Q1=bit0, Q2=bit1, Q3=bit2, Q4=bit3
+  //
+  // Two-quadrant (definitive):
+  //   0x03 = Q1+Q2 (row-half A7=0) → TMS4532-4
+  //   0x0C = Q3+Q4 (row-half A7=1) → TMS4532-3
+  //   0x05 = Q1+Q3 (col-half A7=0) → MSM3732-H
+  //   0x0A = Q2+Q4 (col-half A7=1) → MSM3732-L
+  //
+  // Single-quadrant (ambiguous — can't distinguish RAS-split from CAS-split):
+  //   0x01 = Q1 only → 4532-4 or 3732-H
+  //   0x02 = Q2 only → 4532-4 or 3732-L
+  //   0x04 = Q3 only → 4532-3 or 3732-H
+  //   0x08 = Q4 only → 4532-3 or 3732-L
+  //
+  // Diagonal or 3+: defective
+  if ((type == T_4164 || type == T_4164_2MS) && quadrantErrors) {
+    const char *qs;
+    switch (quadrantErrors) {
+      case 0x03: qs = qs_4532_4; break;   // Definitive TMS4532-4
+      case 0x0C: qs = qs_4532_3; break;   // Definitive TMS4532-3
+      case 0x05: qs = qs_3732_H; break;   // Definitive MSM3732-H
+      case 0x0A: qs = qs_3732_L; break;   // Definitive MSM3732-L
+      case 0x01: qs = qs_Q1; break;       // Ambiguous Q1
+      case 0x02: qs = qs_Q2; break;       // Ambiguous Q2
+      case 0x04: qs = qs_Q3; break;       // Ambiguous Q3
+      case 0x08: qs = qs_Q4; break;       // Ambiguous Q4
+      default:   error(0, 2);             // Diagonal/3+ → defective
+    }
+    typeSuffix = (const __FlashStringHelper *)qs;
+
+    // Set LED blink code: 1=4532 (1G-5O), 2=3732 (1G-6O), 3=ambig (1G-5O+1G-6O)
+    halfGoodBlink = (quadrantErrors & (quadrantErrors - 1))
+        ? ((quadrantErrors == 0x03 || quadrantErrors == 0x0C) ? 1 : 2)
+        : 3;
+  }
+#endif
+
   // ===== REFRESH TIME TEST (41256/41257) =====
-  // Test if chip can retain data with maximum refresh interval
   if (type == T_41256 || type == T_41257) {
     refreshTimeTest_16Pin();
   }
 
-  // All tests passed - display success pattern
+  // All tests passed - invert chip name on display if requalified (4532/3732)
   testOK();  // Never returns
 }
 
@@ -242,10 +273,6 @@ void test_16Pin() {
  *
  * @param patNr Pattern number (0-3 only)
  */
-
-// Global half-good error tracking (set by fastPatternTest/checkRow error handlers)
-static uint8_t error_in_lower_half;  // Errors where A7=0 (RAS for 4532, CAS for 3732)
-static uint8_t error_in_upper_half;  // Errors where A7=1
 
 static void __attribute__((hot)) fastPatternTest_16Pin(uint8_t patNr) {
   uint16_t total_rows = ramTypes[type].rows;
@@ -359,16 +386,14 @@ static void __attribute__((hot)) fastPatternTest_16Pin(uint8_t patNr) {
           CAS_HIGH16;
 
           if ((PINC ^ exp) & 0x04) {
-            // ---- Error: mismatch on DOUT ----
-            // Track half-errors for 4164/4532/3732 half-good detection
-            if (row >= 128) error_in_upper_half |= 0x01;
-            else error_in_lower_half |= 0x01;
-            if (PORTD & 0x40) error_in_upper_half |= 0x02;
-            else error_in_lower_half |= 0x02;
-            if (type == T_4164 || type == T_4532 || type == T_3732) {
-              if ((error_in_lower_half & error_in_upper_half & 0x03) != 0x03)
-                continue;
-            }
+#ifdef ENABLE_32K
+            // ---- Error: track quadrant for TMS4532/MSM3732 detection ----
+            // PORTD bit 6 = PD6 = A7 column address (already set during CAS)
+            uint8_t qbit = ((row >= 128) ? 2 : 0) | ((PORTD & 0x40) ? 1 : 0);
+            quadrantErrors |= (1 << qbit);
+            if (quadrantErrors != 0x0F)   // Not all 4 quadrants dead yet
+              continue;                   // Keep testing remaining cells
+#endif
             sei();
             RAS_HIGH16;
             DDRC |= 0x02;
@@ -396,43 +421,58 @@ static void __attribute__((hot)) fastPatternTest_16Pin(uint8_t patNr) {
  * Patterns 0-3: Fast port-ordered write-then-read per row (~4× faster)
  * Patterns 4-5: Pseudo-random with retention testing (ordered access required)
  *
- * Half-good chip handling (T_4532, T_3732):
- *   Both types are tested as full 256x256 (same as 4164). Errors in the
- *   expected bad half are ignored (continue). After all patterns complete,
- *   the subtype is determined by which half had errors:
- *   - T_4532: RAS-split → track by row A7 → NL3 (lower good) / NL4 (upper good)
- *   - T_3732: CAS-split → track by col A7 → -L (lower good) / -H (upper good)
+ * Quadrant error tracking:
+ *   For T_4164, errors are tracked by quadrant (row A7 × col A7).
+ *   After all patterns, quadrantErrors bitmap is evaluated by caller
+ *   via quadrantLUT to identify TMS4532/MSM3732 variants.
+ *   4ms→2ms retention fallback restores quadrant snapshot from pat 0-3.
  */
 
 static void run_16Pin_tests() {
   uint16_t total_rows = ramTypes[type].rows;
 
-  // Reset half-good error tracking
-  error_in_lower_half = 0;
-  error_in_upper_half = 0;
+#ifdef ENABLE_32K
+  quadrantErrors = 0;
+#endif
 
   // Patterns 0-3: Fast port-ordered per-row write-then-read
   for (uint8_t patNr = 0; patNr < 4; patNr++) {
     fastPatternTest_16Pin(patNr);
   }
 
+#ifdef ENABLE_32K
+  // Snapshot after patterns 0-3 (before retention testing)
+  quadrantErrorsAfterPat03 = quadrantErrors;
+#endif
+
   if (ramTypes[type].flags & RAM_FLAG_NIBBLE_MODE) total_rows /= 2;  // Nibble Mode: A8 used for nibble bit selection
+
+  // Arm retry for T_4164: if patterns 4-5 fail at 4ms, retry with 2ms timing
+  if (type == T_4164) retryActive = 1;
+
   // Patterns 4-5: Pseudo-random with retention testing (needs sequential access)
+pat45_start:
   for (uint8_t patNr = 4; patNr <= 5; patNr++) {
     if (patNr == 5) invertRandomTable();
-
     for (uint16_t row = 0; row < total_rows; row++) {
       writeRow_16Pin(row, ramTypes[type].columns, patNr);
+      if (retryActive == 2) goto pat45_failed;
     }
   }
+  goto pat45_done;
 
-  // ========== HALF-GOOD SUBTYPE DETERMINATION ==========
-  // error_in_lower/upper_half bits: 0x01=row, 0x02=col
-  // T_4532 already detected in sense. T_3732: reclassify from T_4164 if col-half errors.
-  if (type == T_4164 && (error_in_lower_half & 0x02) != (error_in_upper_half & 0x02))
-    type = T_3732;
-  if (type == T_3732)
-    typeSuffix = (error_in_lower_half & 0x02) ? F("(H)") : F("(L)");
+pat45_failed:
+  // 4ms retention failed → retry with 2ms
+  retryActive = 0;
+  type = T_4164_2MS;
+#ifdef ENABLE_32K
+  quadrantErrors = quadrantErrorsAfterPat03;  // Discard 4ms retention errors
+#endif
+  generateRandomTable();
+  goto pat45_start;
+
+pat45_done:
+  retryActive = 0;
 }
 
 //=======================================================================================
@@ -503,30 +543,35 @@ static inline uint8_t read16Pin(uint16_t row, uint16_t col) {
  * @return true if RAM detected and responding, false if socket empty or chip faulty
  */
 bool ram_present_16Pin(void) {
-  // Write test pattern: 0 to address 0, 1 to address 1
+  // Write test pattern: 0 to row 0, 1 to row 1
+  // Half-good chips (4532/3732) still respond here — they alias A7 but rows 0/1 are fine
   write16Pin(0, 0, 0);
   write16Pin(1, 0, 1);
 
-  // Read back and verify retention
   uint8_t r0 = read16Pin(0, 0);  // Should be 0
   uint8_t r1 = read16Pin(1, 0);  // Should be 1
-  uint8_t r2 = read16Pin(0, 0);  // Should still be 0 (retention check)
 
-  // Pass if all reads match expected values
-  return (r0 == 0 && r1 == 1 && r2 == 0);
+  // for half good RAMs make sure we did not hit a broken col/row/bit so check another location
+  write16Pin(4, 32, 0);
+  write16Pin(8, 64, 1);
+
+  uint8_t r2 = read16Pin(4, 32);  // Should be 0
+  uint8_t r3 = read16Pin(8, 64);  // Should be 1
+
+  return ((0 == 0 && r1 == 1) || (r2 == 0 && r3 ==1));
 }
 
 /**
  * Detect RAM capacity and type for 16-pin DRAMs
  *
  * Detection sequence:
- *   1. Basic write/read at (0,0) to verify chip responds
+ *   1. Basic write/read at (0,0) or (128,128) to verify chip responds
  *   2. A8 alias test: row 0 vs row 256 → 41256 if distinct, else 4164-class
  *   3. Row A7 alias test: row 0 vs row 128 → if aliased:
- *      - Col A7 test: col 0 vs 128 → aliased = 4816, independent = TMS4532
- *   4. Otherwise → T_4164 (MSM3732 detected during pattern tests)
+ *      - Col A7 test: col 0 vs 128 → aliased = 4816, independent = T_4164
+ *   4. Otherwise → T_4164 (TMS4532/MSM3732 detected via quadrant errors)
  *
- * Sets global 'type' to T_4164, T_41256, T_4816, or T_4532.
+ * Sets global 'type' to T_4164, T_41256, or T_4816.
  */
 void sense41256_16Pin() {
   CAS_HIGH16;
@@ -550,23 +595,23 @@ void sense41256_16Pin() {
     return;
   }
 
-  // ========== STEP 3: TEST A7 ROW LINE (4164 vs 4816 vs 4532) ==========
+  // ========== STEP 3: TEST A7 ROW LINE (4164 vs 4816) ==========
   write16Pin(0, 0, 0);
   write16Pin(128, 0, 1);
   if (read16Pin(0, 0) != 0) {
-    // Row A7 aliased — could be 4816 (128 cols) or 4532 (256 cols, RAS-split)
-    // Distinguish by testing col A7: write col 0, write col 128, read col 0
+    // Row A7 aliased — could be 4816 or half-good 4164
+    // Test col A7: if also aliased → 4816, otherwise → T_4164 (quadrant test handles 4532)
     write16Pin(0, 0, 0);
     write16Pin(0, 128, 1);
     if (read16Pin(0, 0) == 0) {
-      type = T_4532;  // Col A7 works (256 cols) + Row A7 aliased → TMS4532
+      type = T_4164;  // Col A7 works + Row A7 aliased → quadrant test will detect 4532
     } else {
       type = T_4816;  // Col A7 also aliased (128 cols) → 16Kx1
     }
     return;
   }
 
-  // 3732 detection deferred to pattern tests — defective col-half passes single-cell tests
+  // Quadrant-based detection handles TMS4532/MSM3732 during pattern tests
   type = T_4164;
 }
 
@@ -716,6 +761,16 @@ static void detect41257_16Pin() {
  * Calls error() if any address bit fails, displaying bit number in error code.
  */
 void checkAddressing_16Pin(void) {
+  checkAddressShorts(0x15, (type == T_41256 || type == T_41257) ? 0x11 : 0x10, 0xC3);
+
+  // Restore I/O direction: checkAddressShorts leaves all address pins as inputs with pull-ups
+  DDRB = 0b00111111;
+  PORTB = 0b00101010;  // RAS=HIGH, WE=HIGH
+  DDRC = 0b00011011;
+  PORTC = 0b00001000;  // CAS=HIGH
+  DDRD = 0b11000011;
+  PORTD = 0x00;
+
   uint16_t max_rows = ramTypes[type].rows;
   uint16_t max_cols = ramTypes[type].columns;
 
@@ -741,8 +796,11 @@ void checkAddressing_16Pin(void) {
     uint8_t base_result = read16Pin(base_row, 0);
     uint8_t peer_result = read16Pin(peer_row, 0);
 
-    // T_4532: RAS A7 aliased — skip A7 row test
-    if (type == T_4532 && b == 7) continue;
+#ifdef ENABLE_32K
+    // T_4164: skip A7 row test — half-good chips (4532) have aliased A7
+    // Quadrant error tracking during pattern tests will detect this
+    if (type == T_4164 && b == 7) continue;
+#endif
 
     // Normal address line test - fail if values don't match expected
     if (base_result != 0) error(b, 1);  // Base address corrupted
@@ -975,15 +1033,11 @@ void refreshRow_16Pin(uint16_t row) {
  * - Pre-calculates base port values to eliminate redundant bit manipulation
  * - Disables interrupts during entire read sequence for consistent timing
  *
- * 4532/3732 Half-Good Detection Logic:
- * For chips identified as T_4532 or T_3732 by sense41256_16Pin(), errors are tracked
- * per A7-half using error_in_lower_half / error_in_upper_half:
- * - T_4532 (TMS): RAS-split. Row A7 determines half (row >= 128 = upper half)
- * - T_3732 (OKI): CAS-split. Column A7 determines half (error_column >= 128 = upper half)
- *
- * Errors in the defective half are expected and ignored (return without error()).
- * After all 6 patterns complete, run_16Pin_tests() determines the subtype
- * (NL3/NL4 for TMS, -L/-H for OKI) based on which half had errors.
+ * Quadrant Error Detection:
+ * Errors are tracked by quadrant using row A7 and col A7:
+ *   qbit = ((row>=128)?2:0) | ((col>=128)?1:0)
+ * If not all 4 quadrants are bad, returns without error.
+ * After all patterns, caller evaluates quadrantErrors via LUT.
  *
  * @param cols Number of columns to verify (256 for 4164/4816/4532, 512 for 41256/41257)
  * @param row Row address to verify (0-255 for 4164/4816, 0-511 for 41256)
@@ -1005,8 +1059,7 @@ void __attribute__((hot)) checkRow_16Pin(uint16_t cols, uint16_t row, uint8_t pa
 
   // Calculate number of 32-column chunks
   uint8_t num_chunks = cols >> 5;
-  bool error_found = false;
-  uint16_t error_column = 0;  // Track which column failed for half-detection
+  uint8_t row_errors = 0;  // Bit 0 = col<128 error, bit 1 = col>=128 error
   bool is_nibble = (ramTypes[type].flags & RAM_FLAG_NIBBLE_MODE);
 
   // Switch PC1 (Din) to INPUT for shared Din/Dout chips (e.g., 41256 in A501)
@@ -1025,6 +1078,7 @@ void __attribute__((hot)) checkRow_16Pin(uint16_t cols, uint16_t row, uint8_t pa
       uint8_t base_c = (PORTC & 0xEC) | hc;
       uint8_t base_d = (PORTD & 0x3C) | hd;
       uint16_t chunkBase = (chunk << 5);
+      uint8_t half_bit = (chunk >= 4) ? 2 : 1;  // col half: chunks 0-3 < 128, 4+ >= 128
 
       for (int8_t c = 31; c >= 0; c--) {
         SET_ADDR_16_LOW(c);
@@ -1033,8 +1087,7 @@ void __attribute__((hot)) checkRow_16Pin(uint16_t cols, uint16_t row, uint8_t pa
         if (isRandom) expected = randomTable[mix8(chunkBase | c, row)];
         else expected = pat;
         if (((PINC ^ expected) & 0x04) != 0) {
-          if (!error_found) error_column = chunkBase | c;
-          error_found = true;
+          row_errors |= half_bit;
         }
         CAS_HIGH16;
         if (!isRandom) pat = rotate_left(pat);
@@ -1087,8 +1140,7 @@ void __attribute__((hot)) checkRow_16Pin(uint16_t cols, uint16_t row, uint8_t pa
       if ((data0 | data1 | data2 | data3) & 0x04) {
         CAS_HIGH16;
         RAS_HIGH16;
-        error_found = true;
-        error_column = col;
+        row_errors |= (col >= 128) ? 2 : 1;
         break;
       }
       RAS_HIGH16;
@@ -1098,14 +1150,16 @@ void __attribute__((hot)) checkRow_16Pin(uint16_t cols, uint16_t row, uint8_t pa
   // Switch PC1 (Din) back to OUTPUT for next write operation
   DDRC |= 0x02;
 
-  // --- ERROR HANDLING WITH HALF-FUNCTIONAL CHIP DETECTION ---
-  if (error_found) {
-    if (row >= 128) error_in_upper_half |= 0x01;
-    else error_in_lower_half |= 0x01;
-    if (error_column >= 128) error_in_upper_half |= 0x02;
-    else error_in_lower_half |= 0x02;
-    if ((type == T_4164 || type == T_4532 || type == T_3732) && (error_in_lower_half & error_in_upper_half & 0x03) != 0x03)
-      return;
+  // --- ERROR HANDLING ---
+  if (row_errors) {
+#ifdef ENABLE_32K
+    // Quadrant detection: track which quadrants have errors
+    // row_errors bits: 0=col<128, 1=col>=128  →  shifted by row half maps to quadrant bits
+    quadrantErrors |= row_errors << ((row >= 128) ? 2 : 0);
+    if (quadrantErrors != 0x0F)   // Not all quadrants bad
+      return;                     // Continue with next row
+#endif
+    if (retryActive) { retryActive = 2; return; }
     error(patNr + 1, check);
   }
 }

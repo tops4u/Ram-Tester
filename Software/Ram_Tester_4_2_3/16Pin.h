@@ -104,11 +104,11 @@ extern const struct port_config16_t PROGMEM lut_combined[512];
  *
  * Performs complete test sequence for 16-pin DRAM chips including:
  * 1. RAM presence detection
- * 2. Chip type identification (4164/41256/41257/4816/4532)
+ * 2. Chip type identification (4164/41256/41257/4816)
  * 3. Address line verification
  * 4. Pattern testing (stuck-at, alternating, random)
  * 5. Retention time testing with refresh timing verification
- * 6. 4532 half-functional chip detection and handling
+ * 6. TMS4532/MSM3732 detection via quadrant error tracking
  *
  * The function never returns during normal operation - it ends by calling
  * testOK() for success or error() for failures, both of which loop infinitely.

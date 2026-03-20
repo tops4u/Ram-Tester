@@ -6,7 +6,11 @@
 // -----------------------------------------------------------------------------------------
 // ---- UNCOMMENT FOR 2-PAGE BUFFER: FASTER DISPLAY (+128 BYTES RAM) -----------------------
 // ---- REQUIRES PATCHED U8g2 LIBRARY (see u8g2_i2c_speedfix.patch) ------------------------
-// #define OLED_2PAGE
+//#define OLED_2PAGE
+// -----------------------------------------------------------------------------------------
+// ---- COMMENT TO DISABLE TMS4532/MSM3732 32Kx1 DETECTION --------------------------------
+// ---- Without this, any 4164 pattern error = immediate failure (no quadrant analysis) ----
+#define ENABLE_32K
 // -----------------------------------------------------------------------------------------
 
 #ifndef COMMON_H
@@ -16,7 +20,7 @@
 #include <avr/pgmspace.h>
 
 // Version String
-const String version="4.1.0";
+const String version="4.2.3";
 
 #ifdef OLED
 #include <U8g2lib.h>
@@ -152,11 +156,9 @@ typedef enum
 #define PATTERN_PAUSE_MS 2000 // Pause before pattern repeat
 #define ERROR_PAUSE_MS 1500   // Pause between error pattern repeats
 
-// ADC parameters
-#define ADC_VREF 5.0
-#define TARGET_VOLTAGE 1.6
-#define VOLTAGE_TOLERANCE 0.16
-#define ADC_RESOLUTION 1024
+// ADC threshold for 4116 adapter detection (1.6V ± 0.16V → ADC 295-360 at 5V ref)
+#define ADC_4116_LOW  295
+#define ADC_4116_HIGH 360
 
 //=======================================================================================
 // RAM TYPE DEFINITIONS
@@ -176,8 +178,11 @@ typedef enum
 #define T_4116 10
 #define T_4816 11
 #define T_4027 12
-#define T_4532 13    // TMS4532 - RAS-split half-good 4164 (7-bit RAS, A7 ignored at RAS)
-#define T_3732 14    // OKI MSM3732 - CAS-split half-good 4164 (7-bit CAS, A7 ignored at CAS)
+// TMS4532 / MSM3732: No own ramTypes[]/ledPatterns[] entries.
+// Detected via quadrant error analysis during 4164 testing.
+// Identified by typeSuffix (OLED name) + halfGoodBlink (LED code).
+// Blink codes: 1G-5O = 4532, 1G-6O = 3732, 1G-5O+1G-6O = ambiguous.
+#define T_4164_2MS 13 // 4164 variant with 2ms retention time (array index 13)
 
 // Test Patterns
 extern const uint8_t pattern[6];
@@ -214,10 +219,16 @@ extern struct RAM_Definition ramTypes[];
 //=======================================================================================
 
 extern int type;
-extern const __FlashStringHelper *typeSuffix;
 extern uint8_t Mode;
 extern uint8_t red;
 extern uint8_t green;
+
+#ifdef ENABLE_32K
+extern const __FlashStringHelper *typeSuffix;
+// Half-good blink code selector (set by 16Pin quadrant evaluation)
+// 0=normal (use ledPatterns[type]), 1=4532 (1G-5O), 2=3732 (1G-6O), 3=ambig (1G-5O+1G-6O)
+extern uint8_t halfGoodBlink;
+#endif
 
 //=======================================================================================
 // FUNCTION PROTOTYPES - LED and Error Handling
@@ -229,13 +240,14 @@ void printQRandVersion(String s);
  * @return void
  */
 void setupLED(void);
-void error(uint8_t code, uint8_t error, int16_t row = -1, int16_t col = -1);
-void testOK(void);
+void error(uint8_t code, uint8_t error) __attribute__((noreturn));
+void checkAddressShorts(uint8_t mB, uint8_t mC, uint8_t mD);
+void testOK() __attribute__((noreturn));
 /**
  * ConfigFail — see implementation for details.
  * @return void
  */
-void ConfigFail(void);
+void ConfigFail(void) __attribute__((noreturn));
 void buildTest(void);
 
 //=======================================================================================
@@ -258,7 +270,6 @@ void invertRandomTable(void);
  */
 void adc_init(void);
 uint16_t adc_read(uint8_t channel);
-float adc_to_voltage(uint16_t adc_value);
 
 //=======================================================================================
 // FUNCTION PROTOTYPES - Ground Short Check
@@ -281,6 +292,21 @@ extern const uint8_t CPU_18PORTD[];
 extern const uint8_t CPU_20PORTB[];
 extern const uint8_t CPU_20PORTC[];
 extern const uint8_t CPU_20PORTD[];
+
+#ifdef ENABLE_32K
+//=======================================================================================
+// FUNCTION PROTOTYPES - Half Good RAM Text Combinations
+//=======================================================================================
+extern const char qs_4532_4[];
+extern const char qs_4532_3[];
+extern const char qs_3732_H[];
+extern const char qs_3732_L[];
+// Ambiguous (single quadrant — could be either type):
+extern const char qs_Q1[];
+extern const char qs_Q2[];
+extern const char qs_Q3[];
+extern const char qs_Q4[];
+#endif
 
 //=======================================================================================
 // FUNCTION PROTOTYPES - RAM Initialization
