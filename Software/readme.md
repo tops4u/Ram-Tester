@@ -7,7 +7,7 @@ You may have seen that currently there are two HEX Files for the 4.2.x Release. 
 
 In order to rise the users awareness that if a 4164 is inserted and then identified as 3732 and/or 4532 the Text of those RAM Types is inverted on the Display. To Check if your Firmware has 32K Support, you can check the Version of the Firmware. Firmware without 32K is writen white text on black background like <code>Ver.:4.3.2</code> while Firmware that has 32K Support enabled will be written black text on white background and has the suffix 32 like <code>Ver.:4.3.2 32</code>. 
 
-If you compile the Firmware yourself by uploading it via the Arduino IDE, you may decide if you want to disable the 32K Logic, by commenting out the macro <code>#define ENABLE_32K</code> in the file common.h in the first few lines.
+**If you compile the Firmware yourself by uploading it via the Arduino IDE, you may decide if you want to disable the 32K Logic, by commenting out the macro <code>#define ENABLE_32K</code> in the file common.h in the first few lines. Alternatively you may choos the HEX File without 32k in the name**
 
 The Assembly Test was used to check if the Soldering was ok, with the built in Selftest of 4.x this is more or less obsolete.
 
