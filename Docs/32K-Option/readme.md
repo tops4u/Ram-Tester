@@ -1,21 +1,82 @@
-## These Documents describe the Function and Procedure to test 4164/3732/4532 RAM
+# Testing 32K RAM: 4164 / 3732 / 4532
 
-32K has its name because half of good 4164 (64K times 1 bit) are 32K bits in size. 
+## The Simple Version
 
-1. Check if your firmware has the 32K option enabled in order to test 3732 and 4532 RAM -> See Docs Page
-2. Once you insert any of the above RAM into the tester, there are various possibilities of defects. 
-3. For a 4164, if no defects are found, it is reported as 4164 64K x 1 4ms or 2ms. If errors are found, it very much depends on where they are. If this RAM could still be used as 3732 or 4532, the tester will show which one would still work. Only if there are too many or too severe defects will a 4164 RAM show as a defect. So you will need to pay attention when reading the result for 4164 when 32K support is enabled. 
-4. When testing 3732 or 4532, they will be tested in all quadrants (check the docs above), and if 3 quadrants are okay and all defects are just in one quadrant, a 3732 may also be used as 4532 and vice versa. Explanation see below.
-5. When testing 3732 or 4532 and they show defects in two neighbouring quadrants, they only serve the type which is printed on the RAM. So only one specific subtype will be reported okay like: "3732-L 32K". 
+A **4164** is a 64K×1 DRAM. When it has defects, it may still be usable as a **32K×1** chip — either as an **OKI MSM3732** or a **TI TMS4532**. This tester figures that out automatically.
 
-As an option, if you find this confusing and don't want to test any 3732 or 4532 ever, you may choose to install the firmware with deactivated 32K Logic. For instructions on how to do this, check the "Software" Section
+### What happens when you test a chip?
 
-### What is the history behind 3732 and 4532? 
-In the early days, RAM was expensive, and 4164 RAM was just invented, and all computer manufacturers wanted it. Production was not perfect, and many silicon chips had some errors. In order to still use them, 2 companies (OKI and TI) had the idea to relabel them as 32K x 1 RAM by labeling them 3732 and 4532 respectively instead of 4164. They just did use a different approach. Both decided to split the available 64K in 2 by means of address line A7, so instead of 256 rows or columns, those RAMs only had 128. But here comes the twist... while TI decided to split the rows, like a horizontal split in lower and upper rows, OKI decided to split by columns, having like a left and right side (lower and upper columns). So those two were very incompatible. The only computer I know ever to use them was the ZX Spectrum for the higher part of its RAM. But you had to populate with the same type and subtype and define the behaviour with jumpers. So this led to 4 different RAM chips.
+- **4164**: If no errors are found → reported as `4164 64K x 1`. If errors are found but a good 32K half exists → the tester reports which 3732 or 4532 type it could still serve as. Only if there is no usable 32K block will it show as defective.
 
-- OKI MSM3732-L having the lower columns working
-- OKI MSM3732-H having the upper columns working
-- TI TMS4532-NL3 having the lower rows working
-- TI TMS4532-NL4 having the upper rows working
+- **3732 or 4532**: The tester checks all four quadrants of the chip. If only one quadrant has errors, the chip may work not only as the type printed on it, but also as the *other* type (e.g. a 3732-H could also work as a 4532-4). The tester reports all valid options.
 
-As you can see, if we mix the two concepts, this will give us 4 quadrants (imagine the RAM like a spreadsheet having 256 rows and 256 columns and draw lines in the middle at row 128 and col 128). If now the MSM3732-H has an error in the first quadrant (let’s say row 5, col 15), it would not be able to use the lower columns, thus type -H. But the very same would also apply to the TMS4532-4, just that this one would use all columns but only rows 128-256, also leaving out the error in quadrant 1. So this MSM3732-H could also serve as TMS4532-4. And this is what the 32K test of this tester will report as a result. 
+- **If errors span two adjacent quadrants**: The chip can only work as the specific subtype printed on it (e.g. `3732-L 32K`), if that half is error-free.
+
+### Important
+
+- Make sure your firmware has the 32K option enabled. Check the [Software section](../../Software) for instructions.
+- When 32K support is enabled, pay attention to 4164 results — a chip with errors may still show as a valid 3732 or 4532 rather than simply "defective".
+- If you never test 3732 or 4532 and find the extra output confusing, you can install the firmware with 32K logic disabled.
+
+---
+
+## The Technical Details
+
+### Why do 32K chips exist?
+
+In the early 1980s, 4164 RAM was in high demand but production yields were imperfect. Rather than discarding chips with partial defects, two manufacturers found a way to sell them as 32K×1 chips:
+
+- **OKI** sold them as the **MSM3732**
+- **Texas Instruments** sold them as the **TMS4532**
+
+Both split the 4164's 256×256 matrix in half using address line **A7**, reducing the addressable space from 256 to 128 on one axis. But they chose different axes:
+
+| Manufacturer | Chip | Split Axis | Variants |
+|---|---|---|---|
+| OKI | MSM3732 | **Columns** (left/right) | **-L** (cols 0–127) · **-H** (cols 128–255) |
+| TI | TMS4532 | **Rows** (upper/lower) | **-3** aka NL3 (rows 0–127) · **-4** aka NL4 (rows 128–255) |
+
+The ZX Spectrum is the most well-known computer to use these chips for its upper RAM. The board had jumpers to select the type and subtype — you had to populate all sockets with the same variant.
+
+### The Quadrant Approach
+
+This tester doesn't just check one half — it evaluates the entire 4164 matrix and splits it into **four quadrants** at A7 on both axes:
+
+```
+         Col 0–127       Col 128–255
+        (Col A7 = 0)    (Col A7 = 1)
+       ┌──────────────┬──────────────┐
+Row    │              │              │
+0–127  │     Q1       │     Q2       │
+(A7=0) │              │              │
+       ├──────────────┼──────────────┤
+Row    │              │              │
+128–255│     Q3       │     Q4       │
+(A7=1) │              │              │
+       └──────────────┴──────────────┘
+```
+
+Each quadrant holds 16K bits (128×128). A valid 32K chip needs **two adjacent quadrants** that are error-free:
+
+| Good Quadrants | Usable As | Split |
+|---|---|---|
+| Q1 + Q2 | **TMS4532-3** | Upper rows (Row A7 = 0) |
+| Q3 + Q4 | **TMS4532-4** | Lower rows (Row A7 = 1) |
+| Q1 + Q3 | **MSM3732-L** | Left columns (Col A7 = 0) |
+| Q2 + Q4 | **MSM3732-H** | Right columns (Col A7 = 1) |
+
+**Diagonal combinations** (Q1+Q4 or Q2+Q3) are **not valid** — they don't form a contiguous address block because A7 cannot be 0 and 1 at the same time.
+
+### Cross-Type Compatibility
+
+Because the 4532 and 3732 split along *different axes*, a chip can sometimes serve as either type:
+
+**Example:** A chip has errors only in Q3 (lower-left). Three quadrants are good (Q1, Q2, Q4).
+- ✅ Works as **TMS4532-3** (Q1+Q2, upper rows — no errors)
+- ✅ Works as **MSM3732-H** (Q2+Q4, right columns — no errors)
+- ❌ Fails as **TMS4532-4** (Q3+Q4 — Q3 has errors)
+- ❌ Fails as **MSM3732-L** (Q1+Q3 — Q3 has errors)
+
+The tester reports **all** valid configurations, not just the type printed on the chip. As far as we know, no other tester does this kind of cross-type evaluation.
+
+For a visual explanation with diagrams, see the [Quadrant Documentation (EN)](4164_Quadrants_Explanation.pdf) or [Quadranten-Dokumentation (DE)](4164_Quadranten_Erklärung.pdf).
