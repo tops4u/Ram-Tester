@@ -10,12 +10,15 @@ Check whether your firmware supports the testing of half-good 4164 RAMs. Check t
 
 | Document | Description |
 |----------|-------------|
-| [Manual_4.x.pdf](Manual_4.x.pdf) | Assembly guide and detailed operation manual for the RAM Tester |
+| [Manual_4.x.pdf](Manual_4.x.pdf) | Operation manual for the RAM Tester |
 | [Manual_4116.pdf](Manual_4116.pdf) / [Handbuch_4116.pdf](Handbuch_4116.pdf) | Assembly guide and operation manual for the 4116 adapter (EN / DE) |
 | [Update_EN.pdf](Update_EN.pdf) / [Update_DE.pdf](Update_DE.pdf) | Step-by-step firmware update guide using an Arduino as ISP programmer (EN / DE) |
 | [32K-Option/](32K-Option) | Documentation on 3732/4532 quadrant testing |
 | [Measurements/](Measurements) | Oscilloscope captures from various test runs |
 | [Archive/](Archive) | Legacy manuals for firmware 3.x and earlier (pre-display) |
+
+### For Assembly please check the following Video<br>
+[![YouTube Assembly Video](https://i.ytimg.com/vi/SPN98FYMu7Y/0.jpg)](https://youtu.be/SPN98FYMu7Y "Assembly")<br/>
 
 ---
 
