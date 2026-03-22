@@ -1,14 +1,22 @@
-# Vintage DRAM Tester  
+# Vintage DRAM Tester für 15 verschiedene RAM-Typen
 Schnell – Präzise – Kompatibel mit vielen 8-/16-Bit-Systemen wie C64, C128, Amigas, Atari 800XL, 1040ST und anderen, Apple IIe, Spectrum und vielen weiteren
 
-<img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/Tester.jpeg" width="400px" align="center"/><br/>
+## Was ist dieses Projekt?
+Ein schneller, quelloffener DIY-DRAM-Tester für Vintage-RAM-Chips, wie sie in C64, Amiga, Atari und anderen Retro-Computern verbaut sind. Basierend auf einem ATmega328P auf einer eigenen Platine testet er Speicherbausteine in Sekunden gründlich und unterstützt eine Vielzahl von Chiptypen mit optionalem OLED-Display.
+
+<img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/IMGP7463 (1).jpeg" width="400px" align="center"/><br/>
+
+**Bekannt aus:**
+
+- [***Hackaday***](https://hackaday.com/2025/12/08/cheap-and-aggressive-dram-chip-tester/) (Dec 2025): "Cheap and Aggressive DRAM Chip Tester"
+- [***Elektor Magazine***](https://www.elektormagazine.com/news/open-source-diy-ram-tester) (Dec 2025): "Ram-Tester Is an Open-Source DIY Solution for Retro Computer RAM"
 
 ---
 
 ## Warum dieser Tester?
 
-Die meisten Arduino-basierten DRAM-Tester benötigen bis zu 2 Minuten oder mehr für einen einzelnen 41256 RAM und prüfen nur Grundfunktionen.  
-Dieses Projekt führt einen vollständigen Speicher-, Adress-, Datenleitungs- und Retentionszeittest **in 15 Sekunden oder weniger** durch (oder sogar 2,5 Sekunden schneller ohne Display).  
+Die meisten Arduino-basierten DRAM-Tester benötigen bis zu 2 Minuten oder mehr für einen einzelnen 41256 RAM und prüfen nur Grundfunktionen.
+Dieses Projekt führt einen vollständigen Speicher-, Adress-, Datenleitungs- und Retentionszeittest **in 15 Sekunden oder weniger** durch (oder sogar 2,5 Sekunden schneller ohne Display).
 Es ist wahrscheinlich die schnellste Arduino-Lösung, die zudem **Static-Column-DRAMs, Zell-Retentionszeit und 20-polige ZIP-Gehäuse** unterstützt.
 
 ---
@@ -16,44 +24,52 @@ Es ist wahrscheinlich die schnellste Arduino-Lösung, die zudem **Static-Column-
 ## Hauptfunktionen
 
 | Funktion | Vorteil |
-|-----------|----------|
-| Die meisten Tests dauern ≤ 10s | Schnelle Diagnose auf der Werkbank oder bei Retro-Reparatur-Events |
+|----------|---------|
+| Die meisten Tests dauern ≤ 10 s | Schnelle Diagnose auf der Werkbank oder bei Retro-Reparatur-Events |
 | Messung der Retentionszeit | Erkennt schwache Chips, indem überprüft wird, ob die minimale Haltezeit eingehalten wird |
 | Unterstützung für Static Column | Zuverlässige Prüfung von 44258-, 514402-Static-Column-Funktionen |
-| Nibble Modus Unterstützung | Nibble Modus Test für 41257 RAM |
+| Nibble-Modus-Unterstützung | Nibble-Modus-Test für 41257-RAM |
 | 20-poliger ZIP-Sockel | Direkter Test von 20-poligen ZIP-DRAMs ohne Adapter |
 | Optionales OLED-Display oder LED-Blinkcodes | Vollständige Textausgabe oder minimale Hardwarekonfiguration |
 | Offene Hardware und Firmware | KiCad-, Gerber-Dateien und Arduino-Quellcode unter offener Lizenz |
+| Selbsttest-Modus | Prüft die Hardware auf Defekte wie Kurzschlüsse, fehlerhafte Lötstellen usw. |
+| Automatische Erkennung | Identifiziert den Chiptyp automatisch und prüft Teilverwendbarkeit defekter Chips |
 
 ---
 
-## Unterstützte DRAM-Typen 
+## Unterstützte DRAM-Typen (Testzeiten mit aktueller Firmware-Version)
 
-| Kapazität | DIP | 20-pol. ZIP | Static Column | Nibble Modus | Retentionszeit | Testzeit |
-|----------|-----|-----------|---------------|----------------|-----------|
-| 4 K x 1 | 4027 <sup>1)</sup>| - | - | - | 2ms  | 1.3sec |
-| 16 K x 1 | 4816 | - | - | - | 2ms | 1.6sec |
-| 16 K x 1 | 4116 <sup>1)</sup> | - | - | - | 2ms | 1.6sec |
-| 16 K × 4 | 4416 | – | – | - | 4ms | 4.2sec |
-| 64 K × 1 | 4164 | - | – | - | 4ms | 2.8sec |
-| 64 K × 4 | 4464 | – | – | - | 4ms | 6.4sec |
-| 256 K × 1 | 41256 | - | – | 41257 | 4ms | 7.9sec |
-| 256 K × 4 | 44256 | both | 44258 | - | 4ms | 4.5sec|
-| 1 M x 1 | 411000 | **!NO!** | - | - | 8ms | 26.1sec |
-| 1 M × 4 | 514400 | both | 514402 | - | 16ms | 12.8sec |
+| Kapazität | DIP | 20-pol. ZIP | Static Column | Nibble-Modus | Retentionszeit | Testzeit |
+|-----------|-----|-------------|---------------|--------------|----------------|----------|
+| 4 K × 1 | 4027 <sup>1)</sup> | – | – | – | 2 ms | 1,3 s |
+| 16 K × 1 | 4816 | – | – | – | 2 ms | 1,6 s |
+| 16 K × 1 | 4116 <sup>1)</sup> | – | – | – | 2 ms | 1,6 s |
+| 16 K × 4 | 4416 | – | – | – | 4 ms | 4,2 s |
+| 32 K × 1 | 3732 <sup>2)</sup> | – | – | – | 2/4 ms | 2,8 s |
+| 32 K × 1 | 4532 <sup>2)</sup> | – | – | – | 2/4 ms | 2,8 s |
+| 64 K × 1 | 4164 | – | – | – | 2/4 ms | 2,8 s |
+| 64 K × 4 | 4464 | – | – | – | 4 ms | 6,4 s |
+| 256 K × 1 | 41256 | – | – | 41257 | 4 ms | 7,4 s |
+| 256 K × 4 | 44256 | both | 44258 | – | 8 ms | 4,1 s |
+| 1 M × 1 | 411000 | **!NEIN!** | – | – | 8 ms | 25,9 s |
+| 1 M × 4 | 514400 | both | 514402 | – | 16 ms | 12,8 s |
 
-1) 4116 benötigt eine Adapterplatine.
+<sup>1)</sup> Benötigt die [4116-Adapterplatine](Schematic/4116).<br/>
+<sup>2)</sup> Teildefekte 4164-Chips, die als 32K × 1 verkauft wurden (OKI MSM3732 / TI TMS4532). Seit Firmware 4.2.3 standardmässig aktiv. Siehe [32K-Dokumentation](Docs/32K-Option) für Details.
 
-Hinweis: Die obigen Testzeiten beinhalten das OLED-Display. Ohne Display sind die Testzeiten etwa 1,7 Sekunden kürzer.
+**Static Column** bedeutet, dass der RAM Spaltenwechsel bei gehaltenem CAS erlaubt — schneller als Standard-Page-Mode. **Nibble Mode** liefert vier aufeinanderfolgende Bits aus einer Spaltenadresse.
+
+Hinweis: Die obigen Testzeiten beinhalten das OLED-Display. Ohne Display sind die Testzeiten ca. 1 s kürzer.
 
 ---
 
 ## Testablauf
 
-1. Das Bauteil einstecken (16, 18 oder 20 Pins, DIP oder ZIP).  
-2. USB-Stromversorgung anschließen.  
-3. Ergebnis ablesen  
-   * OLED-Version: Textausgabe auf dem Display  
+1. Das Bauteil einstecken (16, 18 oder 20 Pins, DIP oder ZIP).
+2. Den DIP-Schalter passend zur Pinanzahl des RAMs einstellen. Siehe [Bedienungsanleitung](Docs) für die Schalterstellungen.
+3. USB-Stromversorgung anschliessen (oder RESET drücken, falls bereits eingeschaltet).
+4. Ergebnis ablesen
+   * OLED-Version: Textausgabe auf dem Display
    * LED-Version: grün = bestanden, rot = Fehler
 
 Ein kurzes YouTube-Video zeigt den Tester in Aktion. <br/>
@@ -62,59 +78,60 @@ Ein kurzes YouTube-Video zeigt den Tester in Aktion. <br/>
 ---
 
 ## Was wird getestet?
-1. Kurzschluss gegen GND, falls dein RAM einen Kurzschluss auf einen Pin hat  
-2. Kurzschluss in der Stromversorgung – es gibt eine rücksetzbare Sicherung zum Schutz der Platine  
-3. Adressleitungs- oder Decoderfehler  
-4. Festsitzende Zellen oder Übersprechen durch verschiedene Testmuster  
-5. Zufällige Muster kombiniert mit Retentionszeitprüfungen  
-6. All dies erfolgt mit Fast Page Mode oder Static Column Steuerung – je nach RAM-Typ
+1. GND-Kurzschlüsse — prüft, ob ein Pin gegen Masse kurzgeschlossen ist
+2. Kurzschlüsse in der Stromversorgung — eine rücksetzbare Sicherung schützt die Platine
+3. Adressleitungs- oder Decoderfehler
+4. Festsitzende Zellen oder Übersprechen durch verschiedene Testmuster
+5. Zufällige Muster kombiniert mit Retentionszeitprüfungen
+6. CAS-before-RAS Refresh-Timer-Funktion
+7. Alle Tests nutzen den passenden Zugriffsmodus für den jeweiligen Chiptyp: Fast Page Mode, Static Column oder Nibble Mode
 
 ### Warum kein MARCH-B?
 Hier eine Analyse dieses Algorithmus im Vergleich zu March-B:
 
 | Aspekt | Aktueller Code | MARCH-B |
 | --- | --- | --- |
-| Musterabdeckung     | ✅ 0x00, 0xFF, 0xAA, 0x55 | ✅ |
-| 0/1-Übergangstests | ✅ Durch Muster-Sequenz | ✅ Durch R0W1, R1W0 |
-| Adressreihenfolge | ⚠️ Nur aufsteigend | ✅ Auf-/Absteigend |
-| Kopplungserkennung | ✅ Durch Retentionsverzögerung | ✅ Systematisch |
-| Echte Retention | ✅ 2–16 ms Tests | ❌ Nur µs-Bereich |
+| Musterabdeckung      | ✅ 0x00, 0xFF, 0xAA, 0x55 | ✅                     |
+| 0/1-Übergangstests   | ✅ Durch Muster-Sequenz    | ✅ Durch R0W1, R1W0    |
+| Adressreihenfolge    | ⚠️ Nur aufsteigend         | ✅ Auf-/Absteigend     |
+| Kopplungserkennung   | ✅ Durch Retentionsverzögerung | ✅ Systematisch    |
+| Echte Retention      | ✅ 2–16 ms Tests           | ❌ Nur µs-Bereich      |
 
 ### Warum ist er wahrscheinlich besser als viele andere Arduino-basierte RAM-Tester?
 Im Vergleich zu vielen anderen Open-Source-Projekten:
-- Sie testen normalerweise keine Adressleitungsfehler. Tests bestehen sogar, wenn ein Adresspin hochgebogen ist.  
-- Sie prüfen selten mehrere Reihen gleichzeitig, da sie langsame Arduino-Lese-/Schreibbefehle verwenden.  
-- Viele verwenden nur einfache Tests mit allen 0 oder allen 1, keine Muster- oder Zufallsdaten.  
-- Keine Retentionstests möglich, da das Schreiben und Lesen einer einzelnen Reihe mit Arduino-I/O länger als eine Sekunde dauert – typische Retentionszeiten liegen im Millisekundenbereich.  
-- Keine Prüfung auf defekte Chips (z. B. Kurzschluss nach GND).  
-- Kein Schutz vor Kurzschlüssen auf Versorgungsleitungen. Einige nutzen DC-DC-Wandler von der Stange, die bei Kurzschluss hohe Ströme liefern.  
-- Keine Prüfung von Refresh- oder Static-Column-Funktionalität.  
-- Sehr oft nur auf 1-Bit- oder 4-Bit-Schaltungen begrenzt und keine ZIP-Sockel.  
+- Sie testen normalerweise keine Adressleitungsfehler. Tests bestehen sogar, wenn ein Adresspin hochgebogen ist.
+- Sie prüfen selten mehrere Reihen gleichzeitig, da sie langsame Arduino-Lese-/Schreibbefehle verwenden.
+- Viele verwenden nur einfache Tests mit allen 0 oder allen 1, keine Muster- oder Zufallsdaten.
+- Keine Retentionstests möglich, da das Schreiben und Lesen einer einzelnen Reihe mit Arduino-I/O länger als eine Sekunde dauert — typische Retentionszeiten liegen im Millisekundenbereich.
+- Keine Prüfung auf defekte Chips (z. B. Kurzschluss nach GND).
+- Kein Schutz vor Kurzschlüssen auf Versorgungsleitungen. Einige nutzen DC-DC-Wandler von der Stange, die bei Kurzschluss hohe Ströme liefern.
+- Keine Prüfung von Refresh- oder Static-Column-Funktionalität.
+- Sehr oft nur auf 1-Bit- oder 4-Bit-Schaltungen begrenzt und keine ZIP-Sockel.
 - Sie sind in der Regel **VIEL** langsamer.
 
 ---
+## Bauen oder kaufen — du hast die Wahl
 
-## Bauen oder kaufen – du hast die Wahl
-Verkaufs-Thread auf Amibay: [https://www.amibay.com](https://www.amibay.com/threads/memory-tester.2450230/)<br/>
-Produktseite auf Tindie: [https://www.tindie.com](https://www.tindie.com/products/38927/)<br/>
-Produktseite auf EBAY: [https://www.ebay.ch](https://www.ebay.ch/itm/136500192190)<br/>
-DIY-Bestellung bei PCBWay für die Through-Hole-Version: [https://www.pcbway.com](https://www.pcbway.com/project/shareproject/Ram_Tester_ThruHole_Version_93863356.html)<br/>
-Verwende die bereitgestellten Gerber-Dateien aus diesem Repository.
+**Fertig kaufen:** [Amibay](https://www.amibay.com/threads/memory-tester.2450230/) · [Tindie](https://www.tindie.com/products/38927/) · [eBay](https://www.ebay.ch/itm/136743995188)
+
+**Selbst bauen (DIY):** Verfügbar als einsteigerfreundliche Through-Hole-Version (THT) oder als kompakte SMD-Version. PCBs bestellen bei [PCBWay (THT)](https://www.pcbway.com/project/shareproject/Ram_Tester_ThruHole_Version_93863356.html) oder die bereitgestellten Gerber-Dateien aus dem [Schematic](Schematic)-Ordner verwenden.
 
 ---
 
 ## Dokumentation
 
-* **Wiki** – Montage- und Bedienungsanleitung  
-* **Software** – Quellcode  
-* **Schaltplan** – KiCad-Projekt und Gerber-Dateien  
-* **Änderungsprotokoll**
+* [**Wiki**](../../wiki) – Montage- und Bedienungsanleitung
+* [**Bedienungsanleitung**](Docs) – Testablauf, Fehlercodes, Selbsttest und Fehlerbehebung
+* [**Software / Firmware**](Software) – Firmware-Varianten, Flash-Anleitung
+* [**Schaltplan**](Schematic) – KiCad-Projekt und Gerber-Dateien (THT und SMD)
+* [**Änderungsprotokoll**](changelog.md) – Firmware-Versionshistorie
+* [**Kompatibilität**](compatibility.md) – Hersteller-Kreuzreferenz und System-DRAM-Übersicht
 
 ---
 
 ## Mitwirken
 
-Pull Requests, Issues und Forks sind willkommen.  
+Pull Requests, Issues und Forks sind willkommen.
 Fragen: GitHub Discussions oder Kontakt **tops4u** auf AmiBay.
 
 Open-Source-Hardware unter GPL v3 – Nutzung auf eigenes Risiko.
