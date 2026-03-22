@@ -1,27 +1,68 @@
-Current Firmwares:
-- 2.1.x   Legacy Versions prior to Displays
-- 4.2.x   Current Firmware. Includes verified implementation of 3732/4532 Logic. Please read below! 
+# Software / Firmware
 
-## New with 4.2.x
+## Which firmware do I need?
 
-### Short Story
-- Using <code>Ram_Tester_4.2.3_32k.hex</code> or unmodified source code, the tester will be able to Test *MSM3732* and *TMS4532* at the cost that partially broken *4164* will be reported as one of those 2 types if it covers their functionality and not as bad *4164* - as long it is not completely broken. 
-- Using <code>Ram_Tester_4.2.3.hex</code> or by making <code>#define ENABLE_32K</code> a comment (just add <code>//</code> in front of it) in file <code>common.h</code> the tester will not be able to test *MSM3732* or *TMS4532* they will be reported as bad *4164*. Also any defect on a *4164* will be reported as broken 4164 RAM. <br>**--> This is recommended for Users without Display!**
+There are **two versions** of the firmware:
 
-### Long Story
-You may have seen that currently there are two HEX Files for the 4.2.x Release. This is due to the fact that the implementation of the MSM3732 and TMS4532 have some consequences. Those are basically 4164 RAM with some defects (ranging from simple 1bit errors to complete rows or columns that don't work). For an automatic detection of the RAM it needs to be tested. As said before it is basically a partially broken 4164 RAM, detecting a sane 4164 is no longer possible this way. So similarly broken 4164 RAM would exhibit the same pattern and are thus also identified as one of those RAM types. If you think that you will never test any of those RAMs you may use the Version without 32K in the Name, which has this logic deactivated. Defective 4164 will then be shown as faulty as any 3732 or 4532 would. 
+| Firmware | File | 32K Testing | Best for |
+|---|---|---|---|
+| **Standard + 32K** | `Ram_Tester_4.2.3_32k.hex` | ✅ Enabled | Users who test 3732/4532 or want full diagnostics on 4164 |
+| **Standard** | `Ram_Tester_4.2.3.hex` | ❌ Disabled | Users who only test 4164 and other standard types |
 
-In order to rise the users awareness that if a 4164 is inserted and then identified as 3732 and/or 4532 the Text of those RAM Types is inverted on the Display. To Check if your Firmware has 32K Support, you can check the Version of the Firmware. Firmware without 32K is writen white text on black background like <code>Ver.:4.3.2</code> while Firmware that has 32K Support enabled will be written black text on white background and has the suffix 32 like <code>Ver.:4.3.2 32</code>. 
+**Not sure which one to pick?** If you repair ZX Spectrums or work with 32K RAM, use the 32K version. If you never touch 3732 or 4532 chips, use the standard version — it keeps things simpler.
 
-**If you compile the Firmware yourself by uploading it via the Arduino IDE, you may decide if you want to disable the 32K Logic, by commenting out the macro <code>#define ENABLE_32K</code> in the file common.h in the first few lines. Alternatively you may choos the HEX File without 32k in the name**
+> **Users without a display should use the standard version** (without 32K), since the 32K results rely on on-screen text to distinguish chip types.
 
-The Assembly Test was used to check if the Soldering was ok, with the built in Selftest of 4.x this is more or less obsolete.
+## What's the difference?
 
-You can choose to directly use the HEX Version (i.e. for Programming with T48 over ICSP), or download the Arduino .INO File, Compile and Upload by any ICSP means Arduino IDE offers. You may of course change the Source code, but be aware that this might change Retention Timings due to compiler optimizations. 
+With **32K enabled**, the tester can identify MSM3732 and TMS4532 chips. But this changes how defective 4164 chips are reported: instead of simply showing "defective", the tester will check whether the chip still works as a 3732 or 4532 and report that instead. Only chips that have no usable 32K half are reported as defective. See the [32K documentation](../Docs/32K-Option) for details on how this works.
 
-To directly programm the HEX file use fuses:
+With **32K disabled**, any defective 4164 is simply reported as defective. Any 3732 or 4532 inserted will also be reported as a bad 4164, since the tester doesn't know to look for a working half.
 
-- LowByte: 0xFF
-- HighByte: 0xDF
-- Extended: 0xFF
-- LockBit: 0xFF
+## How to tell which version is on your tester
+
+Select an invalid DIP switch combination to show the firmware version on the display:
+
+- **Standard firmware**: white text on black background, e.g. `Ver.:4.2.3`
+- **32K firmware**: black text on white background (inverted), with suffix "32", e.g. `Ver.:4.2.3 32`
+
+When testing a 4164 with 32K firmware enabled, any result showing a 3732 or 4532 type will also be displayed with **inverted text** — this is a visual hint that the chip was inserted as a 4164 but is only partially functional.
+
+## How to flash the firmware
+
+There are two ways to update:
+
+### Option 1: Flash the .hex file directly (recommended)
+
+Use any ISP programmer (e.g. USBasp, T48, or an Arduino as ISP) connected to the **ICSP header** on the tester board.
+
+**Fuse settings** (ATmega328P):
+| Fuse | Value |
+|---|---|
+| Low Byte | `0xFF` |
+| High Byte | `0xDF` |
+| Extended | `0xFF` |
+| Lock Bit | `0xFF` |
+
+Example using `avrdude` with a USBasp:
+```
+avrdude -c usbasp -p m328p -U flash:w:Ram_Tester_4.2.3_32k.hex:i
+```
+
+### Option 2: Compile from source using Arduino IDE
+
+1. Open the `.ino` file in Arduino IDE
+2. To **disable 32K logic**: open `common.h` and change the line `#define ENABLE_32K` to `// #define ENABLE_32K` (add `//` in front)
+3. Upload via any ICSP method supported by the Arduino IDE
+
+> **Note for source builders:** Changing the code or using a different compiler version may affect retention timing calibration due to compiler optimizations. If you only want to toggle 32K support, use the `#define` switch and avoid other changes.
+
+### Not sure how to update? 
+Check the Documentation on the Update procedure if you have never done this before and only have an Arduino UNO to use as programmer. Available in [English](../Docs/Update_EN.pdf) or [German](../Docs/Update_DE.pdf).
+
+## Firmware history
+
+| Version | Notes |
+|---|---|
+| **4.2.x** | Current release. Verified 3732/4532 quadrant logic. Two .hex variants (with/without 32K). |
+| **2.1.x** | Legacy firmware, before display support was added. |
