@@ -65,7 +65,7 @@ To ensure your power supply is behaving correctly, measure the voltage at the **
 
 ## LED Indicators
 
-The onboard LEDs only indicate whether there is a short circuit on the **−5 V** or **+12 V** lines.
+The onboard LEDs will go off to indicate whether there is a short circuit on the **−5 V** or **+12 V** lines.
 
 - If a short is detected, **remove the RAM immediately**.
 - The adapter board can tolerate a permanent short:
@@ -73,18 +73,5 @@ The onboard LEDs only indicate whether there is a short circuit on the **−5 V*
   - Max current: **≈80 mA** on the +12 V line (version 3.4 introduced an additional 30 mA resettable fuse)
 
 However, this still results in more than **1 W of power dissipation**, which will heat up the components significantly.
-
----
-
-## LED Indicators  
-
-The onboard LEDs only indicate whether there is a short circuit on the **−5 V** or **12 V** lines.  
-
-- If a short is detected, **remove the RAM immediately**.  
-- The adapter board can tolerate a permanent short:  
-  - Max current: **−30 mA** on the −5 V line  
-  - Max current: **≈80 mA** on the 12 V line - Version 3.4 introduced an additional 30mA resetable Fuse. 
-
-⚠️ However, this still results in more than **1 W of power dissipation**, which will heat up the components significantly.  
 
 ---
