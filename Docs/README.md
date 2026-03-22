@@ -1,26 +1,51 @@
 # RAM Tester: Operation Manual
 
 ## Capabilities
-Check whether your firmware supports the testing of half-good 4164 RAMs. Check the FW Version (dial an invalid DIP Switch configuration like all off or multiple on), then the Tester displays the Firmware version. If it is written in black on a white background and has <code>32</code> as a suffix - Support is active for MSM3732 and TMS4532. If it is white text on black and does only show the Version String like <code>Ver.:4.2.3</code> without <code>32</code> at the end, then the active Firmware does not support those. For details on the 32K Mode check the 32K-Option Section. 
 
-**Current Firmware Release is 4.2.3**. If your Firmware is below, you may want to consider updating it. 
+Check whether your firmware supports the testing of half-good 4164 RAMs. Check the firmware version (select an invalid DIP switch configuration like all off or multiple on), then the tester displays the firmware version. If it is written in black on a white background and has `32` as a suffix — support is active for MSM3732 and TMS4532. If it is white text on black and does only show the version string like `Ver.:4.2.3` without `32` at the end, then the active firmware does not support those. For details on the 32K mode check the [32K-Option section](32K-Option).
+
+**Current Firmware Release is 4.2.3**. If your firmware is below, you may want to consider updating it.
+
+### Further documentation in this folder
+
+| Document | Description |
+|----------|-------------|
+| [Manual_4.x.pdf](Manual_4.x.pdf) | Assembly guide and detailed operation manual for the RAM Tester |
+| [Manual_4116.pdf](Manual_4116.pdf) / [Handbuch_4116.pdf](Handbuch_4116.pdf) | Assembly guide and operation manual for the 4116 adapter (EN / DE) |
+| [Update_EN.pdf](Update_EN.pdf) / [Update_DE.pdf](Update_DE.pdf) | Step-by-step firmware update guide using an Arduino as ISP programmer (EN / DE) |
+| [32K-Option/](32K-Option) | Documentation on 3732/4532 quadrant testing |
+| [Measurements/](Measurements) | Oscilloscope captures from various test runs |
+| [Archive/](Archive) | Legacy manuals for firmware 3.x and earlier (pre-display) |
+
+---
 
 ## 1. Basic Operation
 Follow these steps to operate the tester correctly.
 
 1.  **Identify Pin Count:** Determine how many pins your RAM chip has.
-2.  **Set DIP Switches:** Adjust the DIP switches to match the number of pins on your chip.
-3.  **Insert the RAM:**
+2.  **Set DIP Switches:** Adjust the DIP switches to match the number of pins on your chip:
+
+    | DIP Switch | RAM Pin Count | Example Types |
+    |------------|---------------|---------------|
+    | 1 ON | 20-pin | 4027<sup>1)</sup>, 4116<sup>1)</sup>, 44256, 44257, 514256, 514258, 514400, 514402 |
+    | 2 ON | 18-pin | 4416, 4464, 411000 |
+    | 3 ON | 16-pin | 3732, 4532, 4816, 4164, 41256 |
+    | All OFF | Self-test mode | (no RAM inserted) |
+
+    Any other combination (multiple ON, etc.) shows the firmware version.
+    <sup>1)</sup>Requires the Adapter to be in Place
+
+4.  **Insert the RAM:**
     * Insert the chip into the socket.
     * **Note:** You may use either the ZIF (Zero Insertion Force) or ZIP (Zig-zag) socket, but **never populate both at the same time**.
-    * > **WARNING:** The **441000** RAM type is only supported in the standard **DIP** version. Do **not** test it in the ZIP socket; it uses a different pinout and may cause damage.
-4.  **Power Up:** Turn on the tester power supply or press the **RESET** button if already powered.
-5.  **Test Sequence:**
+    * > **WARNING:** The **411000** RAM type is only supported in the standard **DIP** socket. Do **not** test it in the ZIP socket; it uses a different pinout and may cause damage.
+5.  **Power Up:** Turn on the tester power supply or press the **RESET** button if already powered.
+6.  **Test Sequence:**
     * The RAM should be recognized automatically.
     * If recognition fails, the RAM is likely defective.
     * During the test, the **LED will turn orange** and may flicker.
-    * Tests can take up to **40 seconds** depending on the chip size.
-6.  **Completion:** The final test result is reported on the display.
+    * Tests can take up to **26 seconds** depending on the chip size (see the [supported DRAM types table](../README.md#supported-dram-types-speed-with-current-firmware-version)).
+7.  **Completion:** The final test result is reported on the display.
 
 ---
 
@@ -28,22 +53,22 @@ Follow these steps to operate the tester correctly.
 If the tester reports an error, refer to the list below to diagnose the issue.
 
 ### Hardware Errors
-* **Defect or no RAM:** The RAM does work to provide simple functions so it can't be detected or identified.
+* **Defect or no RAM:** The RAM does not provide enough basic function to be detected or identified.
 * **GND Short:** A pin that should not have a short-circuit to ground is shorted.
-    * *Note:* Pin numbers displayed correspond to the **ZIF Socket**.
+    * *Note:* Pin numbers displayed correspond to the **ZIF socket**.
 * **Addressline Error:** The tester is unable to address the memory cells.
-    * *Possible causes:* Broken address line inside the chip, or a tester fault (Decoder, Amplifier, or Buffer).
+    * *Possible causes:* Broken address line inside the chip, or a tester fault (decoder, amplifier, or buffer).
 
 ### Pattern Test Errors
 The tester runs various data patterns to verify memory integrity:
 
 * **Pattern 0:** All cells are linearly filled with '0'. Cells may be stuck at '1'.
 * **Pattern 1:** All cells are linearly filled with '1'. Cells may be stuck at '0'.
-* **Pattern 2:** Cells are written with an alternating pattern '010101...'. This is performed row-wise (Write Row -> Check Row). Checks for Crosstalk
-* **Pattern 3:** Cells are written with the inverted pattern of Pattern 2 ('101010...'). This is performed row-wise. Checks for Crosstalk
+* **Pattern 2:** Cells are written with an alternating pattern '010101...'. This is performed row-wise (write row → check row). Checks for crosstalk.
+* **Pattern 3:** Cells are written with the inverted pattern of Pattern 2 ('101010...'). This is performed row-wise. Checks for crosstalk.
 * **Pattern 4:** Rows are filled with pseudo-random data. The tester waits (refresh cycle) and re-checks the data a few rows later to verify data retention.
 * **Pattern 5:** Same as Pattern 4, but using inverted data.
-* **Pattern 6 (CBR Test):** Performs a "CAS before RAS" test. This checks the internal Refresh Timer logic (specific to RAMs with internal refresh logic).
+* **Pattern 6 (CBR Test):** Performs a "CAS before RAS" test. This checks the internal refresh timer logic (specific to RAMs with internal refresh logic).
 
 ---
 
@@ -56,11 +81,11 @@ Use this mode to verify the tester hardware is functioning correctly.
 
 **Procedure:**
 1.  **Start Self-Test:** Reset the tester. It will automatically detect the "All OFF" state and start the self-test.
-2.  **Step 1 (Resistors):** The unit tests the Pull-Up resistors of the DIP switches.
+2.  **Step 1 (Resistors):** The unit tests the pull-up resistors of the DIP switches.
 3.  **Step 2 (Shorts):** The unit tests for short circuits between the signal lines of the socket.
 4.  **Step 3 (Manual Connection Test):**
     * You will need a jumper wire.
-    * Connect one end to the **Top-Right Pin** (Pin 20 of the ZIP Socket).
+    * Connect one end to the **top-right pin** (Pin 20 of the ZIP socket).
     * Touch the other end of the wire to **all other pins** of the ZIP socket (or the ZIF socket).
     * The tester monitors the connections in real-time.
 5.  **Success:** If all contacts register correctly, the tester reports an **OK** feedback.
@@ -68,15 +93,14 @@ Use this mode to verify the tester hardware is functioning correctly.
 ---
 
 ## 4. Troubleshooting Self-Test Failures
-If the Self-Test reports an error, check the specific components listed below:
+If the self-test reports an error, check the specific components listed below:
 
 * **Pull-Up Resistor Error:**
-    * Check the three **1M Pull-up Resistors** located under the Display.
-    * If they come loose or have a bad solder joint, the status of the DIP Switches will be read incorrectly.
+    * Check the three **1 MΩ pull-up resistors** located under the display.
+    * If they come loose or have a bad solder joint, the status of the DIP switches will be read incorrectly.
 * **Shorts Detected:**
     * There are connections between contacts of one of the two sockets that shouldn't be there.
     * *Action:* Check for solder bridges or debris on the PCB and remove them.
 * **Connection Test Failure:**
     * If the test does not end even after touching all contacts, a signal is missing.
     * *Action:* Check for bad soldering points, a broken PCB trace, or a defective socket contact.
-
