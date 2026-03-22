@@ -1,56 +1,61 @@
-# RAM Manufacturer X-Compatibility List
+# RAM Tester Compatibility Reference
+
+This document lists which manufacturer part numbers correspond to each DRAM type supported by the [RAM Tester](README.md), and which vintage systems use them.
+
 No warranty that this listing is 100% correct or complete. Always check individual datasheets before substituting parts.
 
-# RAM Tester Compatibility
-Note: The row “16K×1 (5V)” contains CMOS 4116-class devices and 5V-only replacements. Not all devices are guaranteed true single-supply 5V. Always verify with datasheets.
+---
 
 ## Standard DRAM Compatibility Matrix
 
 | Organisation | AMD | Angstrem/Mikron | Fairchild | Fujitsu | GoldStar/LG | Hitachi | Hyundai/Hynix/Nanya | Inmos | Intel | Intersil | ITT | Micron | Mitsubishi | MME (DDR) | MOS Tech | Motorola | Mostek | NEC | National Semi | OKI | Panasonic | Samsung | Sharp | Siemens | Tesla | Texas Instruments | Toshiba | Vitelic |
 |--------------|-----|-----------------|-----------|---------|-------------|---------|---------------------|--------|-------|----------|-----|--------|------------|-----------|----------|----------|--------|-----|---------------|-----|-----------|---------|-------|---------|-------|-------------------|---------|---------|
-| **16K×1 (5V)** | – | – | F4116-CMOS | MB8116-CMOS | GM4116-CMOS | HM4816 | HY4116-CMOS | – | – | – | – | – | M5M4116P | – | – | – | – | µPD416C-CMOS | – | MSM4116RS/HS | MN4116-CMOS | KM4116-CMOS | LH4116-CMOS | – | – | – | – | – |
+| **16K×1 (4816, 5V)** | – | – | F4116-CMOS | MB8116-CMOS | GM4116-CMOS | HM4816 | HY4116-CMOS | – | – | – | – | – | M5M4116P | – | – | – | – | µPD416C-CMOS | – | MSM4116RS/HS | MN4116-CMOS | KM4116-CMOS | LH4116-CMOS | – | – | – | – | – |
+| **32K×1 (3732)** | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | MSM3732 | – | – | – | – | – | – | – | – |
+| **32K×1 (4532)** | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | TMS4532 | – | – |
 | **64K×1 (4164)** | AM9064 | K565RU5 K565PY5 | F4164 | MB8264 MB8264A | GM4164 | HM4864 HM4164A | HY51C64 HY5164 | IMS2600 | 2164A/B C2164 | – | – | MT4264 MT4C164 | M5M4164 M5K4164 | U2164D | – | MCM4164 MCM6664 MCM6665 | MK4164 MK4564 | µPD4164 | NMC4164 NMC3764 | MSM4164 MSM3764 | MN4164 | KM4164 | LH2164 | HYB4164 | MHB4164 | TMS4164 SMJ4164 | TMM4164 | V51C64 |
 | **256K×1 (41256)** | – | – | – | MB81256/81257 | GS41256 | HM51256 | HY53C256 | – | – | – | – | MT42C256 | M5M41256 | – | – | MCM6256/B | – | µPD41256/41257 | NMC41256 | MSM41256A | MN41256 | KM41256 | LH51256 | HYB41256 | – | TMS4256 TMS41256 | TC51256 | – |
 | **256K×1 (41257)** | – | KR565RU7 | – | MB81257 | – | HM50257 | – | – | – | – | – | MT1257 | M5M41257 | – | – | MCM6257/B | – | µPD41257 | – | – | – | – | – | – | – | TMS4257 | TC51257 | – |
 | **16K×4 (4416)** | – | – | – | MB81416 | – | HM41416 | – | – | – | – | – | – | M5M4416 | – | – | MCM4416 | – | µPD41416 | – | MSM41416 | – | – | LH4416 | – | – | TMS4416 | – | – |
 | **64K×4 (4464)** | – | – | – | MB81464/81466 | GS41464 | HM50464 | HY51C4464 | – | – | – | – | MT4C4464 | M5M4464 | – | – | – | – | µPD41464 | – | MSM41464 | – | KM41464 | LH4464 | – | – | TMS4464 | TC51464 | – |
 | **256K×4 (514256)** | – | – | – | MB81C4256 | GS4256 | HM514256 | HY514256 | – | – | – | – | MT4C4256 | M5M4256 | – | – | MCM514256 | – | µPD424256 | – | MSM514256A | – | KM44C256 | – | HYB514256 | – | – | TC514256 | – |
-| **256K×4 (514258_SC)** | – | – | – | – | – | HM514258A | – | – | – | – | – | – | – | – | – | MCM51428AZ80 | – | µPD42458V | – | MSM514258 | – | KM44C258 | – | – | – | – | – | – |
+| **256K×4 SC (514258)** | – | – | – | – | – | HM514258A | – | – | – | – | – | – | – | – | – | MCM51428AZ80 | – | µPD42458V | – | MSM514258 | – | KM44C258 | – | – | – | – | – | – |
 | **1M×4 (514400)** | – | – | – | MB814400 | GS4400 | HM514400 | HY514400 | – | – | – | – | MT4C4100 | M5M4400 | – | – | – | – | µPD424400V | – | MSM514400 | – | KM44C1000 | – | HYB514400 | – | – | TC514400 | – |
-| **1M×4 (514402_SC)** | – | – | – | – | – | HM514402A | – | – | – | – | – | – | – | – | – | – | – | µPD424402V | – | M514402-80Z | – | – | – | HYB514402 | – | – | TC514402 | – |
+| **1M×4 SC (514402)** | – | – | – | – | – | HM514402A | – | – | – | – | – | – | – | – | – | – | – | µPD424402V | – | M514402-80Z | – | – | – | HYB514402 | – | – | TC514402 | – |
 | **1M×1 (411000)** | – | – | – | MB81C1000 | GS511000 | HM511000 | HY511000 HY51C1000 | – | – | – | – | MT4C1024 | M5M41000 | – | – | – | – | µPD421000 | – | MSM511000 | – | KM41C1000 | LH511000 | HYB511000 | – | TMS511000 | TC511000 | – |
 
-**41257 DRAMs - Nibble Mode is not tested.**
+Note: The "16K×1 (4816, 5V)" row contains CMOS 4116-class devices and 5V-only replacements. Not all devices are guaranteed true single-supply 5V. Always verify with datasheets.
 
-# With 4116 Adapter
+---
+
+## With 4116 Adapter
 
 | Organisation | AMD | Angstrem/Mikron | Fairchild | Fujitsu | GoldStar/LG | Hitachi | Hyundai/Hynix/Nanya | Inmos | Intel | Intersil | ITT | Micron | Mitsubishi | MME (DDR) | MOS Tech | Motorola | Mostek | NEC | National Semi | OKI | Panasonic | Samsung | Sharp | Siemens | Tesla | Texas Instruments | Toshiba | Vitelic |
 |--------------|-----|-----------------|-----------|---------|-------------|---------|---------------------|--------|-------|----------|-----|--------|------------|-----------|----------|----------|--------|-----|---------------|-----|-----------|---------|-------|---------|-------|-------------------|---------|---------|
-|**4K×1 (4027)** | AM9027 | – | F4027 | MB8104 | – | HM4027 | – | – | 2104 | 7027 | ITT4027 | – | M5M4027 | – | – | MCM4027 | MK4027 | µPD404 | MM5280 | MSM4027 | – | KM4027 | – | – | – | TMS4027 | TMM4027 | – |
+| **4K×1 (4027)** | AM9027 | – | F4027 | MB8104 | – | HM4027 | – | – | 2104 | 7027 | ITT4027 | – | M5M4027 | – | – | MCM4027 | MK4027 | µPD404 | MM5280 | MSM4027 | – | KM4027 | – | – | – | TMS4027 | TMM4027 | – |
 | **16K×1 (4116)** | AM9016C | – | F4116 F16K | MB8116 | GM4116 | HM4116 HM4716 | HY4116 | – | 2116 2117 | 4116 | ITT4116 | – | M5M4116 | – | 2690 | MCM4116/B/BP | MK4116 | µPD416 | MM5290 | MSM4116 | MN4116 | KM4116 | LH4116 | HYB4116 | – | TMS4116 | TMM4116 | – |
 
-# DRAM System Compatibility List
-No warranty that this listing is 100% correct or complete.
+---
 
-Scope: system DRAM in standard DIP and ZIP packages.  
-VRAM is excluded unless explicitly noted.
+## Home Computers
 
-# HOME COMPUTERS  
 Sorted alphabetically by manufacturer, then by technology (8-bit first), then by product name.
 
-## Apple
+Scope: system DRAM in standard DIP and ZIP packages. VRAM is excluded unless explicitly noted.
 
-### 8-bit systems (Apple II family)
+### Apple
+
+#### 8-bit systems (Apple II family)
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
-| Apple II (Rev 0-3) | 4027 / 4116 | 8x or 16x or 24x | 4 KB (using 4027) or 16-48 KB |
+| Apple II (Rev 0–3) | 4027 / 4116 | 8× or 16× or 24× | 4 KB (using 4027) or 16–48 KB |
 | Apple II / II+ | 4116 | 8× or 16× | 16 KB or 32 KB |
 | Apple II Europlus | 4116 | 8× or 16× | 16 KB or 32 KB |
 | Apple IIc (1984) | 4164 | 8× | 64 KB |
 | Apple IIc (1986) | 4464 | 2× | 64 KB |
 | Apple IIe | 4164 | 8× or 16× | 64–128 KB |
 
-### 16-bit / 32-bit systems
+#### 16-bit / 32-bit systems
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
 | Apple IIGS | 41256 | Expansion cards (base RAM in custom ICs) |
@@ -58,9 +63,9 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Macintosh 512K | 41256 | 16× | |
 | Macintosh Plus | 41256 | 16× or 32× | |
 
-## Atari
+### Atari
 
-### 8-bit systems
+#### 8-bit systems
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
 | Atari 130XE (early) | 4164 | 16× | |
@@ -71,38 +76,38 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Atari 800 (early) | 4116 | 8× or 16× | |
 | Atari 800XL | 4164 | 8× | |
 
-### 16/32-bit systems
+#### 16/32-bit systems
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
-| Atari 1040 ST | 41256 | 32× | |
 | Atari 520 ST | 41256 | 16× | |
+| Atari 1040 ST | 41256 | 32× | |
 | Atari Falcon 030 | 514256 | 4× | ST-RAM |
 
-## BBC / Oric / Sinclair
+### BBC / Oric / Sinclair
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
 | BBC Micro Model B | HM4816 | 8× | 5V-only 4116 replacement |
 | Oric-1 | 4164 | 8× | |
 | Sinclair ZX Spectrum 48K | 4164 | 8× | |
 
-## Commodore
+### Commodore
 
-### 8-Bit Systems
+#### 8-bit systems
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
 | Commodore 128 / 128D | 4164 | 16× | 128 KB system RAM |
-| Commodore 128DCR | 41256 (System) | 4x | 2 x 4464 for video |
+| Commodore 128DCR | 41256 (System) | 4× | 2 × 4464 for video |
 | Commodore 16 / 116 | 4416 | 2× | 32 KB system RAM |
 | Commodore 64 (breadbin) | 4164 | 8× | 64 KB |
 | Commodore 64C (shortboard) | 4464 | 2× | 64 KB |
 | Commodore Plus/4 | 4464 | 2× | 64 KB |
-| Commodore PET 2001/3000/4000 | 4116 | 8×/16× | System RAM (Some early expansions used 4027) |
+| Commodore PET 2001/3000/4000 | 4116 | 8×/16× | System RAM (some early expansions used 4027) |
 
-### Amiga Systems
+#### Amiga systems
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
-| Amiga 1000 | 41256 | 8-16× | 256–512 KB |
-| Amiga 2000 Rev 4.x | 41256 | 16-32× | Chip RAM |
+| Amiga 1000 | 41256 | 8–16× | 256–512 KB |
+| Amiga 2000 Rev 4.x | 41256 | 16–32× | Chip RAM |
 | Amiga 2000 Rev 6.x | 514256 | 8× | Chip RAM |
 | Amiga 3000 (DIP Chip RAM) | 514256 | 8× | DIP packages |
 | Amiga 3000 ZIP Fast-RAM | 514400/-02 | ZIP-20 | Static column |
@@ -110,9 +115,9 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Amiga 500 Rev 4.x | 41256 | 16× | 512 KB |
 | Amiga 500 Rev 5 | 41256 | 16× | 512 KB |
 | Amiga 500 Rev 6/6A | 514256 | 4× | 512 KB (256K×4) |
-| Amiga 500+ Rev 8.x | 514256 | 8x | 1 MB chip RAM |
+| Amiga 500+ Rev 8.x | 514256 | 8× | 1 MB chip RAM |
 
-## DEC (Digital Equipment Corporation)
+### DEC (Digital Equipment Corporation)
 
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
@@ -121,7 +126,7 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | DEC VT220 | 4164 | varies | Terminal |
 | DEC VT320 | 41256 | varies | Terminal |
 
-## HP / Tektronix / Xerox
+### HP / Tektronix / Xerox
 
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
@@ -131,7 +136,7 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Tektronix 4907 / 4909 | 4164 | varies | Controllers |
 | Xerox 820-II | 4164 | 8× | |
 
-## IBM PC Family
+### IBM PC Family
 
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
@@ -140,14 +145,20 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | IBM PC/AT 5170 | 41256 | 8× or more | Parity SIMMs also exist |
 | IBM PC/XT 5160 | 4164 | 8× or more | |
 
-## Tandy / Radio Shack (TRS-80)
+### Sharp
 
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
-| TRS-80 Model I (Level I) | 4027 | 8x | 4 KB System RAM |
-| TRS-80 Model I (Level II) | 4116 | 8x | 16 KB System RAM |
+| Sharp X68000 | 41256 | varies | System DRAM (VRAM separate) |
 
-## Other / Eastern Europe / USSR
+### Tandy / Radio Shack (TRS-80)
+
+| System | DRAM Type | Configuration | Notes |
+|--------|-----------|---------------|-------|
+| TRS-80 Model I (Level I) | 4027 | 8× | 4 KB system RAM |
+| TRS-80 Model I (Level II) | 4116 | 8× | 16 KB system RAM |
+
+### Other / Eastern Europe / USSR
 
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
@@ -155,9 +166,10 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | KC 85/3 | 4164 | 8× | MME U2164D |
 | Pravetz 8M | 4164 | 8× | Apple-II compatible |
 | Robotron A7150 | 41256 | 8× | |
-| Sharp X68000 | 41256 | varies | System DRAM (VRAM separate) |
 
-# GAME CONSOLES (System DRAM Only)
+---
+
+## Game Consoles (System DRAM Only)
 
 | Console | DRAM Type | Configuration | Notes |
 |---------|-----------|---------------|-------|
@@ -168,11 +180,13 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Sega SC-3000 RAM cards | 4164 / 41256 | varies | RAM cartridges |
 | Vectrex | 4116 | 8× | System RAM |
 
-# ARCADE SYSTEMS (System DRAM Only)
+---
+
+## Arcade Systems (System DRAM Only)
 
 | Board / System | DRAM Type | Configuration | Notes |
 |----------------|-----------|---------------|-------|
-| Atari Sprint 2 / 4 | 4027 | varies | Early Video RAM |
+| Atari Sprint 2 / 4 | 4027 | varies | Early video RAM |
 | Atari Super Breakout | 4027 | varies | |
 | BurgerTime | 4164 | varies | Data East |
 | Data East DECO boards | 4164 / 41256 | varies | Board-specific |
@@ -191,7 +205,9 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Sega System 1 | 4164 | varies | |
 | Sega System 2 | 44256 | varies | System RAM (not VRAM) |
 
-# PINBALL SYSTEMS (System DRAM Only)
+---
+
+## Pinball Systems (System DRAM Only)
 
 | System | DRAM Type | Configuration | Notes |
 |--------|-----------|---------------|-------|
@@ -200,7 +216,9 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Williams WPC-89 | 4464 | varies | MPU RAM |
 | Williams WPC-95 | 4464 | varies | MPU RAM |
 
-# INDUSTRIAL / AUTOMATION / WORKSTATION SYSTEMS
+---
+
+## Industrial / Automation / Workstation Systems
 
 | Manufacturer / System | DRAM Type | Notes |
 |------------------------|-----------|-------|
@@ -212,14 +230,16 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Motorola VME MVME-120 | 41256 | VME CPU card |
 | Motorola VME MVME-130 | 514256 | VMEbus cards |
 | NCR POS 2150 | 41256 | POS terminal |
-| S-100 Memory Boards | 4027 | Early 4KB / 8KB / 16KB cards (Altair/IMSAI) |
+| S-100 Memory Boards | 4027 | Early 4 KB / 8 KB / 16 KB cards (Altair/IMSAI) |
 | Siemens SIMATIC S5 | 4164 | Early CPU modules |
 | Sun-1 Workstations | 4116 / 4164 | RAM boards |
 | Sun-2 Systems | 41256 | Workstation RAM |
 
-# EXPANSION CARDS & PERIPHERALS
+---
 
-## Commodore 64 / 128 RAM Expansions
+## Expansion Cards & Peripherals
+
+### Commodore 64 / 128 RAM Expansions
 
 | Board | DRAM Type | Configuration | Notes |
 |-------|-----------|---------------|-------|
@@ -236,7 +256,7 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Snaper 512K | 41256 | varies | |
 | Super 1750 Clone | 44256 / 514256 | ZIP-20 | 512 KB / 1 MB |
 
-## Commodore Amiga – RAM Expansion Cards
+### Commodore Amiga – RAM Expansion Cards
 
 | Expansion Board | DRAM Type | Notes |
 |-----------------|-----------|-------|
@@ -277,7 +297,7 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | SupraRAM 500 | 514256 | 512 KB–1 MB |
 | W.T.S. A500 Pro-RAM | 41256 | 512 KB |
 
-## Commodore Amiga – Accelerator and Turbo Cards
+### Commodore Amiga – Accelerator and Turbo Cards
 
 | Accelerator Board | DRAM Type | Notes |
 |-------------------|-----------|-------|
@@ -294,7 +314,7 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | PP&S Mercury 040 | 514400 | 68040 accelerator |
 | Vortex Golden Gate 386/486 | 514256 / 514400 | PC-on-Amiga accelerator |
 
-# ISA Memory Expansion Cards
+### ISA Memory Expansion Cards
 
 | Board / Manufacturer | DRAM Type | Notes |
 |----------------------|-----------|-------|
@@ -312,7 +332,7 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Tecmar Captain RAM | 4164 / 41256 | ISA RAM |
 | Wang PC prototype boards | 4164 / 41256 | Rare engineering samples |
 
-# Apple II / IIGS Expansions
+### Apple II / IIGS Expansions
 
 | Board | DRAM Type | Notes |
 |-------|-----------|-------|
@@ -323,52 +343,54 @@ Sorted alphabetically by manufacturer, then by technology (8-bit first), then by
 | Saturn 128K/256K | 4164 | Apple II expansion |
 | Titan 128K | 4164 | Apple II RAM card |
 
-# Atari 8-bit / ST / TT Expansions
+### Atari 8-bit / ST / TT Expansions
 
 | Expansion | DRAM Type | Notes |
 |-----------|-----------|-------|
-| Atari 600XL 64K upgrade | 4164 | 64KB upgrade |
+| Atari 600XL 64K upgrade | 4164 | 64 KB upgrade |
 | Atari 130XE 320K mod | 4164 / 41256 | Mixed RAM scheme |
 | Axlon 128 KB | 4164 | XL/XE RAM |
 | Compy-Shop 256K/320K | 41256 / 44256 | XL/XE boards |
 | Exxos LaST ST 4MB | 514256 | ST RAM |
 | FRAK board (for PAK68/3) | 514400 | TT-RAM type |
-| GE-Soft 4 MB ST | 514256 | 4MB ST RAM |
-| Marpet Xtra-RAM Deluxe | 44256 / 514256 | 2–4MB ST RAM |
+| GE-Soft 4 MB ST | 514256 | 4 MB ST RAM |
+| Marpet Xtra-RAM Deluxe | 44256 / 514256 | 2–4 MB ST RAM |
 | Newell 1MB | 514256 | XL/XE expansion |
 | RAMBO-256 DIY | 41256 | DIY upgrade |
 | Rambo XL/XE | 41256 | 256 KB memory |
 | ST 1MB piggy-back mod | 41256 | Early ST RAM mod |
 | Ultimate 1MB (old version) | 514256 | XL/XE multifunction RAM |
 
-# Summary by DRAM Type
+---
 
-## 4027 (4Kx1)
+## Summary by DRAM Type
+
+### 4027 (4K×1)
 Predecessor to the 4116. Used in very early home computers (TRS-80 Model I Level I, early Apple II) and late 70s arcade games (Atari, Exidy).
 
-## 4116 (16K×1)
+### 4116 (16K×1)
 Used in early 1980s systems including Apple II, Commodore PET, VIC-20 expansion, TRS-80 Model I/III, many early arcade boards (Pac-Man, Donkey Kong).
 
-## 4164 (64K×1)
+### 4164 (64K×1)
 Widespread mid-1980s DRAM. Used in Commodore 64, Apple IIe, Atari 800XL, ZX Spectrum 48K, IBM PC/XT, many arcade boards.
 
-## 4416 (16K×4)
+### 4416 (16K×4)
 Primarily Commodore 16/116.
 
-## 4464 (64K×4)
+### 4464 (64K×4)
 Used in C64C, Plus/4, 128DCR (VDC VRAM), late Atari XE models, Williams pinball systems.
 
-## 41256 (256K×1)
+### 41256 (256K×1)
 Used in Amiga 500 (early), Atari ST family, Macintosh Plus, IBM AT, many expansion cards.
 
-## 44256 / 514256 (256K×4)
+### 44256 / 514256 (256K×4)
 Used in later Amiga revisions, A500+/A2000, Atari Falcon, Neo-Geo boards (graphics RAM), and many RAM expansions.
 
-## 514400 (1M×4)
+### 514400 (1M×4)
 Dense DRAM used in CMD RAMLink, Amiga fast-RAM expansions, 68030/040 accelerators.
 
-## 514402 (1M×4 Static Column)
+### 514402 (1M×4 Static Column)
 Used primarily in Amiga 3000 ZIP fast-RAM.
 
-## 411000 (1M×1)
+### 411000 (1M×1)
 Used in certain Amiga expansions (A2058), some ISA RAM boards, and industrial system RAM.
