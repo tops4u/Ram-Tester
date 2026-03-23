@@ -120,7 +120,6 @@ Compared with many other open source projects:
 
 ## Documentation
 
-* [**Wiki**](../../wiki) – assembly and operating guide
 * [**Operation manual**](Docs) – test procedure, error codes, self-test and troubleshooting
 * [**Software / Firmware**](Software) – firmware variants, flashing instructions
 * [**Schematic**](Schematic) – KiCad project and Gerber files (THT and SMD)
