@@ -93,6 +93,9 @@ Use this mode to verify the tester hardware is functioning correctly.
     * The tester monitors the connections in real-time.
 5.  **Success:** If all contacts register correctly, the tester reports an **OK** feedback.
 
+ The following Video shows the function of the Self-Test Mode:<br>
+ [![Self-Test Demo](https://img.youtube.com/vi/qTgzcuxilXE/0.jpg)](https://youtu.be/qTgzcuxilXE)
+
 ---
 
 ## 4. Troubleshooting Self-Test Failures
