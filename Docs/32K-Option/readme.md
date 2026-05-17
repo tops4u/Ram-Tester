@@ -77,6 +77,6 @@ Because the 4532 and 3732 split along *different axes*, a chip can sometimes ser
 - ❌ Fails as **TMS4532-4** (Q3+Q4 — Q3 has errors)
 - ❌ Fails as **MSM3732-L** (Q1+Q3 — Q3 has errors)
 
-The tester reports **all** valid configurations, not just the type printed on the chip. As far as we know, no other tester does this kind of cross-type evaluation.
+The tester reports **all** valid configurations, not just the type printed on the chip. As far as we know, few other testers do this kind of cross-type evaluation.
 
 For a visual explanation with diagrams, see the [Quadrant Documentation (EN)](4164_Quadrants_Explanation.pdf) or [Quadranten-Dokumentation (DE)](4164_Quadranten_Erklärung.pdf).
