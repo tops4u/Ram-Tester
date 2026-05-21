@@ -14,26 +14,20 @@ A fast, open-source DIY DRAM tester for vintage RAM chips used in C64, Amiga, At
 ---
 
 ## Why this tester?
-
-Most Arduino-based DRAM testers need up to 2 mins or even more for a single 41256 RAM and check only basic functions.
-This project completes a full memory, address, data-line and retention time test **in 15 s or less** (or even 2.5 s faster without the display).
-It is probably the fastest Arduino solution which also covers **static-column DRAMs, cell retention time and 20-pin ZIP packages**.
+- **No chip knowledge needed** – Set the pin count via DIP switch, the tester auto-detects the chip type. No menus, no datasheet lookups. Grab a chip from the parts bin, plug it in, get a result.
+- **Fast** – Most tests complete in under 10 seconds. Full 41256 test in 7.4s — up to 60× faster than typical Arduino-based testers that rely on `digitalWrite()`. Direct port manipulation at 62.5 ns per operation makes the difference.
+- **Thorough** – Six test patterns per cell, crosstalk analysis, address line verification, retention time measurement, CAS-Before-RAS refresh, fast page mode, static column, nibble mode and ground short detection.
+- **Practical** – Clear good/bad result. A DRAM chip can't be repaired, so detailed fault classification is academic. This tester tells you what you need to know to get your machine running.
+- **Safe** – Short-circuit protection, current limiting, ground short detection, resettable fuse. Self-test mode to verify your build.
+- **Fully open** – KiCad schematics, Gerber files and Arduino source under GPL v3. No black box.
 
 ---
-
 ## Key features
-
 | Feature | Benefit |
 |---------|---------|
-| Most tests are ≤ 10 s | Rapid diagnosis on the workbench or at retro repair events |
-| Retention-time measurement | Detects weak chips by checking they meet the minimum retention times |
-| Static-column support | Reliable testing of 44258, 514402 static-column functions |
-| Nibble Mode support | Testing 41257 RAM with nibble mode access |
 | 20-pin ZIP socket | Direct test of 20-pin ZIP DRAMs without an adapter |
 | Optional OLED display or LED blink codes | Full text feedback or minimal hardware setup |
-| Open hardware and firmware | KiCad, Gerber files and Arduino source under an open licence |
-| Self-test mode | Check the hardware for defects like short circuits, broken solder joints, etc. |
-| Automatic detection | Automatically identifies the chip type and checks for reusability of broken parts |
+| Self-test mode | Verify the hardware for defects like short circuits or broken solder joints |
 
 ---
 
@@ -89,25 +83,24 @@ There is a short YouTube video demonstrating the tester in action. <br/>
 ### So why no MARCH-B?
 Here is the analytics of this algorithm vs. March-B
 
-| Aspect | Actual Code | MARCH-B |
+| Aspect | This Tester | MARCH-B |
 | --- | --- | --- |
 | Pattern Coverage     | ✅ 0x00, 0xFF, 0xAA, 0x55 | ✅                   |
-| 0, 1Transition Tests | ✅ Thru Pattern-Sequence  | ✅ Thru R0W1, R1W0   |
-| Address Sequence     | ⚠️ Ascending only         | ✅ Asc-/Descending   |
-| Coupling Detection   | ✅ By Retention-Delay     | ✅ Systematically    |
-| Real Retention       | ✅ 2–16 ms Tests          | ❌ Only µs-Range     |
+| 0→1 / 1→0 Transition | ✅ Via pattern sequence  | ✅ Via R0W1, R1W0   |
+| Address Sequence     | ⚠️ Ascending only         | ✅ Asc + Descending   |
+| Coupling Detection   | ✅ Via retention delay     | ✅ Systematic    |
+| Real Retention       | ✅ 2–16 ms per chip spec  | ❌ Not covered <sup>1)</sup>   |
+| GND Short Detection  | ✅ Before power-up        | ⚠️ Implicit only <sup>1)</sup>      |
+| Address Line Faults  | ✅ Bit-independence check  | ⚠️ Implicit only <sup>1)</sup>    |
+| CBR Refresh          | ✅ CAS-before-RAS test    | ❌ Not covered <sup>1)</sup>      |
 
-### Why is it probably better than many other Arduino-based RAM testers?
-Compared with many other open source projects:
-- They usually don't test for address line faults. Tests will pass even if you bend one address pin up.
-- They usually don't check multiple rows at a time, since they use slow Arduino read and write commands.
-- Many use simple all-0 and all-1 tests, no patterns or random data tests.
-- No retention tests possible since writing and reading one row alone with Arduino I/O takes more than one second — usual retention times are within a few milliseconds.
-- No checks for broken chips (i.e. shorts to GND).
-- No protection against short circuits on supply lines. Some use off-the-shelf DC-DC converters which supply high currents in short circuit situations.
-- No tests of refresh or static column functionality.
-- Very often limited to 1-bit or 4-bit circuits and no ZIP sockets.
-- They are usually **MUCH** slower.
+<sup>1)</sup>unless implemented outside of MARCH-B
+
+March-B is thorough for coupling and decoder faults but operates in the microsecond range — it cannot catch chips with weak retention that meet spec on paper but fail under real-world refresh timing. This tester trades systematic address ordering for real-time retention stress, which is where most age-related failures actually occur.
+
+### A note on CMOS vs TTL voltage levels
+Vintage DRAM chips were designed for TTL signal levels. The ATmega328P drives CMOS levels at 5 V — logic high is close to V<sub>CC</sub>, which is above what the original systems delivered. This means marginal chips that fail at true TTL thresholds may still pass on this tester (and most other microcontroller-based testers).
+Some designs use 3.3 V controllers with 5 V-tolerant I/O to get closer to TTL levels, but the ATmega328P does not support this operating mode. In practice, virtually no consumer DRAM tester on the market operates at true TTL levels — this is a fundamental limitation of the approach, not specific to this project. For definitive TTL-level testing, dedicated vintage test equipment (e.g. Advantest, Agilent) operating at calibrated thresholds would be needed.
 
 ---
 ## Build or buy — the choice is yours
