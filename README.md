@@ -8,7 +8,7 @@ A fast, open-source DIY DRAM tester for vintage RAM chips used in C64, Amiga, At
 
 **As featured on:**
 
-- [***Adrians Digital Basement II***](https://youtu.be/9QQ8ZqHPRVQ?si=1NziV2UrEB0AZ_NR) (May 2026): "This is freaking awesome"
+- [***Adrians Digital Basement II***](https://youtu.be/9QQ8ZqHPRVQ?&t=2573) (May 2026): "This is freaking awesome"
 - [***Hackaday***](https://hackaday.com/2025/12/08/cheap-and-aggressive-dram-chip-tester/) (Dec 2025): "Cheap and Aggressive DRAM Chip Tester"
 - [***Elektor Magazine***](https://www.elektormagazine.com/news/open-source-diy-ram-tester) (Dec 2025): "Ram-Tester Is an Open-Source DIY Solution for Retro Computer RAM"
 
