@@ -15,7 +15,7 @@ A fast, open-source DIY DRAM tester for vintage RAM chips used in C64, Amiga, At
 ---
 
 ## Why this tester?
-- **No chip knowledge needed** – Set the pin count via DIP switch — the tester auto-detects the chip type and runs all tests automatically. No selecting algorithms, the right socket, no menus, no datasheet lookups. Grab a chip, plug it in, get a result.
+- **No chip knowledge needed** – Set the pin count via DIP switch — the tester auto-detects the chip type and runs all tests automatically. No selecting algorithms, no choosing the right socket, no menus, no datasheet lookups. Grab a chip, plug it in, get a result.
 - **Fast** – Full test in under 8 seconds for a 41256. Test a whole tray of chips in minutes.
 - **Thorough** – While other testers require you to choose between test modes, this one runs them all: memory patterns, crosstalk, address line verification, retention time, CAS-Before-RAS refresh, fast page mode, static column mode, ground short detection.
 - **Practical** – Broken is broken. You get a clear good/bad result because a DRAM chip can't be repaired anyway.
