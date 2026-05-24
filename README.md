@@ -15,13 +15,12 @@ A fast, open-source DIY DRAM tester for vintage RAM chips used in C64, Amiga, At
 ---
 
 ## Why this tester?
-- **No chip knowledge needed** – Set the pin count via DIP switch, the tester auto-detects the chip type. No chip marking deciphering, no menus, no datasheet lookups. Grab a chip from the parts bin, plug it in, get a result.
-- **Fast** – Most tests complete in under 10 seconds. Full 41256 test in 7.4s — up to 60× faster than typical Arduino-based testers that rely on `digitalWrite()`. Direct port manipulation at 62.5 ns per operation makes the difference.
-- **Thorough** – Six test patterns per cell, crosstalk analysis, address line verification, retention time measurement, CAS-Before-RAS refresh, fast page mode, static column, nibble mode and ground short detection.
-- **Practical** – Clear good/bad result. A DRAM chip can't be repaired, so detailed fault classification is academic. This tester tells you what you need to know to get your machine running.
-- **Safe** – Short-circuit protection, current limiting, ground short detection, resettable fuse. Self-test mode to verify your build.
-- **Fully open** – KiCad schematics, Gerber files and Arduino source under GPL v3. No black box.
-
+- **No chip knowledge needed** – Set the pin count via DIP switch — the tester auto-detects the chip type and runs all tests automatically. No selecting algorithms, the right socket, no menus, no datasheet lookups. Grab a chip, plug it in, get a result.
+- **Fast** – Full test in under 8 seconds for a 41256. Test a whole tray of chips in minutes.
+- **Thorough** – While other testers require you to choose between test modes, this one runs them all: memory patterns, crosstalk, address line verification, retention time, CAS-Before-RAS refresh, fast page mode, static column mode, ground short detection.
+- **Practical** – Broken is broken. You get a clear good/bad result because a DRAM chip can't be repaired anyway.
+- **Safe** – Short-circuit protection, current limiting, ground short detection. Self-test mode included.
+- **Fully Open Source** – Hardware, firmware, schematics on GitHub (tops4u/Ram-Tester). No black box.
 ---
 ## Key features
 | Feature | Benefit |
