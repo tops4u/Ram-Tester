@@ -8,4 +8,4 @@ I am happy to see this project used commercially. If you decide to sell assemble
 - Mention this is a GPL Project
 - Link to the Source (this Repo)
 - Mention the original creator
-- Include the license files (GPLv3 for this project and the original licenses for used third-party components) and provide them to customers.
+- Include the license files (GPLv3 for this project and the original licenses for used third-party components) and provide them to customers. Alternatively you may provide it to the Customers on delivery. 
