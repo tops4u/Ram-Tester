@@ -28,9 +28,9 @@ Follow these steps to operate the tester correctly.
     | DIP Switch | RAM Pin Count | Example Types |
     |------------|---------------|---------------|
     | All ON | Setup mode | Adjust Tester behaviour |
-    | 1 ON | 20-pin | 4027<sup>1)</sup>, 4116<sup>1)</sup>, 44256, 44257, 514256, 514258, 514400, 514402 |
+    | 1 ON | 20-pin | 4027<sup>1)</sup>, 4116<sup>1)</sup>, 44256, 44258, 514256, 514258, 514400, 514402 |
     | 2 ON | 18-pin | 4416, 4464, 411000, **2114 (Turn 180°!)**|
-    | 3 ON | 16-pin | 3732, 4532, 4816, 4164, 41256 |
+    | 3 ON | 16-pin | 3732, 4532, 4816, 4164, 41256, 41257 |
     | All OFF | Self-test mode | (no RAM inserted) |
 
     Any other combination (multiple ON, etc.) shows the firmware version.
@@ -81,17 +81,16 @@ If the tester reports an error, refer to the list below to diagnose the issue.
     * *Note:* Pin numbers displayed correspond to the **ZIF socket**.
 * **Addressline Error:** The tester is unable to address the memory cells.
     * *Possible causes:* Broken address line inside the chip, or a tester fault (decoder, amplifier, or buffer).
+* **Short Addressline:** Two address lines are shorted to each other (checked before the memory test starts).
+    * *Possible causes:* A solder bridge between two address pins, or a chip that internally shorts two address lines.
 
 ### Pattern Test Errors
 The tester runs various data patterns to verify memory integrity:
 
-* **Pattern 0:** All cells are linearly filled with '0'. Cells may be stuck at '1'.
-* **Pattern 1:** All cells are linearly filled with '1'. Cells may be stuck at '0'.
-* **Pattern 2:** Cells are written with an alternating pattern '010101...'. This is performed row-wise (write row → check row). Checks for crosstalk.
-* **Pattern 3:** Cells are written with the inverted pattern of Pattern 2 ('101010...'). This is performed row-wise. Checks for crosstalk.
-* **Pattern 4:** Rows are filled with pseudo-random data. The tester waits (refresh cycle) and re-checks the data a few rows later to verify data retention.
-* **Pattern 5:** Same as Pattern 4, but using inverted data.
-* **Pattern 6 (CBR Test):** Performs a "CAS before RAS" test. This checks the internal refresh timer logic (specific to RAMs with internal refresh logic).
+* **Error Checkerboard** Cells are filles with a checkerboard pattern. This is done twice once by writing in one direction and reading in the opposite, then the other way around. For RAMs that have a refresh counter it will fill the whole RAM and then read it back. For RAMs without it is using 2 subsequent Rows. This checks column and row interaction between cells and Stuck Cells as well. 
+* **Error RandomData** A pseudorandom pattern is used row-wise to be written and then read back after the refresh time has expired. This checks propper adressing, refresh and Crosstalk. This Test is run a second time with inverted pattern. 
+* **CBR Timer fault** Performs a "CAS before RAS" test. This checks the internal refresh timer logic (specific to RAMs with internal refresh logic). This Test is only run in Loop Mode and takes 60 seconds to complete.
+* **SRAM Error** A detected 2114 SRAM failed its functional test — a control-signal or memory-cell fault found by the March C- algorithm. The chip is present but defective. (The exact sub-test is encoded on the LED as the orange-blink count.) 
 
 ---
 
