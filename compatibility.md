@@ -1,6 +1,6 @@
 # RAM Tester Compatibility Reference
 
-This document lists which manufacturer part numbers correspond to each DRAM type supported by the [RAM Tester](README.md), and which vintage systems use them.
+This document lists which manufacturer part numbers correspond to each DRAM and SRAM type supported by the [RAM Tester](README.md), and which vintage systems use them.
 
 No warranty that this listing is 100% correct or complete. Always check individual datasheets before substituting parts.
 
@@ -34,6 +34,62 @@ Note: The "16K×1 (4816, 5V)" row contains CMOS 4116-class devices and 5V-only r
 |--------------|-----|-----------------|-----------|---------|-------------|---------|---------------------|--------|-------|----------|-----|--------|------------|-----------|----------|----------|--------|-----|---------------|-----|-----------|---------|-------|---------|-------|-------------------|---------|---------|
 | **4K×1 (4027)** | AM9027 | – | F4027 | MB8104 | – | HM4027 | – | – | 2104 | 7027 | ITT4027 | – | M5M4027 | – | – | MCM4027 | MK4027 | µPD404 | MM5280 | MSM4027 | – | KM4027 | – | – | – | TMS4027 | TMM4027 | – |
 | **16K×1 (4116)** | AM9016C | – | F4116 F16K | MB8116 | GM4116 | HM4116 HM4716 | HY4116 | – | 2116 2117 | 4116 | ITT4116 | – | M5M4116 | – | 2690 | MCM4116/B/BP | MK4116 | µPD416 | MM5290 | MSM4116 | MN4116 | KM4116 | LH4116 | HYB4116 | – | TMS4116 | TMM4116 | – |
+
+---
+
+## Static RAM (SRAM)
+
+Unlike every other chip in this reference the **2114 is static RAM** (no refresh). On the tester it must be inserted **rotated 180°** — its Vcc/GND are swapped versus DRAM (see the manual). It is verified with a March C- algorithm and graded into an indicative speed class shown as **-20 / -30 / -45** (≈ 200 / 300 / 450 ns; a room-temperature indication, not a guaranteed bin).
+
+The 2114 (1024 × 4, 18-pin, common I/O) was one of the most heavily second-sourced SRAMs ever made — essentially any device carrying a "2114" number in the standard 18-pin pinout works.
+
+### Manufacturer cross-reference (2114, 1K×4 NMOS)
+
+| Manufacturer | Part number(s) | Notes |
+|--------------|----------------|-------|
+| Intel | 2114, 2114A, P2114, D2114 | Originator; "A" = faster grade |
+| AMD | AM9114 | |
+| Motorola | MCM2114, MCM21L14 | "21L14" = low-power |
+| National Semiconductor | MM2114 | |
+| NEC | µPD2114 | |
+| Hitachi | HM472114 | |
+| Toshiba | TMM2114, TMM314 | |
+| OKI | MSM2114 | |
+| Synertek | SY2114 | |
+
+…and many further second-sources (Signetics, Fairchild, Mostek, EMM, Eastern-Bloc analogs, etc.) — any standard-pinout 2114 is fine.
+
+### Speed & power flavors
+
+- **Speed grades** (access time): 2114 (450 ns), 2114-3 (≈ 300 ns), 2114-2 (≈ 200 ns) and faster "-1" parts. The tester reports the measured class as **-20 / -30 / -45**.
+- **Low-power "L" types** (2114L, 2114L-2/-3, MCM21L14, µPD2114L): identical pinout, lower standby current — fully supported.
+
+### CMOS pin-compatible 1K×4 statics
+
+18-pin CMOS 1K×4 SRAMs with the 2114 pinout generally test fine too:
+
+| Part | Manufacturer |
+|------|--------------|
+| TC5514 | Toshiba |
+| HM6514 | Hitachi |
+| IM6514 | Intersil / Harris |
+
+> ⚠ **Different pinout — do NOT test as a 2114:** TI **TMS4045 / TMS4047** and similar 1K×4 statics with *separate* data-in / data-out pins are not 2114-compatible.
+
+### Systems using the 2114
+
+| System / Board | Use | Notes |
+|----------------|-----|-------|
+| Sinclair ZX80 / ZX81 | 1 KB system RAM | 2 × 2114 |
+| Acorn Atom | system RAM | |
+| Commodore 64 | colour RAM | 1000-nibble colour RAM |
+| Commodore VIC-20 | system & colour RAM | static-RAM machine |
+| Namco arcade (Pac-Man, Ms. Pac-Man, Galaga, Galaxian, Dig Dug, Rally-X) | video / tile / sprite / work RAM | extremely common |
+| Nintendo arcade (Donkey Kong, DK Jr., Popeye) | video / work RAM | |
+| S-100 / Z80 / 6502 trainers & SRAM boards | main or scratch RAM | widespread |
+| Disk-drive controllers, printer buffers, drum machines | buffer / scratch RAM | many early-1980s designs |
+
+No warranty that this listing is complete or 100% correct — always verify with the individual datasheet (pinout and supply especially).
 
 ---
 
@@ -363,7 +419,7 @@ Scope: system DRAM in standard DIP and ZIP packages. VRAM is excluded unless exp
 
 ---
 
-## Summary by DRAM Type
+## Summary by RAM Type
 
 ### 4027 (4K×1)
 Predecessor to the 4116. Used in very early home computers (TRS-80 Model I Level I, early Apple II) and late 70s arcade games (Atari, Exidy).
@@ -394,3 +450,6 @@ Used primarily in Amiga 3000 ZIP fast-RAM.
 
 ### 411000 (1M×1)
 Used in certain Amiga expansions (A2058), some ISA RAM boards, and industrial system RAM.
+
+### 2114 (1K×4 SRAM)
+The tester's only **static**-RAM type (no refresh; insert rotated 180°). Ubiquitous late-1970s/1980s 1K×4 SRAM — most famously the **Commodore 64/128 colour RAM** (the classic C64 U6), plus Sinclair ZX80/ZX81, Acorn Atom, Commodore VIC-20, and a huge range of arcade boards (Pac-Man and most Namco/Nintendo hardware) for video and work RAM.

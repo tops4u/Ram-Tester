@@ -1,8 +1,11 @@
-# Vintage DRAM Tester for 15 different RAM Types
-Fast – Precise – Open for many 8-/16-bit systems like C64, C128, Amigas, Atari 800XL, 1040ST and others, Apple IIe, Spectrum and many more
+# Ram-Tester
+**Fast, open-source DIY tester for vintage DRAM/SRAM** — auto-detects the
+chip type, runs every test, gives a clear good/bad in seconds.
+
+[GPL v3] [Firmware 5.0.5] · C64 · Amiga · Atari · ST · Apple II · Spectrum
 
 ## What this project is
-A fast, open-source DIY DRAM tester for vintage RAM chips used in C64, Amiga, Atari, and other retro computers. Built around an ATmega328P on a custom PCB, it tests memory thoroughly in seconds and supports a wide range of chip types with optional OLED feedback.
+A fast, open-source DIY RAM tester for vintage RAM chips used in C64, Amiga, Atari, and other retro computers. Built around a 16MHz ATmega328P on a custom PCB, it tests memory thoroughly in seconds and supports a wide range of chip types with optional OLED feedback.
 
 <img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/IMGP7463 (1).jpeg" width="400px" align="center"/><br/>
 
@@ -45,15 +48,22 @@ A fast, open-source DIY DRAM tester for vintage RAM chips used in C64, Amiga, At
 | 64 K × 4 | 4464 | – | – | – | 4 ms | 6.4 s |
 | 256 K × 1 | 41256 | – | – | 41257 | 4 ms | 7.4 s |
 | 256 K × 4 | 44256 | both | 44258 | – | 8 ms | 4.1 s |
-| 1 M × 1 | 411000 | **!NO!** | – | – | 8 ms | 25.9 s |
+| 1 M × 1 | 411000 | **✗**<sup>3)</sup> | – | – | 8 ms | 25.9 s |
 | 1 M × 4 | 514400 | both | 514402 | – | 16 ms | 12.8 s |
 
 <sup>1)</sup> Requires the [4116 adapter board](Schematic/4116).<br/>
-<sup>2)</sup> Half-good 4164 chips sold as 32K × 1 (OKI MSM3732 / TI TMS4532). Enabled by default since firmware 4.2.3. See [32K documentation](Docs/32K-Option) for details.
+<sup>2)</sup> Half-good 4164 chips sold as 32K × 1 (OKI MSM3732 / TI TMS4532). Enabled by default since firmware 4.2.3. See [32K documentation](Docs/32K-Option) for details.<br/>
+<sup>3)</sup> The ZIP pinout is different than the 20-pin DIP — for the ZIP version you need an adapter!
 
 **Static Column** means the RAM allows column changes while CAS is held low — faster than standard page mode. **Nibble Mode** delivers four consecutive bits from one column address.
 
-Note: Above test times include the OLED display. Without display, test durations are approx. 1 s shorter.
+## Supported SRAM types (speed with current firmware version)
+
+| Capacity | DIP | Test Time |
+|----------|-----|-----------|
+| 1 K × 4 | 2114 <sup>1)</sup> | 0.4 s |
+
+ <sup>1)</sup> **WARNING:**  2114 SRAM needs to be inserted 180° rotated, with Pin 10 of the SRAM on the ZIF Pin 1 marking. 
 
 ---
 
@@ -75,7 +85,7 @@ There is a short YouTube video demonstrating the tester in action. <br/>
 1. GND shorts — checks if any pin is shorted to ground
 2. Power supply shorts — a resettable fuse protects the board
 3. Address-line and decoder faults
-4. Stuck cells or crosstalk using various patterns
+4. Stuck cells or crosstalk via bidirectional Checkerboards
 5. Random patterns combined with retention time checks
 6. CAS-before-RAS refresh timer function
 7. All of the above use the appropriate access mode for the chip type: Fast Page Mode, Static Column, or Nibble Mode
@@ -85,16 +95,17 @@ Here is the analytics of this algorithm vs. March-B
 
 | Aspect | This Tester | MARCH-B |
 | --- | --- | --- |
-| Pattern Coverage     | ✅ 0x00, 0xFF, 0xAA, 0x55 | ✅                   |
+| Pattern Coverage     | ✅ Checkerboard | ✅                   |
 | 0→1 / 1→0 Transition | ✅ Via pattern sequence  | ✅ Via R0W1, R1W0   |
-| Address Sequence     | ⚠️ Ascending only         | ✅ Asc + Descending   |
+| Address Sequence     | ✅ Asc + Descending         | ✅ Asc + Descending   |
 | Coupling Detection   | ✅ Via retention delay     | ✅ Systematic    |
 | Real Retention       | ✅ 2–16 ms per chip spec  | ❌ Not covered <sup>1)</sup>   |
-| GND Short Detection  | ✅ Before power-up        | ⚠️ Implicit only <sup>1)</sup>      |
+| GND Short Detection  | ✅ Before test        | ⚠️ Implicit only <sup>1)</sup>      |
 | Address Line Faults  | ✅ Bit-independence check  | ⚠️ Implicit only <sup>1)</sup>    |
-| CBR Refresh          | ✅ CAS-before-RAS test    | ❌ Not covered <sup>1)</sup>      |
+| CBR Refresh          | ✅ CAS-before-RAS test<sup>2)</sup>    | ❌ Not covered <sup>1)</sup>      |
 
-<sup>1)</sup>unless implemented outside of MARCH-B
+<sup>1)</sup>unless implemented outside of MARCH-B<br>
+<sup>2)</sup>For RAM that have a Refresh Counter (41256 and newer)
 
 March-B is thorough for coupling and decoder faults but operates in the microsecond range — it cannot catch chips with weak retention that meet spec on paper but fail under real-world refresh timing. This tester trades systematic address ordering for real-time retention stress, which is where most age-related failures actually occur.
 
@@ -117,7 +128,31 @@ Some designs use 3.3 V controllers with 5 V-tolerant I/O to get closer to TTL le
 * [**Software / Firmware**](Software) – firmware variants, flashing instructions
 * [**Schematic**](Schematic) – KiCad project and Gerber files (THT and SMD)
 * [**Changelog**](changelog.md) – firmware version history
-* [**Compatibility**](compatibility.md) – manufacturer cross-reference and system DRAM usage
+* [**Compatibility**](compatibility.md) – manufacturer cross-reference and system DRAM/SRAM usage
+
+---
+
+## Building or selling your own units
+
+You're welcome to build, modify and even sell your own Ram-Testers — that's the
+point of open hardware. In return, the license asks you to keep it open:
+
+- **It stays open-source.** Boards you distribute or sell remain under
+  CERN-OHL-S v2 (hardware) and GPL v3 (firmware). No closing the design, no
+  proprietary fork.
+- **Pass on the source.** If you sell or give away boards, make the complete
+  design files for *your* version — including any changes you made — available
+  under the same license.
+- **Keep the credit and the link.** Leave the copyright and license notices
+  intact and keep the source location — https://github.com/tops4u/Ram-Tester/ —
+  visible, on the board silkscreen where practicable (CERN-OHL-S §4).
+- **Don't strip attribution.** Selling it as your own closed product, or
+  removing the notices, is not permitted.
+- **Article description.** For online platforms you need to include:
+  Creator, link to the source files (this GitHub repo) and licence.
+
+In short: build it, improve it, sell it — just keep it open and point people
+back here. If unsure, open a Discussion and ask.
 
 ---
 
@@ -126,4 +161,4 @@ Some designs use 3.3 V controllers with 5 V-tolerant I/O to get closer to TTL le
 Pull requests, issues and forks are welcome.
 Questions: GitHub Discussions or contact **tops4u** on AmiBay.
 
-Open-source hardware under GPL v3 – use at your own risk.
+Open-source hardware (CERN-OHL-S v2) and firmware (GPL v3) – use at your own risk.

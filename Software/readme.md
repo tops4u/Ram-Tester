@@ -1,33 +1,5 @@
 # Software / Firmware
 
-## Which firmware do I need?
-
-There are **two versions** of the firmware:
-
-| Firmware | File | 32K Testing | Best for |
-|---|---|---|---|
-| **Standard + 32K** | `Ram_Tester_4.2.3_32k.hex` | ✅ Enabled | Users who test 3732/4532 or want full diagnostics on 4164 |
-| **Standard** | `Ram_Tester_4.2.3.hex` | ❌ Disabled | Users who only test 4164 and other standard types |
-
-**Not sure which one to pick?** If you repair ZX Spectrums or work with 32K RAM, use the 32K version. If you never touch 3732 or 4532 chips, use the standard version — it keeps things simpler.
-
-> **Users without a display should use the standard version** (without 32K), since the 32K results rely on on-screen text to distinguish chip types.
-
-## What's the difference?
-
-With **32K enabled**, the tester can identify MSM3732 and TMS4532 chips. But this changes how defective 4164 chips are reported: instead of simply showing "defective", the tester will check whether the chip still works as a 3732 or 4532 and report that instead. Only chips that have no usable 32K half are reported as defective. See the [32K documentation](../Docs/32K-Option) for details on how this works.
-
-With **32K disabled**, any defective 4164 is simply reported as defective. Any 3732 or 4532 inserted will also be reported as a bad 4164, since the tester doesn't know to look for a working half.
-
-## How to tell which version is on your tester
-
-Select an invalid DIP switch combination to show the firmware version on the display:
-
-- **Standard firmware**: white text on black background, e.g. `Ver.:4.2.3`
-- **32K firmware**: black text on white background (inverted), with suffix "32", e.g. `Ver.:4.2.3 32`
-
-When testing a 4164 with 32K firmware enabled, any result showing a 3732 or 4532 type will also be displayed with **inverted text** — this is a visual hint that the chip was inserted as a 4164 but is only partially functional.
-
 ## How to flash the firmware
 
 There are two ways to update:
@@ -64,5 +36,6 @@ Check the Documentation on the Update procedure if you have never done this befo
 
 | Version | Notes |
 |---|---|
-| **4.2.x** | Current release. Verified 3732/4532 quadrant logic. Two .hex variants (with/without 32K). |
+| **5.0.x** | Current active Version with configuration options and adapted Timings / Tests |
+| **4.2.x** | Archived Version. Verified 3732/4532 quadrant logic. Two .hex variants (with/without 32K). |
 | **2.1.x** | Legacy firmware, before display support was added. |

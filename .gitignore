@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Arduino / build artifacts
+build/
+*.o
+*.elf
+*.d
+
+# KiCad backups & caches
+*-backups/
+*.kicad_pcb-bak
+*.kicad_sch-bak
+*.000
+*.bak
+fp-info-cache
+~*

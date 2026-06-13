@@ -1,5 +1,17 @@
 # Changelog
 
+### v5.0.5 (2026-06-13)
+* Major: Replaced Pattern Checks with Checkerboard Checks. Rams that support Hidden Refresh will be checked on all Cells simultaneously, those who don't with current and last row. Checks run forward and backwards (Row- and Columnwise).
+* Major: Adjusted Timing to be more Spec-Compliant
+* Fixed: Addressing Error caused part of 41257 remain untested. 
+* Fixed: Various bugs found during an in-depth Anthropic Fable code review.
+* New: SRAM 2114 1Kx4 Support: **WARNING:** 2114 RAMs need to be turned 180° around as they have VCC & GND swapped vs. all other DRAMs that can be testet in this Tester! 2114 RAM will be tested in 3 speed categories (not 100% Sharp) as indication.
+* New: Configuration Options: 
+  1. 32K Support: This Option will Enable or Disable the Checks for 3732/4532 RAM Chips. Default: Enabled
+  2. Loop Mode: Enables continuous Testing of RAM Chips. Will test the CBR Counter on RAMs that support that feature. Default: Disabled
+  3. Dim Display: Lowers Display brightness to aviod burn in when used longer periods of time i.e. Loop Tests. Default: Disabled
+* Open Issues: 41257 Nibble RAM Timing needs to be further adjusted to comply with Specs - current Test Rams work at room temperature. 
+
 ### v4.2.3 (2026-03-20)
 - Fixed the logic for MSM3732 and TMS4532, which is now also verified — please check the Docs on this!
 - Added address-line short-circuit test before actually testing RAM. This checks address lines against each other
