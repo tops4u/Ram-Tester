@@ -29,13 +29,14 @@ Follow these steps to operate the tester correctly.
     |------------|---------------|---------------|
     | All ON | Setup mode | Adjust Tester behaviour |
     | 1 ON | 20-pin | 4027<sup>1)</sup>, 4116<sup>1)</sup>, 44256, 44258, 514256, 514258, 514400, 514402 |
-    | 2 ON | 18-pin | 4416, 4464, 411000, **2114 (Turn 180°!)**|
+    | 2 ON | 18-pin | 4416, 4464, 411000, 2114<sup>2)</sup>|
     | 3 ON | 16-pin | 3732, 4532, 4816, 4164, 41256, 41257 |
     | All OFF | Self-test mode | (no RAM inserted) |
 
     Any other combination (multiple ON, etc.) shows the firmware version.
 
-    <sup>1)</sup>Requires the 4116-Adapter to be in Place
+    <sup>1)</sup>Requires the 4116-Adapter to be in Place</br>
+    <sup>2)</sup>**WARNING:** 2114 needs to be inserted 180° rotated. Pin 10 Top Left! Align to top like the DRAMs
 
 4.  **Insert the RAM:**
     * Insert the chip into the socket.
