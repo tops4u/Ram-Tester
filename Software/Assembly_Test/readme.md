@@ -1,3 +1,5 @@
+**From Firmware 4.x this has been integrated in the Test Mode**
+
 If you just built your RAM Tester, you may use this Software to check if there is any problem.
 
 *Be sure to test without the Display inserted at the beginnging. It would disturb the Test*
