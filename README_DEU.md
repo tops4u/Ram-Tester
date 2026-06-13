@@ -38,18 +38,18 @@ Ein schneller, quelloffener DIY-RAM-Tester für Vintage-RAM-Chips aus C64, Amiga
 
 | Kapazität | DIP | 20-Pin-ZIP | Static Column | Nibble Mode | Retention-Zeit | Testzeit |
 |----------|-----|------------|---------------|-------------|----------------|-----------|
-| 4 K × 1 | 4027 <sup>1)</sup> | – | – | – | 2 ms | 1.3 s |
-| 16 K × 1 | 4816 | – | – | – | 2 ms | 1.6 s |
-| 16 K × 1 | 4116 <sup>1)</sup> | – | – | – | 2 ms | 1.6 s |
-| 16 K × 4 | 4416 | – | – | – | 4 ms | 4.2 s |
-| 32 K × 1 | 3732 <sup>2)</sup> | – | – | – | 2/4 ms | 2.8 s |
-| 32 K × 1 | 4532 <sup>2)</sup> | – | – | – | 2/4 ms | 2.8 s |
-| 64 K × 1 | 4164 | – | – | – | 2/4 ms | 2.8 s |
-| 64 K × 4 | 4464 | – | – | – | 4 ms | 6.4 s |
-| 256 K × 1 | 41256 | – | – | 41257 | 4 ms | 7.4 s |
-| 256 K × 4 | 44256 | beide | 44258 | – | 8 ms | 4.1 s |
-| 1 M × 1 | 411000 | **✗**<sup>3)</sup> | – | – | 8 ms | 25.9 s |
-| 1 M × 4 | 514400 | beide | 514402 | – | 16 ms | 12.8 s |
+| 4 K × 1 | 4027 <sup>1)</sup> | – | – | – | 2 ms | 0.2 s |
+| 16 K × 1 | 4816 | – | – | – | 2 ms | 0.7 s |
+| 16 K × 1 | 4116 <sup>1)</sup> | – | – | – | 2 ms | 0.5 s |
+| 16 K × 4 | 4416 | – | – | – | 4 ms | 1.7 s |
+| 32 K × 1 | 3732 <sup>2)</sup> | – | – | – | 2/4 ms | 1.8 s |
+| 32 K × 1 | 4532 <sup>2)</sup> | – | – | – | 2/4 ms | 1.8 s |
+| 64 K × 1 | 4164 | – | – | – | 2/4 ms | 1.8 s |
+| 64 K × 4 | 4464 | – | – | – | 4 ms | 5.2 s |
+| 256 K × 1 | 41256 | – | – | 41257 | 4 ms | 7.5 s |
+| 256 K × 4 | 44256 | both | 44258 | – | 8 ms | 3.5 s |
+| 1 M × 1 | 411000 | **✗**<sup>3)</sup> | – | – | 8 ms | 23.8 s |
+| 1 M × 4 | 514400 | both | 514402 | – | 16 ms | 12.0 s |
 
 <sup>1)</sup> Benötigt die [4116-Adapterplatine](Schematic/4116).<br/>
 <sup>2)</sup> Half-Good-4164-Chips, verkauft als 32K × 1 (OKI MSM3732 / TI TMS4532). Seit Firmware 4.2.3 standardmässig aktiviert. Details in der [32K-Dokumentation](Docs/32K-Option).<br/>
