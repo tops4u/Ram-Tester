@@ -1,5 +1,10 @@
 # Changelog
 
+### 5.0.6 (2026-06-18)
+* Changed Self-Test LED behaviour to stay orange and flash during 20Pin->All test and only switch to green once all pins are ok.
+* Adjusted 41257 Timing in Random Test Patterns to match max refresh time from specs
+* Added Signal Names for Pin Shorts for 16 and 20 Pin Types. 18 Pin types are ambiguous as there are various Pinouts for this size - here still pin numbers are used. 
+
 ### v5.0.5 (2026-06-13)
 * Major: Replaced Pattern Checks with Checkerboard Checks. Rams that support Hidden Refresh will be checked on all Cells simultaneously, those who don't with current and last row. Checks run forward and backwards (Row- and Columnwise).
 * Major: Adjusted Timing to be more Spec-Compliant
