@@ -217,11 +217,14 @@ struct RAM_Definition ramTypes[] = {
   // effective age differs slightly from steady-state rows; delays[0] compensates
   // approximately. One row of 512 — not worth a special-cased pipeline.
   { ramType_41256, 4, 1, 512, 512, 0, { 94, 1, 1, 1, 1, 1 }, 75 },
-  // 41257: delays intentionally 0 — the nibble-mode row cycle already takes ~4.5 ms,
-  // beyond the 4 ms tREF, so the implicit code runtime alone provides the aging.
-  // writeTime 4 is likewise intentional: the drained LAST row then ages ~4.6 ms
-  // (vs ~9 ms for pipeline rows) — still past tREF, and a faithful writeTime would
-  // stretch the drain pointlessly. Asymmetry accepted by design.
+  // 41257: nibble retention uses a DEDICATED refresh-split tail
+  // (retentionTailNibble_16Pin in 16Pin.cpp), NOT the shared retentionTail. The
+  // nibble row cycle is ~4.5 ms (≈ tREF); the old shared pipeline aged each cell
+  // ~9 ms (~2.25× tREF) and risked false-failing in-spec parts. A RAS-only refresh
+  // of the just-written row now splits that into two ~4.5 ms (≈ tREF) windows.
+  // delays[]/writeTime are UNUSED for this type (the check/write runtime IS the
+  // aging); delayRows is effectively 1. The values below are kept only as
+  // documentation — the nibble tail never reads them.
   { ramType_41257, 4, 1, 512, 512, RAM_FLAG_NIBBLE_MODE, { 0, 0, 0, 0, 0, 0 }, 4 },
   { ramType_4416, 4, 2, 256, 64, RAM_FLAG_SMALL_TYPE, { 52, 52, 16, 16, 16, 16 }, 38 },
   // 4464: retuned for the every-column inline-snapshot tRAS recycle (5.0.5) — the
@@ -542,6 +545,67 @@ void writeRAMType(const __FlashStringHelper *chipName) {
 // GROUND SHORT DETECTION
 //=======================================================================================
 
+// ---- GND-short signal labels (5.0.6) -------------------------------------------------
+// Per pinout group: AVR port bit -> signal-name descriptor, parallel to the CPU_xxPORT[]
+// pin-number arrays. On a ground short the OLED shows "GND Short <signal>" (e.g. "GND
+// Short RAS", "GND Short A5", "GND Short Dout") instead of a bare socket pin number; the
+// LED still blinks 3 red + <pin-number> orange (unchanged). Descriptor 0 = no known
+// signal -> falls back to the numeric "Short Pin n". Address/data labels are generated
+// ("A"+n, "IO"+n) so only the fixed mnemonics below cost string flash.
+// NOTE: derived from the signal maps in 16Pin.h/18Pin.h/20Pin.h crossed with CPU_xxPORT[]
+// — verify against the board/adapter schematic before trusting.
+#define GL_NONE 0
+#define GL_RAS  1
+#define GL_CAS  2
+#define GL_WE   3
+#define GL_OE   4
+#define GL_DIN  5
+#define GL_DOUT 6
+#define GL_CS   7
+#define GL_A(n)  (0x10 | (n))  // address line An (0..9)
+#define GL_IO(n) (0x20 | (n))  // data line IOn (1..4)
+
+// 16-pin (4164/41256/41257/4816/3732/4532)
+static const uint8_t LBL_16B[8] PROGMEM = { GL_A(6), GL_RAS,  GL_A(3),  GL_WE,    0,       0,       0,       0       };
+static const uint8_t LBL_16C[8] PROGMEM = { GL_A(8), GL_DIN,  GL_DOUT,  GL_CAS,   GL_A(0), 0,       0,       0       };
+static const uint8_t LBL_16D[8] PROGMEM = { GL_A(2), GL_A(1), 0,        0,        0,       0,       GL_A(7), GL_A(5) };
+// 18-pin: intentionally NOT labelled. At GND-check time the sub-pinout is unknown
+// (4416/4464 vs 411000-Alt vs 2114-SRAM all differ), so a label would be wrong for two of
+// the three. 18-pin therefore falls back to the numeric "Short Pin n" via this zero map.
+static const uint8_t LBL_NONE8[8] PROGMEM = { 0, 0, 0, 0, 0, 0, 0, 0 };
+// 20-pin (514256/514258/514400/514402)
+static const uint8_t LBL_20B[8] PROGMEM = { GL_CAS,  GL_RAS,  GL_OE,    GL_WE,    GL_A(8), 0,       0,       0       };
+static const uint8_t LBL_20C[8] PROGMEM = { GL_IO(1),GL_IO(2),GL_IO(3), GL_IO(4), GL_A(9), 0,       0,       0       };
+static const uint8_t LBL_20D[8] PROGMEM = { GL_A(0), GL_A(1), GL_A(2),  GL_A(3),  GL_A(4), GL_A(5), GL_A(6), GL_A(7) };
+// 4116/4027 via adapter (same 20-pin socket, different pinout; no OE/A8/A9; the 4027 uses
+// A6/PD6 also as /CS but we label it A6).
+static const uint8_t LBL_41B[8] PROGMEM = { GL_CAS,  GL_RAS,  0,        GL_WE,    0,       0,       0,       0       };
+static const uint8_t LBL_41C[8] PROGMEM = { GL_DOUT, GL_DIN,  0,        0,        0,       0,       0,       0       };
+static const uint8_t LBL_41D[8] PROGMEM = { GL_A(0), GL_A(1), GL_A(2),  GL_A(3),  GL_A(4), GL_A(5), GL_A(6), 0       };
+
+// Rendered signal name for the most recent GND short ("" = unknown -> show pin number).
+char g_gndLabel[6] = { 0 };
+
+bool test_4116(void);  // 20Pin.cpp — ADC-based adapter presence check (for label choice)
+
+// Render a descriptor byte into out[] ("" if GL_NONE/unknown).
+static void buildGndLabel(uint8_t d, char *out) {
+  if ((d & 0xF0) == 0x10) { out[0] = 'A'; out[1] = '0' + (d & 0x0F); out[2] = 0; return; }
+  if ((d & 0xF0) == 0x20) { out[0] = 'I'; out[1] = 'O'; out[2] = '0' + (d & 0x0F); out[3] = 0; return; }
+  const char *s;
+  switch (d) {
+    case GL_RAS:  s = PSTR("RAS");  break;
+    case GL_CAS:  s = PSTR("CAS");  break;
+    case GL_WE:   s = PSTR("WE");   break;
+    case GL_OE:   s = PSTR("OE");   break;
+    case GL_DIN:  s = PSTR("Din");  break;
+    case GL_DOUT: s = PSTR("Dout"); break;
+    case GL_CS:   s = PSTR("CS");   break;
+    default:      out[0] = 0; return;
+  }
+  strcpy_P(out, s);
+}
+
 /**
  * Check for ground shorts on all pins based on current mode
  *
@@ -557,12 +621,22 @@ void writeRAMType(const __FlashStringHelper *chipName) {
  * @note Never returns if short detected - enters infinite error blink pattern
  */
 void checkGNDShort() {
-  if (Mode == Mode_20Pin)
-    checkGNDShort4Port(CPU_20PORTB, CPU_20PORTC, CPU_20PORTD);
-  else if (Mode == Mode_18Pin)
-    checkGNDShort4Port(CPU_18PORTB, CPU_18PORTC, CPU_18PORTD);
-  else
-    checkGNDShort4Port(CPU_16PORTB, CPU_16PORTC, CPU_16PORTD);
+  if (Mode == Mode_20Pin) {
+    // 4116/4027 adapter sits in the 20-pin socket but has a different pinout. Detect it
+    // (cheap ADC check) so the labels match, then restore the pull-ups test_4116() dropped.
+    bool adapter = test_4116();
+    PORTB |= 0b00111111;
+    PORTC |= 0b00111111;
+    PORTD = 0xFF;
+    if (adapter)
+      checkGNDShort4Port(CPU_20PORTB, CPU_20PORTC, CPU_20PORTD, LBL_41B, LBL_41C, LBL_41D);
+    else
+      checkGNDShort4Port(CPU_20PORTB, CPU_20PORTC, CPU_20PORTD, LBL_20B, LBL_20C, LBL_20D);
+  } else if (Mode == Mode_18Pin) {
+    checkGNDShort4Port(CPU_18PORTB, CPU_18PORTC, CPU_18PORTD, LBL_NONE8, LBL_NONE8, LBL_NONE8);
+  } else {
+    checkGNDShort4Port(CPU_16PORTB, CPU_16PORTC, CPU_16PORTD, LBL_16B, LBL_16C, LBL_16D);
+  }
 }
 
 /**
@@ -596,22 +670,26 @@ void checkGNDShort() {
  * @note Arrays must be defined in respective header files (16Pin.h, 18Pin.h, 20Pin.h)
  * @note Function never returns if short detected
  */
-void checkGNDShort4Port(const uint8_t *portb, const uint8_t *portc, const uint8_t *portd) {
+void checkGNDShort4Port(const uint8_t *portb, const uint8_t *portc, const uint8_t *portd,
+                        const uint8_t *lblb, const uint8_t *lblc, const uint8_t *lbld) {
   for (uint8_t i = 0; i <= 7; i++) {
     uint8_t mask = 1 << i;  // Bit mask for current position
 
     // Check PORTB bit i
     if (portb[i] != EOL && portb[i] != NC && ((PINB & mask) == 0)) {
+      buildGndLabel(pgm_read_byte(&lblb[i]), g_gndLabel);
       error(portb[i], 4);  // Ground short on pin portb[i]
     }
 
     // Check PORTC bit i
     if (portc[i] != EOL && portc[i] != NC && ((PINC & mask) == 0)) {
+      buildGndLabel(pgm_read_byte(&lblc[i]), g_gndLabel);
       error(portc[i], 4);  // Ground short on pin portc[i]
     }
 
     // Check PORTD bit i
     if (portd[i] != EOL && portd[i] != NC && ((PIND & mask) == 0)) {
+      buildGndLabel(pgm_read_byte(&lbld[i]), g_gndLabel);
       error(portd[i], 4);  // Ground short on pin portd[i]
     }
   }
@@ -914,8 +992,23 @@ void error(uint8_t code, uint8_t error) {
         errScreen(custom_check_icons, 'B', 8, F("Error RandomData"), -1);
       break;
 
-    case 4:                                                              // Ground short detected
-      errScreen(custom_embedded_icons, 'C', 24, F("Short Pin "), code);  // code = pin number
+    case 4:  // Ground short detected
+      if (g_gndLabel[0]) {
+        // Labelled: "GND Short <signal>" centred (M_Font ~7 px/char).
+        OLED_BEGIN()
+        display.setFont(custom_embedded_icons);
+        display.setCursor(50, 33);
+        display.print('C');
+        display.setFont(M_Font);
+        int x = 64 - (int)(10 + strlen(g_gndLabel)) * 7 / 2;
+        if (x < 0) x = 0;
+        display.setCursor(x, 54);
+        display.print(F("GND Short "));
+        display.print(g_gndLabel);
+        OLED_END();
+      } else {
+        errScreen(custom_embedded_icons, 'C', 24, F("Short Pin "), code);  // code = pin number
+      }
       break;
 
     case 5:  // Refresh timeout - chip cannot hold data at max refresh interval
@@ -1744,12 +1837,11 @@ void checkShortPins(void) {
  *   3. Repeat until all pins checked (array check[] all true)
  *   4. Exit when all pins successfully tested
  *
- * Pin-by-Pin Feedback:
- *   On each successful contact:
- *     - Green LED turns off (via pinMode INPUT_PULLUP)
- *     - Red LED flashes briefly (200ms)
- *     - Red LED turns off
- *     - Green LED restored to INPUT_PULLUP
+ * LED Feedback:
+ *   - While testing (not all pins done): steady ORANGE
+ *     (green lit by the PB4 pull-up + red driven on).
+ *   - On each successful contact: brief GREEN blink (red drops out for 200 ms).
+ *   - When all pins are done: steady green (set by selfCheck after this returns).
  *
  * @note Pin 13 automatically marked as checked (LED pin, not testable)
  * @note Function blocks until all pins successfully tested
@@ -1758,6 +1850,13 @@ void checkShortPins(void) {
 void testPins() {
   // Mark pin 13 as checked (LED pin, not testable)
   pinCheckBits |= (1UL << 13);
+
+  // "Busy / not all pins done" indicator = ORANGE. The green LED is already lit by the
+  // PB4 pull-up (the LED is FET-driven, so the pull-up fully switches it on) while PB4
+  // stays INPUT_PULLUP and therefore still readable for the pin-12 continuity check. We
+  // only add RED (PB5, the test-excluded pin) on top to make the colour orange.
+  pMode(LED_RED_PIN, OUTPUT);
+  pWrite(LED_RED_PIN, HIGH);
 
   // Target: all pins 0-19 checked (0xFFFFF = bits 0-19 set)
   const uint32_t allPinsMask = 0xFFFFFUL;
@@ -1774,13 +1873,13 @@ void testPins() {
       if (pRead(i) == LOW) {
         pinCheckBits |= (1UL << i);  // Mark pin as tested
 
-        // Visual feedback: flash red LED
-        pMode(LED_GREEN_PIN, OUTPUT);
-        pWrite(LED_GREEN_PIN, LOW);
-        pWrite(LED_RED_PIN, HIGH);
+        // Visual feedback: GREEN blink (orange -> green -> orange). Green stays lit via
+        // the PB4 pull-up the whole time; we only drop RED briefly to leave pure green,
+        // then restore RED to return to the orange "still testing" state. PB4 is never
+        // driven as an output, so pin 12 stays readable for its own continuity check.
+        pWrite(LED_RED_PIN, LOW);   // red off -> pure green flash
         delay(200);
-        pWrite(LED_RED_PIN, LOW);
-        pMode(LED_GREEN_PIN, INPUT_PULLUP);
+        pWrite(LED_RED_PIN, HIGH);  // red on again -> orange
       }
     }
   }

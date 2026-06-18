@@ -1361,10 +1361,33 @@ void __attribute__((hot)) writeRow_16Pin(uint16_t row, uint16_t cols, uint8_t pa
   }
 
   // ========== RETENTION TESTING (patterns 4-5; all types incl. 41257 nibble) ==========
-  // Shared aging tail (common.cpp retentionTail): delays[5] + delayRows pipeline,
-  // last-row drain with simulated writeTime. retCheck_16Pin re-supplies the cols
-  // parameter (always ramTypes[type].columns, same value writeRow received).
-  retentionTail(row, last_row, patNr, retCheck_16Pin);
+  if (is_nibble) {
+    // 41257 refresh-split retention. The nibble row cycle is ~4.5 ms (≈ tREF), so the
+    // shared write→check pipeline ages each cell ~9 ms (~2.25× tREF) and risks false-
+    // failing in-spec parts. A RAS-only refresh of the just-written row halves that:
+    //   write(N) →[check(N-1) ~4.5ms]→ refresh(N) →[write(N+1) ~4.5ms]→ check(N)
+    // ORDER IS CRITICAL — check BEFORE refresh (refreshing a still-fresh row collapses
+    // it back to one ~9 ms window). Refresh inlined (rasHandling + RAS high) to avoid
+    // resurrecting the otherwise-dead refreshRow_16Pin. Aging is the implicit check()/
+    // write() runtime (delays[5]=0); delayRows effectively 1.
+    // NOTE: assumes the 41257's 256-cycle (A0–A7) refresh covers BOTH A8 nibble halves
+    // of the row — bench-confirm against the datasheet.
+    if (row) {
+      retCheck_16Pin(row - 1, patNr);            // verify previous row (~tREF since its refresh)
+      if (row == last_row) {
+        retCheck_16Pin(row, patNr);              // drain last row (aged ~tREF by the check above)
+      } else {
+        cli();                                   // protect the refresh RAS pulse (tRAS-max)
+        rasHandling_16Pin(row); RAS_HIGH16;      // RAS-only refresh: re-arm the just-written row
+        sei();
+      }
+    }
+    // row 0: written fresh; aged only by write(1) before its check on the next call.
+  } else {
+    // All other 16-pin types: shared retentionTail (common.cpp) — delays[5] + delayRows
+    // pipeline, last-row drain with simulated writeTime. retCheck_16Pin re-supplies cols.
+    retentionTail(row, last_row, patNr, retCheck_16Pin);
+  }
 }
 
 /**
