@@ -5,7 +5,7 @@ RAM Tester Program for RAM Tester PCB
 
 Author:   Andreas Hoffmann
 Project:  github.com/tops4u/ram-tester
-Version:  5.0.5
+Version:  5.0.6
 Date:     13.06.2026
 
 This software is published under GPL 3.0. Respect the license terms.
@@ -193,7 +193,14 @@ Version History:
                 4 ms refresh spec during the test (previously up to ~190 ms unrefreshed).
               - 16-pin read sampling margin fix; deterministic CAS pulse widths; loop mode now works
                 in non-OLED builds.
-
+  - 5.0.6     - Improvement in LED Handling during Self-Test if one is not using a Display. As long as
+                the "20-Pin to all" has not completed, the LED will only flash briefly and then return to orange
+                state. It is green when all tests were successful. 
+              - Clear pin names für GND checks. Instead of Pin Numbers the Display now shows the signal names 
+                except for 18 Pin RAM where it is ambiguous as long it is not known exactly what RAM it is, 
+                as Pinouts differ between 4416/4464 - 441000 and 2114 SRAM.
+              - 41257 Refresh Times adjusted to match Specs for Random Pattern / Retention Tests.
+                
 Disclaimer:
 This project is for hobbyist use. There are no guarantees regarding its fitness for a specific purpose
 or its error-free operation. Use it at your own risk.

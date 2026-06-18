@@ -12,7 +12,7 @@
 #include <avr/pgmspace.h>
 
 // Version String
-#define VERSION_STR "5.0.5"
+#define VERSION_STR "5.0.6"
 
 #ifdef OLED
 #include "src/U8g2/U8g2lib.h"
@@ -47,17 +47,19 @@ const uint8_t github_QR_packed[116] U8X8_PROGMEM = {
 /*
   Fontname: -Misc-Fixed-Medium-R-Normal--7-70-75-75-C-50-ISO10646-1
   Copyright: Public domain font.  Share and enjoy.
-  Glyphs: 20/1848
+  Glyphs: 16/1848   (reduced set: space . 0-9 : V e r — the only chars S_Font ever
+                     draws: "Ver.:" + VERSION_STR + " 32", see common.cpp setFont(S_Font).
+                     Unused "Version" letters i/n/o/s stripped → -31 bytes flash.)
   BBX Build Mode: 0
 */
-const uint8_t u8g2_font_version_custom[201] U8G2_FONT_SECTION("u8g2_font_version_custom") = 
-  "\24\0\2\2\3\3\2\4\4\4\6\0\0\6\377\6\377\0\0\0\0\0\254 \5\200\336\0.\6\322\330"
+const uint8_t u8g2_font_version_custom[170] U8G2_FONT_SECTION("u8g2_font_version_custom") =
+  "\20\0\2\2\3\3\2\4\4\4\6\0\0\6\377\6\377\0\0\0\0\0\215 \5\200\336\0.\6\322\330"
   "\214\0\60\7\363\330U\256\12\61\7\363\330%\331\32\62\12\264\330\251\230A,G\0\63\13\264\330\214\14"
   "\222F\62)\0\64\12\264\330FU\215\230A\2\65\12\264\330\14\15\66\222I\1\66\12\264\330\251\14V"
   "\224I\1\67\13\264\330\214\14b\6\61\203\10\70\12\264\330\251\230T\224I\1\71\12\264\330\251(\323\6"
-  "I\1:\7\352\330\214\70\2V\10\264\330Dg\222\12e\11\244\330\251\64\62P\0i\10\363\330e$"
-  "\253\1n\7\244\330\254h\6o\10\244\330\251(\223\2r\10\244\330\254\250A\6s\10\244\330\15\215\206"
-  "\2\0\0\0\4\377\377\0";
+  "I\1:\7\352\330\214\70\2V\10\264\330Dg\222\12e\11\244\330\251\64\62P\0"
+  "r\10\244\330\254\250A\6"
+  "\0\0\0\4\377\377\0";
 
 /*
   Fontname: open_iconic_check_4x
@@ -295,7 +297,8 @@ uint16_t adc_read(uint8_t channel);
  * @return void
  */
 void checkGNDShort(void);
-void checkGNDShort4Port(const uint8_t *portb, const uint8_t *portc, const uint8_t *portd);
+void checkGNDShort4Port(const uint8_t *portb, const uint8_t *portc, const uint8_t *portd,
+                        const uint8_t *lblb, const uint8_t *lblc, const uint8_t *lbld);
 
 // Forward declarations for port mappings (defined in respective pin modules)
 extern const uint8_t CPU_16PORTB[];
