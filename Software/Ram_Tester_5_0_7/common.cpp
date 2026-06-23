@@ -1196,7 +1196,7 @@ void printTestOK(const __FlashStringHelper *s) {
  * Each tile column is 8 bytes; we send cols 8..14 (the counter region).
  */
 static void updateRunCounterOLED() {
-  OLED_PREP();  // ensure SDA/SCK are OUTPUT+HIGH (fast I2C never sets DDR itself)
+  OLED_PREP();  // set open-drain idle (INPUT+pull-up); END_TRANSFER restores PB4/PB5 to OUTPUT after
   display.setBufferCurrTileRow(2);
   display.clearBuffer();
   display.setFont(M_Font);

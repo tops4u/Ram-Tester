@@ -1,5 +1,8 @@
 # Changelog
 
+### 5.0.7 (2026-06-23)
+* Fixed: 1306 OLED Displays in TH-PCBs v3 may encounter Problems with earliert 5.x Releases due to increased speed and direct drive, reverted to open drain and ~100kHz. No other fixes. If you did not encounter any OLED issues, there is no benefit in upgrading.
+
 ### 5.0.6 (2026-06-18)
 * Changed Self-Test LED behaviour to stay orange and flash during 20Pin->All test and only switch to green once all pins are ok.
 * Adjusted 41257 Timing in Random Test Patterns to match max refresh time from specs

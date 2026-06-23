@@ -100,8 +100,9 @@ extern "C" uint8_t u8x8_gpio_and_delay_arduino(U8X8_UNUSED u8x8_t *u8x8, uint8_t
 {
   switch (msg) {
     case U8X8_MSG_GPIO_AND_DELAY_INIT:
-      DDRB  |= (1 << 5) | (1 << 4);  // SCL=PB5, SDA=PB4 as outputs
-      PORTB |= (1 << 5) | (1 << 4);  // idle high
+      // Open-drain idle: SCL=PB5, SDA=PB4 released (INPUT + internal pull-up).
+      DDRB  &= ~((1 << 5) | (1 << 4));
+      PORTB |=  ((1 << 5) | (1 << 4));
       break;
     case U8X8_MSG_DELAY_MILLI:
       delay(arg_int);
@@ -109,11 +110,15 @@ extern "C" uint8_t u8x8_gpio_and_delay_arduino(U8X8_UNUSED u8x8_t *u8x8, uint8_t
     case U8X8_MSG_DELAY_I2C:
       if (arg_int <= 2) delayMicroseconds(5);
       break;
+    // Open-drain safety-net path (normally bypassed by the optimized byte fn):
+    // arg=1 -> release (input + pull-up); arg=0 -> drive low (output low).
     case U8X8_MSG_GPIO_I2C_CLOCK:
-      if (arg_int) PORTB |= (1 << 5); else PORTB &= ~(1 << 5);
+      if (arg_int) { DDRB &= ~(1 << 5); PORTB |= (1 << 5); }
+      else         { PORTB &= ~(1 << 5); DDRB |= (1 << 5); }
       break;
     case U8X8_MSG_GPIO_I2C_DATA:
-      if (arg_int) PORTB |= (1 << 4); else PORTB &= ~(1 << 4);
+      if (arg_int) { DDRB &= ~(1 << 4); PORTB |= (1 << 4); }
+      else         { PORTB &= ~(1 << 4); DDRB |= (1 << 4); }
       break;
     default:
       break;  // DELAY_NANO / DELAY_100NANO / DELAY_10MICRO: no-op on AVR
@@ -1173,59 +1178,107 @@ extern "C" uint8_t u8x8_byte_arduino_sw_i2c(U8X8_UNUSED u8x8_t *u8x8, U8X8_UNUSE
   ignores ACK response (which is anyway not provided by some displays)
   also does not allow reading from the device
 */
+/* --------------------------------------------------------------------- */
+/* Ram Tester 5.0.7: OPEN-DRAIN software I2C (SCL=PB5, SDA=PB4).              */
+/*                                                                           */
+/* History: the speed-optimized path drove SCL/SDA PUSH-PULL (sbi/cbi on     */
+/* PORTB actively forcing both 0 and 1). On a long-trace board its hard CMOS */
+/* rising edges rang/overshot -> the SSD1306 double-clocked -> garbage.      */
+/* Lowering the clock only reduced it (more settle time), never fixed it.    */
+/* The ORIGINAL upstream u8g2 driver worked at ~22 kHz because it was real   */
+/* OPEN-DRAIN: LOW = actively driven, HIGH = pin released to a pull-up (soft */
+/* RC edge, no ringing). It used the ATmega INTERNAL pull-up (INPUT_PULLUP,  */
+/* ~20-50k) -> needed NO external resistors.                                 */
+/*                                                                           */
+/* We restore open-drain with the internal pull-up: "high" = pin to INPUT +  */
+/* pull-up (line rises via RC), "low" = pin to OUTPUT-low. No hardware.       */
+/*                                                                           */
+/* KEY MEASUREMENT (SMD board, internal pull-up, 5 V):                        */
+/*   Full 0->5 V rise = 4.6 us, BUT the SSD1306 logic switches far lower:     */
+/*   a Miller "shelf" at ~1.38 V shows the input threshold is crossed at      */
+/*   only ~900 ns. What matters for the clock is that ~900 ns to-VIH time,    */
+/*   NOT the 4.6 us to full rail -> we can clock MUCH faster than the full    */
+/*   rise suggested. (SSD1306 logic runs ~2.8 V internally, switching point   */
+/*   ~0.5*VDD ~= 1.4 V.) The falling edge is hard-driven (fast).             */
+/*                                                                           */
+/* Target ~100 kHz. tHIGH (~6 us) covers the to-threshold time with margin   */
+/* even on a long TH board (est. ~2-4.5 us) and chip-to-chip pull-up spread  */
+/* (20-50k). If a long-trace board still glitches, raise HIGH/SU; the auto-  */
+/* calibration option (measure each board's rise at boot) is the bulletproof */
+/* route to per-board maximum without any external resistor.                 */
+/*                                                                           */
+/* Timing knobs are CPU cycles @ 16 MHz (62.5 ns/cycle).                     */
+/* --------------------------------------------------------------------- */
+#ifndef OLED_I2C_DELAY_CYCLES
+#define OLED_I2C_DELAY_CYCLES 48   /* general start/stop spacing (~3 us)           */
+#endif
+#ifndef OLED_I2C_SU_CYCLES
+#define OLED_I2C_SU_CYCLES   32    /* SDA setup before SCL release (~2 us)         */
+#endif
+#ifndef OLED_I2C_HIGH_CYCLES
+#define OLED_I2C_HIGH_CYCLES 96    /* SCL high ~6 us: covers to-VIH time + margin  */
+#endif
+#ifndef OLED_I2C_LOW_CYCLES
+#define OLED_I2C_LOW_CYCLES  24    /* SCL low ~1.5 us (driven, spec tLOW >= 1.3 us) */
+#endif
+
 static void i2c_delay(u8x8_t *u8x8) U8X8_NOINLINE;
 static void i2c_delay(u8x8_t *u8x8)
 {
-  /* Ram Tester fast path: SSD1306 @ 16 MHz tolerates the raw SBI/CBI rate */
-  /* of the patched i2c_*_scl/sda helpers without any extra delay. The    */
-  /* NOINLINE CALL/RET pair (~8 cycles ≈ 500 ns) is the only timing       */
-  /* "delay" left, which still keeps SCK around ~600-800 kHz — well       */
-  /* within what the SSD1306 (and most clones) accepts.                    */
   (void)u8x8;
+  __builtin_avr_delay_cycles(OLED_I2C_DELAY_CYCLES);
 }
 
 static void i2c_init(u8x8_t *u8x8)
 {
-  PORTB |= (1 << 5) | (1 << 4);  // SCL=PB5, SDA=PB4 idle high (hard-coded pins)
+  /* Open-drain idle: both lines released (INPUT + internal pull-up = high). */
+  DDRB  &= ~((1 << 5) | (1 << 4));
+  PORTB |=  ((1 << 5) | (1 << 4));
   i2c_delay(u8x8);
 }
 
 /* actually, the scl line is not observed, so this procedure does not return a value */
 
 /* --------------------------------------------------------------------- */
-/* Ram Tester fast path: SDA = PB4 (pin 12), SCK = PB5 (pin 13).         */
-/* Hard-coded SBI/CBI replaces the ~10-cycle pointer indirection through */
-/* the arduino_i2c_*_port globals; always_inline removes call overhead.  */
-/* Profiled SCK speedup on ATmega328P @ 16 MHz: ~22.7 kHz → ~600-800 kHz.*/
-/* PROJECT-LOCAL u8g2 only — does NOT affect any other sketch.           */
+/* Open-drain line drivers (internal pull-up). SCL=PB5, SDA=PB4.          */
+/*   RELEASE (logic 1): DDR->input THEN PORT->1 (pull-up on). The pin is  */
+/*                      never an output-high for even one cycle, so there  */
+/*                      is no push-pull glitch; the line rises via RC.     */
+/*   DRIVE   (logic 0): PORT->0 THEN DDR->output (actively pulls low).     */
+/* The "safe" register is always written first. PROJECT-LOCAL u8g2 only.  */
 /* --------------------------------------------------------------------- */
-static inline __attribute__((always_inline)) void i2c_read_scl_and_delay(u8x8_t *u8x8)
-{
-  __asm__ __volatile__("sbi %0, 5" :: "I"(_SFR_IO_ADDR(PORTB)));
-  /* SSD1306 needs ~600 ns SCK HIGH for reliable data latching. The bare SBI  */
-  /* alone gave only ~125 ns, which caused intermittent missing/partial       */
-  /* displays. Eight NOPs (~500 ns) bring the total HIGH time to ~625 ns.     */
-  __asm__ __volatile__(
-    "nop\n\t nop\n\t nop\n\t nop\n\t nop\n\t nop\n\t nop\n\t nop\n\t");
-  i2c_delay(u8x8);
-}
-
-static inline __attribute__((always_inline)) void i2c_clear_scl(u8x8_t *u8x8)
-{
-  (void)u8x8;  // pins are hard-coded (PB5); u8x8 kept only for call-site signature
-  __asm__ __volatile__("cbi %0, 5" :: "I"(_SFR_IO_ADDR(PORTB)));
-}
-
-static inline __attribute__((always_inline)) void i2c_read_sda(u8x8_t *u8x8)
+static inline __attribute__((always_inline)) void i2c_read_scl(u8x8_t *u8x8)   /* release SCL high */
 {
   (void)u8x8;
+  __asm__ __volatile__("cbi %0, 5" :: "I"(_SFR_IO_ADDR(DDRB)));
+  __asm__ __volatile__("sbi %0, 5" :: "I"(_SFR_IO_ADDR(PORTB)));
+}
+
+static inline __attribute__((always_inline)) void i2c_read_scl_and_delay(u8x8_t *u8x8)
+{
+  i2c_read_scl(u8x8);
+  __builtin_avr_delay_cycles(OLED_I2C_HIGH_CYCLES);  /* must cover the pull-up RC rise */
+}
+
+static inline __attribute__((always_inline)) void i2c_clear_scl(u8x8_t *u8x8)  /* drive SCL low */
+{
+  (void)u8x8;
+  __asm__ __volatile__("cbi %0, 5" :: "I"(_SFR_IO_ADDR(PORTB)));
+  __asm__ __volatile__("sbi %0, 5" :: "I"(_SFR_IO_ADDR(DDRB)));
+}
+
+static inline __attribute__((always_inline)) void i2c_read_sda(u8x8_t *u8x8)   /* release SDA high */
+{
+  (void)u8x8;
+  __asm__ __volatile__("cbi %0, 4" :: "I"(_SFR_IO_ADDR(DDRB)));
   __asm__ __volatile__("sbi %0, 4" :: "I"(_SFR_IO_ADDR(PORTB)));
 }
 
-static inline __attribute__((always_inline)) void i2c_clear_sda(u8x8_t *u8x8)
+static inline __attribute__((always_inline)) void i2c_clear_sda(u8x8_t *u8x8)  /* drive SDA low */
 {
   (void)u8x8;
   __asm__ __volatile__("cbi %0, 4" :: "I"(_SFR_IO_ADDR(PORTB)));
+  __asm__ __volatile__("sbi %0, 4" :: "I"(_SFR_IO_ADDR(DDRB)));
 }
 
 static void i2c_start(u8x8_t *u8x8)
@@ -1261,16 +1314,35 @@ static void i2c_stop(u8x8_t *u8x8)
   u8x8->i2c_started = 0;
 }
 
+/* --------------------------------------------------------------------- */
+/* i2c_write_bit -- explicit per-phase open-drain timing.                 */
+/* SDA is set first (while SCL low); settle (tSU, also covers SDA's RC    */
+/* rise when releasing high); SCL released high and held (tHIGH, must     */
+/* cover the SCL RC rise so the SSD1306 latches a valid '1'); SCL driven  */
+/* low (fast edge); then tLOW. All three delays are sized for the slow    */
+/* internal-pull-up RC -- shrink them if external pull-ups are fitted.    */
+/* --------------------------------------------------------------------- */
 static void i2c_write_bit(u8x8_t *u8x8, uint8_t val)
 {
+  /* 1. Present the data bit on SDA while SCL is still low. */
   if (val)
-    i2c_read_sda(u8x8);
+    i2c_read_sda(u8x8);    /* release SDA high (rises via pull-up) */
   else
-    i2c_clear_sda(u8x8);
- 
-  i2c_delay(u8x8);
-  i2c_read_scl_and_delay(u8x8);
+    i2c_clear_sda(u8x8);   /* drive SDA low */
+
+  /* 2. tSU;DAT -- let SDA reach its level before the rising edge. */
+  __builtin_avr_delay_cycles(OLED_I2C_SU_CYCLES);
+
+  /* 3. SCL high -- release and hold for the RC rise; the rising edge     */
+  /*    latches SDA into the SSD1306 (tHIGH).                             */
+  i2c_read_scl(u8x8);
+  __builtin_avr_delay_cycles(OLED_I2C_HIGH_CYCLES);
+
+  /* 4. SCL low -- actively driven (fast falling edge). */
   i2c_clear_scl(u8x8);
+
+  /* 5. tLOW -- keep SCL low before the caller drives the next bit. */
+  __builtin_avr_delay_cycles(OLED_I2C_LOW_CYCLES);
 }
 
 static void i2c_read_bit(u8x8_t *u8x8)
@@ -1323,9 +1395,7 @@ extern "C" uint8_t u8x8_byte_arduino_sw_i2c(U8X8_UNUSED u8x8_t *u8x8, U8X8_UNUSE
       break;
       
     case U8X8_MSG_BYTE_INIT:
-      DDRB  |= (1 << 5) | (1 << 4);  // SCL=PB5, SDA=PB4 as outputs (hard-coded pins)
-      PORTB |= (1 << 5) | (1 << 4);  // idle high
-      i2c_init(u8x8);
+      i2c_init(u8x8);   // sets open-drain idle (INPUT + internal pull-up)
       break;
     case U8X8_MSG_BYTE_SET_DC:
       break;
@@ -1346,6 +1416,14 @@ extern "C" uint8_t u8x8_byte_arduino_sw_i2c(U8X8_UNUSED u8x8_t *u8x8, U8X8_UNUSE
       break;
     case U8X8_MSG_BYTE_END_TRANSFER:
       i2c_stop(u8x8);
+      /* Restore the firmware-wide invariant (5.0.6 behaviour) that PB4/PB5 are
+         OUTPUTs after any OLED access. The open-drain bit driver leaves them as
+         INPUT+pull-up; but PB4 doubles as a RAM address line (A8 in 20-pin, A7
+         in 411000) and setLED() only writes PORTB, so the data direction must be
+         put back to output here or the next test phase can't drive the address.
+         PORT bits are already HIGH from the open-drain idle, so this is OUTPUT-
+         HIGH, exactly what push-pull used to leave behind. */
+      DDRB |= (1 << 5) | (1 << 4);
       break;
     default:
       return 0;

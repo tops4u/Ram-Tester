@@ -178,7 +178,7 @@ Version History:
               - OLED error texts: "Failed Pattern n" -> "Error Checkerboard" / "Error RandomData"
               - Retention-aging tail of patterns 4-5 factored into shared retentionTail()
                 (flash savings; 20-pin tail order normalised to delay-before-check)
-  - 5.0.5     Timing fixes (t_RAS max). The NMOS generation (4164/41256/4116/4416/4464/4027…) specs
+- 5.0.5       Timing fixes (t_RAS max). The NMOS generation (4164/41256/4116/4416/4464/4027…) specs
               t_RAS ≤ 10 µs with no page-mode allowance. Several write/verify loops exceeded this
               (measured 12–52 µs). All paths now recycle RAS via a fast row-snapshot restore —
               worst-case RAS-low window is ~7.5 µs on every type. Retention calibration retuned to
@@ -192,15 +192,16 @@ Version History:
               - 4416 checkerboard: rewritten as a 2-row write/read pipeline so rows stay inside the
                 4 ms refresh spec during the test (previously up to ~190 ms unrefreshed).
               - 16-pin read sampling margin fix; deterministic CAS pulse widths; loop mode now works
-                in non-OLED builds.
-  - 5.0.6     - Improvement in LED Handling during Self-Test if one is not using a Display. As long as
+               in non-OLED builds.
+- 5.0.6       - Improvement in LED Handling during Self-Test if one is not using a Display. As long as
                 the "20-Pin to all" has not completed, the LED will only flash briefly and then return to orange
                 state. It is green when all tests were successful. 
               - Clear pin names für GND checks. Instead of Pin Numbers the Display now shows the signal names 
                 except for 18 Pin RAM where it is ambiguous as long it is not known exactly what RAM it is, 
                 as Pinouts differ between 4416/4464 - 441000 and 2114 SRAM.
               - 41257 Refresh Times adjusted to match Specs for Random Pattern / Retention Tests.
-                
+- 5.0.7       - Adjusted I2C Speed to 400kHz for weaker Displays in the TH-PCB Version.  
+              
 Disclaimer:
 This project is for hobbyist use. There are no guarantees regarding its fitness for a specific purpose
 or its error-free operation. Use it at your own risk.
