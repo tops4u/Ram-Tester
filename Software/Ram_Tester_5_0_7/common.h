@@ -12,7 +12,7 @@
 #include <avr/pgmspace.h>
 
 // Version String
-#define VERSION_STR "5.0.6"
+#define VERSION_STR "5.0.7"
 
 #ifdef OLED
 #include "src/U8g2/U8g2lib.h"
@@ -95,15 +95,14 @@ const uint8_t custom_embedded_icons[195] U8G2_FONT_SECTION("custom_embedded_icon
 
 // OLED page buffer macros to reduce boilerplate.
 //
-// OLED_PREP() forces SDA (PB4 / pin 12) and SCK (PB5 / pin 13) to OUTPUT and
-// idle-HIGH before every transfer. This is REQUIRED by the fast SBI/CBI
-// software-I2C path (U8X8_USE_ARDUINO_AVR_SW_I2C_OPTIMIZATION): unlike the
-// stock generic driver it never touches the data direction itself, so any
-// test/config code that left these pins as INPUT (e.g. DIP-switch read prep
-// `DDRB &= 0b11100000`, or 20-pin `configureIO_20Pin()` with PB5 as input)
-// would otherwise make the display non-functional. Setting them here makes
-// every OLED render robust regardless of the preceding port state.
-#define OLED_PREP() do { DDRB |= (1 << 4) | (1 << 5); PORTB |= (1 << 4) | (1 << 5); } while (0)
+// OLED_PREP() restores the OPEN-DRAIN I2C idle state on SDA (PB4) and SCK
+// (PB5): both released to INPUT + internal pull-up (= idle HIGH) before every
+// transfer. Required because other test/config code repurposes these pins
+// (DIP-switch read prep `DDRB &= 0b11100000`, or 20-pin `configureIO_20Pin()`).
+// The open-drain byte driver then actively pulls them LOW as needed via DDRB
+// and releases them HIGH again through the pull-up. Matches the original u8g2
+// driver's INPUT_PULLUP behaviour, so no external pull-ups are required.
+#define OLED_PREP() do { DDRB &= ~((1 << 4) | (1 << 5)); PORTB |= (1 << 4) | (1 << 5); } while (0)
 #define OLED_BEGIN() OLED_PREP(); display.firstPage(); do {
 #define OLED_END() } while (display.nextPage())
 #endif
