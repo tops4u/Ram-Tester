@@ -116,7 +116,7 @@ Some designs use 3.3 V controllers with 5 V-tolerant I/O to get closer to TTL le
 ---
 ## Build or buy — the choice is yours
 
-**Buy ready-made:** [Amibay](https://www.amibay.com/threads/memory-tester.2450230/) · [Lectronz](https://lectronz.com/products/ram-tester) · [eBay](https://www.ebay.ch/itm/136743995188)
+**Buy ready-made:** [Amibay](https://www.amibay.com/threads/memory-tester.2450230/) · [Lectronz](https://lectronz.com/products/ram-tester) · [eBay](https://www.ebay.ch/itm/136743995188) · [Tindie](https://www.tindie.com/products/reusecircuit/ram-tester-for-2114-4116-4164-41256-441000-514256/) 
 
 **Build it yourself (DIY):** Available as a beginner-friendly through-hole (THT) version or a compact SMD version. Order PCBs at [PCBWay (THT)](https://www.pcbway.com/project/shareproject/Ram_Tester_ThruHole_Version_93863356.html) or use the provided Gerber files from the [Schematic](Schematic) folder.
 
