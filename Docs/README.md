@@ -129,7 +129,7 @@ If the self-test reports an error, check the specific components listed below:
     * *Action:* Check for solder bridges or debris on the PCB and remove them.
 * **Connection Test Failure:**
     * If the test does not end even after touching all contacts, a signal is missing.
-    * *Action:* Check for bad soldering points, a broken PCB trace, or a defective socket contact.
+    * *Action:* Check for bad soldering points, a broken PCB trace, missing or loose 47Ohm Resistors on the bottom side, or a defective socket contact.
 
 ## 6. Assembly of the SMD Kit
  For Assembly please check the following Video<br>
