@@ -2,7 +2,7 @@
 **Fast, open-source DIY tester for vintage DRAM/SRAM** — auto-detects the
 chip type, runs every test, gives a clear good/bad in seconds.
 
-[GPL v3] [Firmware 5.0.6] · C64 · Amiga · Atari · ST · Apple II · Spectrum
+[GPL v3] [Firmware 5.0.7] · C64 · Amiga · Atari · ST · Apple II · Spectrum
 
 ## What this project is
 A fast, open-source DIY RAM tester for vintage RAM chips used in C64, Amiga, Atari, and other retro computers. Built around a 16MHz ATmega328P on a custom PCB, it tests memory thoroughly in seconds and supports a wide range of chip types with optional OLED feedback.
