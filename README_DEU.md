@@ -2,7 +2,7 @@
 **Schneller, quelloffener DIY-Tester für Vintage-DRAM/SRAM** — erkennt den
 Chip-Typ automatisch, führt alle Tests durch und liefert in Sekunden ein klares Gut/Schlecht.
 
-[GPL v3] [Firmware 5.0.5] · C64 · Amiga · Atari · ST · Apple II · Spectrum
+[GPL v3] [Firmware 5.0.7] · C64 · Amiga · Atari · ST · Apple II · Spectrum
 
 ## Worum es geht
 Ein schneller, quelloffener DIY-RAM-Tester für Vintage-RAM-Chips aus C64, Amiga, Atari und anderen Retro-Computern. Aufgebaut um einen 16-MHz-ATmega328P auf einer eigenen Platine, testet er den Speicher in Sekunden gründlich und unterstützt eine breite Palette von Chip-Typen mit optionaler OLED-Anzeige.
