@@ -21,16 +21,15 @@ This will disable the RESET Function. You will no longer be able to use the Rese
 
 Example using `avrdude` with a USBasp:
 ```
-avrdude -c usbasp -p m328p -U flash:w:Ram_Tester_4.2.3_32k.hex:i
+avrdude -c usbasp -p m328p -U flash:w:Ram_Tester_5_0_7.hex:i
 ```
 
 ### Option 2: Compile from source using Arduino IDE
 
 1. Open the `.ino` file in Arduino IDE
-2. To **disable 32K logic**: open `common.h` and change the line `#define ENABLE_32K` to `// #define ENABLE_32K` (add `//` in front)
-3. Upload via any ICSP method supported by the Arduino IDE
+2. Upload via any ICSP method supported by the Arduino IDE
 
-> **Note for source builders:** Changing the code or using a different compiler version may affect retention timing calibration due to compiler optimizations. If you only want to toggle 32K support, use the `#define` switch and avoid other changes.
+> **Note for source builders:** Changing the code or using a different compiler version may affect retention timing calibration due to compiler optimizations. 
 
 ### Not sure how to update? 
 Check the Documentation on the Update procedure if you have never done this before and only have an Arduino UNO to use as programmer. Available in [English](../Docs/Update_EN.pdf) or [German](../Docs/Update_DE.pdf).
