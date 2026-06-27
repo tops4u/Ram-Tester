@@ -16,6 +16,9 @@ Use any ISP programmer (e.g. USBasp, T48, or an Arduino as ISP) connected to the
 | Extended | `0xFF` |
 | Lock Bit | `0xFF` |
 
+***BEWARE***: **Never enable Fuse Bit 7 on on the HighByte (DISBLRST)!** <br/>
+This will disable the RESET Function. You will no longer be able to use the Reset Button or to update your Tester! To revert you would need to performa a HighVoltage Programming - which is rather cumbersome to perform!
+
 Example using `avrdude` with a USBasp:
 ```
 avrdude -c usbasp -p m328p -U flash:w:Ram_Tester_4.2.3_32k.hex:i
@@ -31,6 +34,13 @@ avrdude -c usbasp -p m328p -U flash:w:Ram_Tester_4.2.3_32k.hex:i
 
 ### Not sure how to update? 
 Check the Documentation on the Update procedure if you have never done this before and only have an Arduino UNO to use as programmer. Available in [English](../Docs/Update_EN.pdf) or [German](../Docs/Update_DE.pdf).
+
+### ICSP Pinout for the SMD Version ###
+Please note that Pin 1 is not GND! Pin 1 is the marked pin with the square pad on the top-righthand side. 
+
+The following images shows the Pinout of the ICSP on the SMD Board:
+
+![](https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/ICSP.jpg) 
 
 ## Firmware history
 
