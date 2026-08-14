@@ -21,7 +21,7 @@ This will disable the RESET Function. You will no longer be able to use the Rese
 
 Example using `avrdude` with a USBasp:
 ```
-avrdude -c usbasp -p m328p -U flash:w:Ram_Tester_5_0_7.hex:i
+avrdude -c usbasp -p m328p -U flash:w:Ram_Tester_5_0_9.hex:i
 ```
 
 ### Option 2: Compile from source using Arduino IDE
