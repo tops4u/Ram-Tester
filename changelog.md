@@ -1,5 +1,12 @@
 # Changelog
 
+### 5.0.9 (2026-08-14) <includes 5.0.8>
+* 16Pin Mode retention fix for 2ms 4164 RAM in Loop Mode
+* Fixed 5.0.7 Flash Overflow by 52 Bytes - this Firmware fits when using regular stock Arduino IDE Boards
+* Fixed 18Pin.cpp Doc faults
+* 20Pin Mode fixed _WE to activate only after _RAS not to confuse uPD424401 by enable WPM Mode
+* Some minor fixes for GND Short check on 16Pin Types, Self-Test Text / Display Errors, etc.
+
 ### 5.0.7 (2026-06-23)
 * Fixed: 1306 OLED Displays in TH-PCBs v3 may encounter Problems with earliert 5.x Releases due to increased speed and direct drive, reverted to open drain and ~100kHz. No other fixes. If you did not encounter any OLED issues, there is no benefit in upgrading.
 
