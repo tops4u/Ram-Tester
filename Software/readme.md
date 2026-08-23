@@ -6,7 +6,7 @@ There are two ways to update:
 
 ### Option 1: Flash the .hex file directly (recommended)
 
-Use any ISP programmer (e.g. USBasp, T48, or an Arduino as ISP) connected to the **ICSP header** on the tester board.
+Use any ISP programmer (e.g. USBasp, T48, or an Arduino as ISP) connected to the **ICSP header** on the tester board. For example the T48: first choose the correct Target: ATMEGA 328P with TQFP Package and choose ICSP bullet and not ZIF Socket, then load the HEX File into your Software, choose the correct Fuses (even though you may choose not to change them during the programming process). 
 
 **Fuse settings** (ATmega328P):
 | Fuse | Value |
@@ -18,6 +18,14 @@ Use any ISP programmer (e.g. USBasp, T48, or an Arduino as ISP) connected to the
 
 ***BEWARE***: **Never enable Fuse Bit 7 on on the HighByte (DISBLRST)!** <br/>
 This will disable the RESET Function. You will no longer be able to use the Reset Button or to update your Tester! To revert you would need to performa a HighVoltage Programming - which is rather cumbersome to perform!
+
+Wiring: Check the ICSP Pinout below and for your Programmer. For example the T48 has Pin Headers at the Front of the Programmer. To check the connections there is an "INFO" Tab in the Software. Enable Power to the Controller - leave current limit to default. Then Click "Programm" - if you are just updating deselect all but "Flash". 
+Be sure to clear the flash and have ID enabled. If the ID Check fails you have:
+
+- selected the wrong target
+- a problem with the wiring
+
+Be sure that the verification step completes without any errors. You may repeat this step as many times it need to complete without errors without bricking your Tester. 
 
 Example using `avrdude` with a USBasp:
 ```
