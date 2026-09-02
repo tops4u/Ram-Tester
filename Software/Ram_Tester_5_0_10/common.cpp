@@ -211,20 +211,30 @@ const char qs_Q4[] PROGMEM = "3732-L/4532-3";
  */
 struct RAM_Definition ramTypes[] = {
   // name, delayRows, rows, cols, flags, delays[6] (×20μs), writeTime (×20μs)
-  { ramType_4164, 2, 256, 256, RAM_FLAG_SMALL_TYPE, { 48, 46, 0, 0, 0, 0 }, 96 },
+  // delays[]: index 0..delayRows-1 = the early rows (nothing pending yet, no check);
+  // index delayRows..5 = the steady per-row delay and MUST all hold the same value --
+  // retentionTail (common.cpp) reads delays[5], writeRow_4116 (20Pin.cpp, 4116/4027)
+  // reads delays[delayRows]. Filling them uniformly keeps both readers in agreement.
+  // 4164/MSM3732 delays[5] = 4: with 0 the aging was the bare row period, 2*(W+R) =
+  // 3.82 ms = 95% of the 4 ms spec -- UNDER-aged, which lets a weak part pass. d5 sits
+  // inside P and so counts 3x here (dr=2), i.e. 60 us of aging per step: MEASURED
+  // W+R = 1906.6 us -> 3813 + 3*80 = 4053 us = 101%. (3 gave 3993 = 99.8%, just under.)
+  // Costs 41 ms.
+  { ramType_4164, 2, 256, 256, RAM_FLAG_SMALL_TYPE, { 48, 46, 4, 4, 4, 4 }, 96 },
   // 41256 row-0 aging asymmetry (ACCEPTED): row 0's pre-check window contains no
   // interleaved checkRow yet (the delayRows pipeline is still filling), so its
   // effective age differs slightly from steady-state rows; delays[0] compensates
   // approximately. One row of 512 — not worth a special-cased pipeline.
-  { ramType_41256, 1, 512, 512, 0, { 94, 1, 1, 1, 1, 1 }, 75 },
-  // 41257: nibble retention uses a DEDICATED refresh-split tail
-  // (retentionTailNibble_16Pin in 16Pin.cpp), NOT the shared retentionTail. The
-  // nibble row cycle is ~4.5 ms (≈ tREF); the old shared pipeline aged each cell
-  // ~9 ms (~2.25× tREF) and risked false-failing in-spec parts. A RAS-only refresh
-  // of the just-written row now splits that into two ~4.5 ms (≈ tREF) windows.
-  // delays[]/writeTime are UNUSED for this type (the check/write runtime IS the
-  // aging); delayRows is effectively 1. The values below are kept only as
-  // documentation — the nibble tail never reads them.
+  // 41256 delays[5] = 6 (was 1): 3.80 ms = 95% of the 4 ms spec was under-aged. dr=1,
+  // so d5 counts twice: 3758 + 2*120 = 3999 us = 100%. Costs 102 ms.
+  { ramType_41256, 1, 512, 512, 0, { 94, 6, 6, 6, 6, 6 }, 75 },
+  // 41257 retention does NOT use the shared retentionTail: writeRow_16Pin has an inlined
+  // refresh-split in its is_nibble branch. Sequence per row:
+  //   write(N) -> check(N-1) -> refresh(N) -> write(N+1) -> check(N)
+  // so the aging is the LARGER of the two halves, not their sum.
+  // MEASURED 4.11 ms = 103% of the 4 ms spec (without the split it would be 8.13 ms =
+  // 203%). delays[]/writeTime are UNUSED here — the check/write runtime IS the aging and
+  // delayRows is effectively 1; the values below are kept only as documentation.
   { ramType_41257, 1, 512, 512, RAM_FLAG_NIBBLE_MODE, { 0, 0, 0, 0, 0, 0 }, 4 },
   { ramType_4416, 2, 256, 64, RAM_FLAG_SMALL_TYPE, { 52, 52, 16, 16, 16, 16 }, 38 },
   // 4464: retuned for the every-column inline-snapshot tRAS recycle (5.0.5) — the
@@ -236,9 +246,23 @@ struct RAM_Definition ramTypes[] = {
   { ramType_514258, 4, 512, 512, RAM_FLAG_STATIC_COLUMN | RAM_FLAG_SMALL_TYPE, { 61, 61, 61, 61, 30, 30 }, 31 },
   { ramType_514400, 5, 1024, 1024, 0, { 94, 94, 94, 94, 94, 31 }, 60 },
   { ramType_514402, 5, 1024, 1024, RAM_FLAG_STATIC_COLUMN, { 95, 95, 95, 95, 95, 30 }, 64 },
-  // 411000: effective aging lands at ~112% of the 8 ms spec — intentional margin
-  // (vintage parts; tuning to exactly 100% would false-fail borderline-good chips).
-  { ramType_411000, 1, 1024, 1024, 0, { 239, 0, 0, 0, 0, 0 }, 229 },
+  // 411000. Aging = delayRows*P + delays[5]: opening a row refreshes ALL of it, so a
+  // cell ages from the write row's last RAS-low to the check row's FIRST one — the
+  // read-back duration does NOT add to it (cross-checked: 514256 101%, 4416 102%,
+  // 4464 105% of their specs, all originally tuned to that model).
+  // delays[5] sits INSIDE P, so it counts twice into the aging window (once after the
+  // write of row N, once before the check of row N) but only once into runtime:
+  //   aging = (W+R) + 2*d5,  runtime/row = W + R + d5  ->  runtime = (W+R)/2 + 4 ms.
+  // Waiting therefore buys aging at 2:1 while row runtime buys it at 1:1 — the optimum
+  // is a FAST row plus a wait, not a longer row. delayRows = 2 is impossible: 2*(W+R) =
+  // 10.9 ms = 136% before any wait at all.
+  // The 5.0.10 burst-hoist cut W+R 9266 -> 5458 us; on its own that dropped aging to 68%
+  // of the 8 ms spec (was 116%) — LAXER than the part's guarantee. delays[5] = 64
+  // (1280 us) restores it: 5458 + 2*1280 = 8018 us = 100%, and the row still runs
+  // 1904 us faster than before the hoist.
+  // delays[0] ages row 0 like a steady row (W + delays[0] = P -> 2915 us); writeTime
+  // replaces the missing row-write in the last-row drain and tracks W (2534 us).
+  { ramType_411000, 1, 1024, 1024, 0, { 146, 64, 64, 64, 64, 64 }, 127 },
   { ramType_4116, 2, 128, 128, 0, { 13, 13, 1, 1, 1, 1 }, 24 },
   { ramType_4816, 2, 128, 128, 0, { 23, 23, 1, 1, 1, 1 }, 24 },
   { ramType_4027, 4, 64, 64, 0, { 16, 16, 16, 16, 0, 0 }, 15 },
@@ -1440,7 +1464,7 @@ void printQRandVersion(const __FlashStringHelper *s) {
   } else {
     display.setCursor(7, 63);
   }
-  display.print(F("Ver.:"));
+  display.print(F("Ver:"));
   display.print(F(VERSION_STR));
   if (CFG_32K_ACTIVE) {
     display.print(F(" 32"));

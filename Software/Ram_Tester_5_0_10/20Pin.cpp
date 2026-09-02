@@ -10,8 +10,8 @@
 // - Page mode read/write operations with minimal timing overhead
 //
 // Supported chips:
-// - 514256 (256Kx4, 512 rows x 512 cols, 4ms refresh)
-// - 514258 (256Kx4 Static Column, 512 rows x 512 cols, 4ms refresh)
+// - 514256 (256Kx4, 512 rows x 512 cols, 8ms refresh; -L variants spec 64 ms)
+// - 514258 (256Kx4 Static Column, 512 rows x 512 cols, 8ms refresh)
 // - 514400 (1Mx4, 1024 rows x 1024 cols, 16ms refresh)
 // - 514402 (1Mx4 Static Column, 1024 rows x 1024 cols, 16ms refresh)
 // - 4116 (16Kx1 via adapter, 128 rows x 128 cols, 2ms refresh, -5V/+12V)
@@ -555,11 +555,13 @@ void checkAddressing_4116(void) {
   DDRD = 0xFF;
   PORTD = 0x00;
   DDRC = 0b00011110;
-  uint16_t max_rows = ramTypes[type].rows;
-  uint16_t max_cols = ramTypes[type].columns;
-
-  uint8_t rowBits = countBits(max_rows - 1);
-  uint8_t colBits = countBits(max_cols - 1);
+  // Only two types reach this path: the +12/-5 V parts 4116 (128x128) and 4027 (64x64).
+  // The 5 V-only 4816 is a 16-pin-mode type and never gets here. Deriving
+  // the bit counts from the type avoids two ramTypes[type] struct lookups (each a
+  // multiply + indexed 16-bit load) plus two inlined countBits() loops.
+  const uint8_t is4027 = (type == T_4027);
+  const uint8_t rowBits = is4027 ? 6 : 7;
+  const uint8_t colBits = rowBits;  // both geometries are square
 
   RAS_HIGH20;
   CAS_HIGH20;
@@ -573,7 +575,7 @@ void checkAddressing_4116(void) {
   }
 
   // Column address test
-  uint8_t fixed_row = (max_rows > 64) ? 64 : 0;
+  uint8_t fixed_row = is4027 ? 0 : 64;
   for (uint8_t b = 0; b < colBits; b++) {
     testAddressBit_4116(0, (1U << b), fixed_row, false, 16 + b);
   }
@@ -717,9 +719,18 @@ static inline uint8_t read20Pin(uint16_t row, uint16_t col) {
   PORTD = (uint8_t)(col & 0xFF);
   NOP;
   CAS_LOW20;
-  NOP;
-  uint8_t result = PINC & 0x0F;
+  // 5.0.10: sample AFTER CAS rises, like every other 20-pin read path (pass_20Pin and
+  // both checkRow_20Pin branches all do CAS_LOW -> CAS_HIGH -> read). This helper used
+  // to sample one NOP after CAS↓ — and since the ATmega's PINx synchroniser reports the
+  // level of ~1 cycle earlier, that left essentially NO tCAC settling. It is the only
+  // read in the module with less margin than the main paths, and a misread here is
+  // blamed on the address bit under test: the row loop starts at b = 0, so the fault
+  // always surfaced as a sporadic "Addressline A0". Same fix as the 16-pin path
+  // (see checkRow_16Pin: "sample PINC only AFTER CAS_HIGH16").
+  // The former NOP between CAS↓ and the sample is gone with it: CAS_HIGH20 (sbi, 2 cy)
+  // now provides the settling, so the CAS-low width matches the main paths exactly.
   CAS_HIGH20;
+  uint8_t result = PINC & 0x0F;
   RAS_HIGH20;
   return result;
 }
@@ -765,52 +776,59 @@ void checkAddressing_20Pin() {
   // =========================
   // ROW ADDRESS DECODER TEST
   // =========================
-  // Write phase: at fixed COL=0, write 0x0 to base_row=0 and 0xF to peer_row=(1<<b).
+  // At fixed COL=0: base_row=0 -> 0x0, peer_row=(1<<b) -> b+1 (1..10, fits the nibble).
   DDRC = (DDRC & 0xF0) | 0x0F;  // data nibble output (PC0..PC3), PC4 kept as output (A9)
 
   // WE is pulsed inside write20Pin (after RAS↓ — write-per-bit mask guard),
   // so it is already HIGH again before the CAS↓ reads below.
-  for (uint8_t b = 0; b < rowBits; b++) {
-    write20Pin(0, 0, 0x0);                 // base_row=0, col=0, data=0x0
-    write20Pin((uint16_t)1 << b, 0, 0xF);  // peer_row=(1<<b), col=0, data=0xF
-  }
+  // Peer data is b+1, not a uniform 0xF: if two row lines are internally aliased, both
+  // peers land in the same cell and the second write wins -- with 0xF everywhere that
+  // reads back correct and passes, with unique values it does not. (A clean SWAP of two
+  // lines stays invisible: write and read go through the same decoder.)
+  // Base is written once and verified FIRST: the old per-bit base rewrite left base
+  // corrupted only when the TOP line was faulty (no later iteration repaired it), so
+  // that fault always surfaced at b=0 and was reported as "A0". The value read from a
+  // corrupted base now names the real line. Halves the accesses as a side effect.
+  // Running mask instead of "1 << b": a variable shift is a loop on the AVR.
+  uint16_t m = 1;
+  write20Pin(0, 0, 0x0);
+  for (uint8_t b = 0; b < rowBits; b++, m <<= 1) write20Pin(m, 0, (uint8_t)(b + 1));
 
   PORTC &= 0xf0;  // Clear all outputs on lower nibble
   DDRC &= 0xf0;   // Configure lower nibble as INPUT (PC0-PC3)
   OE_LOW20;
 
-  // Read/verify: base must be 0x0, peer must be 0xF
-  for (uint8_t b = 0; b < rowBits; b++) {
-    if (read20Pin(0, 0) != 0x0) error(b, 1);                 // base_row -> expect 0x0
-    if (read20Pin((uint16_t)1 << b, 0) != 0xF) error(b, 1);  // peer_row -> expect 0xF
-  }
+  uint8_t v = read20Pin(0, 0);                             // base_row -> expect 0x0
+  if (v) error((uint8_t)(v - 1), 1);                       // value identifies the line
+  m = 1;
+  for (uint8_t b = 0; b < rowBits; b++, m <<= 1)
+    if (read20Pin(m, 0) != (uint8_t)(b + 1)) error(b, 1);
 
   OE_HIGH20;
 
   // ============================
   // COLUMN ADDRESS DECODER TEST
   // ============================
-  // Fixed ROW in the middle; for each COL bit b:
-  //   base_col=0 -> 0x0, peer_col=(1<<b) -> 0xF, then verify both.
+  // Fixed ROW in the middle; base_col=0 -> 0x0, peer_col=(1<<b) -> b+1. See row test.
   uint16_t test_row = rows >> 1;
 
   // write (WE pulsed inside write20Pin, see row test)
   DDRC = (DDRC & 0xF0) | 0x0F;  // data out
 
-  for (uint8_t b = 0; b < colBits; b++) {
-    write20Pin(test_row, 0, 0x0);                 // base_col=0, data=0x0
-    write20Pin(test_row, (uint16_t)1 << b, 0xF);  // peer_col=(1<<b), data=0xF
-  }
+  m = 1;
+  write20Pin(test_row, 0, 0x0);  // unique peer data + single base, see row test
+  for (uint8_t b = 0; b < colBits; b++, m <<= 1) write20Pin(test_row, m, (uint8_t)(b + 1));
 
   // read
   PORTC &= 0xf0;  // Clear all outputs on lower nibble
   DDRC &= 0xf0;   // Configure lower nibble as INPUT (PC0-PC3)  // data in
   OE_LOW20;
 
-  for (uint8_t b = 0; b < colBits; b++) {
-    if (read20Pin(test_row, 0) != 0x0) error(b + 16, 1);                 // base_col -> expect 0x0
-    if (read20Pin(test_row, (uint16_t)1 << b) != 0xF) error(b + 16, 1);  // peer_col -> expect 0xF
-  }
+  v = read20Pin(test_row, 0);
+  if (v) error((uint8_t)(v - 1) + 16, 1);
+  m = 1;
+  for (uint8_t b = 0; b < colBits; b++, m <<= 1)
+    if (read20Pin(test_row, m) != (uint8_t)(b + 1)) error(b + 16, 1);
 
   OE_HIGH20;
 }
@@ -1231,15 +1249,20 @@ void writeRow_20Pin(uint16_t row, uint8_t patNr, boolean is_static) {
       // recycle between bursts — identical cadence, no per-cell mask check.
       uint8_t col = 0;
       for (uint8_t b = 0; b < 4; b++) {
-        if (b) {                         // tRAS-max guard: recycle RAS every 64 cols
-          WE_HIGH20;                     // WE HIGH across RAS↓ (write-per-bit mask
+        // tRAS-max guard: recycle RAS before EVERY 64-col burst. Unconditional since
+        // 5.0.10 — the former `if (b)` skipped the MSB-group boundary (b==0, msb>0),
+        // where msbHandling_20Pin only sets A8/A9 and does NOT cycle RAS, so two bursts
+        // merged into one 128-CAS window (measured on a 514256: 2048 windows of
+        // 145-156 us against the ~100 us page-mode tRAS limit). Dropping the condition
+        // fixes that AND is smaller than testing it; the extra cycle at msb==0/b==0
+        // merely re-opens the row the caller just opened.
+        WE_HIGH20;                       // WE HIGH across RAS↓ (write-per-bit mask
                                          // guard, e.g. µPD424401; +250 ns/recycle —
                                          // aging shift ~0.1%, below one delays[] LSB)
-          rasHandling_20Pin(row);        // CAS HIGH -> refreshes the row
-          msbHandling_20Pin(msb);        // restore column MSB (A8/A9)
-          WE_LOW20;                      // resume early write (~375 ns before CAS↓)
-          io = PORTC & 0xf0;             // re-cache (A9/PC4 changed)
-        }
+        rasHandling_20Pin(row);          // CAS HIGH -> refreshes the row
+        msbHandling_20Pin(msb);          // restore column MSB (A8/A9)
+        WE_LOW20;                        // resume early write (~375 ns before CAS↓)
+        io = PORTC & 0xf0;               // re-cache (A9/PC4 changed)
         for (uint8_t k = 32; k; k--) {
           PORTC = io | (randomTable[(uint8_t)(K_msb ^ col)]);
           PORTD = col;
@@ -1315,10 +1338,10 @@ void checkRow_20Pin(uint8_t patNr, uint16_t row, uint8_t errNr, boolean is_stati
       // 64 cols, RAS recycle BETWEEN bursts — identical cadence, no per-cell check.
       uint8_t col = 0;
       for (uint8_t b = 0; b < 4; b++) {
-        if (b) {                         // tRAS-max guard: recycle RAS every 64 cols
-          rasHandling_20Pin(row);        // CAS HIGH; OE stays low (preserved)
-          msbHandling_20Pin(msb);        // restore column MSB (A8/A9)
-        }
+        // tRAS-max guard, unconditional since 5.0.10 (see writeRow_20Pin): the former
+        // `if (b)` left the MSB-group boundary unrecycled -> merged 128-CAS windows.
+        rasHandling_20Pin(row);          // CAS HIGH; OE stays low (preserved)
+        msbHandling_20Pin(msb);          // restore column MSB (A8/A9)
         for (uint8_t k = 32; k; k--) {
           PORTD = col;
           CAS_LOW20;

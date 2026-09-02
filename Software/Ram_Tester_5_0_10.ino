@@ -5,8 +5,8 @@ RAM Tester Program for RAM Tester PCB
 
 Author:   Andreas Hoffmann
 Project:  github.com/tops4u/ram-tester
-Version:  5.0.9
-Date:     06.08.2026
+Version:  5.0.10
+Date:     31.08.2026
 
 This software is published under GPL 3.0. Respect the license terms.
 Project hosted at: https://github.com/tops4u/Ram-Tester/
@@ -219,17 +219,47 @@ Version History:
                 before the check — the OLED driver parks it as OUTPUT).
               - Self-test: checkShortPins peer-skip fixed (j==13, was i==13) — pin 13
                 (red LED / OLED SCK) is no longer driven/read as a peer pin.
-              - Self-test: the closing "Self Test OK" screen no longer inherits the EEPROM
-                Loop setting. With Loop ON it rendered the loop layout (off-centre checkmark
-                plus "Run Nr. 1"), which is meaningless for the self test — hence the
-                sporadic look, depending on what was stored in EEPROM.
-              - Self-test: the closing screen could be drawn while the jumper wire still
-                rested on socket pin 12 — which is the OLED's SW-I2C SDA (PB4). A LOW SDA
-                voids the transfer, and since pages go out top-to-bottom the upper screen
-                kept the previous content ("No Shorts found" above a sliver of the
-                checkmark) while the lower part updated. The test now waits for the wire
-                to leave pin 12 and lets the contact settle before rendering.
+              - Self-test: closing screen no longer inherits the EEPROM Loop layout
+                (off-centre checkmark + "Run Nr. 1" showed up whenever Loop was ON).
+              - Self-test: wait for the jumper wire to leave pin 12 (= OLED SDA) before
+                drawing the final screen — a grounded SDA voided the upper page transfers.
               - Doc: 18Pin.h A4-A7 port map corrected; 4164-2ms timings confirmed OK.
+- 5.0.10      - 16Pin: tRAS max exceeded in all three per-chunk paths (writeRow, checkRow,
+                checkerQuadrant read) — the chunk setup ran inside the RAS-low window; the row
+                is now cycled after it so the setup happens during precharge.
+              - 18Pin: same row-open tRAS violation in writeRow_18Pin and checkRow_18Pin
+                (measured: 4416 18.3 us, 4464 15.0 us against the 10 us limit) — row is now
+                cycled after the setup, as in 16Pin.
+              - 18Pin address test: one column access per RAS window (was two — measured
+                13-15 us against the 10 us limit).
+              - 18Pin address test: base row/column is written once instead of before every
+                peer; the old order let a later base write mask an aliasing peer.
+              - 18Pin address test: peers carry unique data (0xA^b, was 0xA everywhere) —
+                two row/column lines aliased onto EACH OTHER read back correct and passed.
+              - 18Pin sense: write and read-back of the 4416/4464 detection no longer share
+                one RAS window with the mode switch in it (measured 14.0-14.8 us).
+              - 18Pin/411000 random path: PORTB and the PORTD high address bits are hoisted
+                out of the per-cell loop (they cannot change inside one RAS burst) — address
+                sequence verified bit-identical, ~22 of ~69 cycles per column saved.
+              - 411000 retention: that speed-up shortened the aging window to 68% of the 8 ms
+                spec (a test laxer than the part) — delays[5] 0 -> 64 restores it to 100%
+                (d5 sits inside the row period, so it counts twice into the aging).
+              - Retention re-measured on hardware for every type: 4164/MSM3732 (95%) and 41256
+                (95%) were under-aged — delays[5] 0->4 resp. 1->6 puts both at 101/100%.
+              - Address test / detection: the RAS-low window is now guarded by cli/sei in the
+                16Pin and 18Pin single-access helpers. Unlike the main loops these ran with
+                interrupts on, so the 1.024 ms millis() ISR stretched one window per run by
+                ~97 cycles to 13.06 us — over the 10 us limit (measured 4164, 4816, 41256,
+                41257, 4464; verified gone on the 4164: max 13.06 -> 7.75 us).
+              - 20Pin: FPM bursts merged at the MSB-group boundary (measured 156 us vs the
+                ~100 us limit) — the RAS recycle there is now unconditional.
+              - 20Pin: sporadic "Addressline A0" on GOOD ram — read20Pin sampled PINC before
+                CAS-high, leaving no tCAC settling; now samples after it like every other read.
+              - 20Pin address test: base cell written once and checked first, peers carry
+                unique data (was 0xF everywhere) — aliased address lines used to pass, and a
+                fault on the top line was always reported as "A0". 38 bytes smaller.
+              - Note: x1 types (16Pin, 411000) cannot use unique peer data — one data bit only,
+                so peer-onto-peer aliasing stays undetectable there by construction.
 
 Disclaimer:
 This project is for hobbyist use. There are no guarantees regarding its fitness for a specific purpose

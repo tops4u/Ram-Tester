@@ -1,5 +1,12 @@
 # Changelog
 
+### 5.0.10 (2026-09-02)
+* **CRITICAL:** 20-pin types could sporadically report a false "Addressline A0" error on perfectly good RAM. Fixed.
+* Improved address-line testing on 18- and 20-pin types: some aliased/shorted address lines used to slip through as OK and are now reliably caught.
+* Tightened timing on several 16-, 18- and 20-pin test paths (address test, detection, sense and FPM bursts) so they stay within spec.
+* Re-verified retention timing on real hardware for every RAM type — a few were aging cells a little too briefly and are now fully spec-compliant.
+* Minor speed and code-size improvements.
+
 ### 5.0.9 (2026-08-14) <includes 5.0.8>
 * 16Pin Mode retention fix for 2ms 4164 RAM in Loop Mode
 * Fixed 5.0.7 Flash Overflow by 52 Bytes - this Firmware fits when using regular stock Arduino IDE Boards

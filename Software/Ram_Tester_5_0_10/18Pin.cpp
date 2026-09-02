@@ -491,9 +491,14 @@ static uint8_t __attribute__((noinline)) col_read(uint8_t col) {
  * @param data 4-bit data nibble to write (0x0-0xF)
  */
 static inline void write18Pin(uint16_t row, uint8_t col, uint8_t data) {
+  // 5.0.10: keep the millis() timer ISR out of the RAS-low window (see write16Pin).
+  // The address test runs unprotected unlike the main loops; a single ISR hit stretches
+  // one window per run by ~97 cycles, past the NMOS tRAS max of 10 us.
+  cli();
   rasHandling_18Pin(row);
   col_write(col, data);
   RAS_HIGH18;
+  sei();
 }
 
 /**
@@ -504,9 +509,11 @@ static inline void write18Pin(uint16_t row, uint8_t col, uint8_t data) {
  * @return 4-bit data nibble read (0x0-0xF)
  */
 static inline uint8_t read18Pin(uint16_t row, uint8_t col) {
+  cli();  // see write18Pin: ISR shield for the address test
   rasHandling_18Pin(row);
   uint8_t result = col_read(col);
   RAS_HIGH18;
+  sei();
   return result;
 }
 
@@ -525,26 +532,33 @@ void checkAddressing_18Pin() {
 
   // Derive bit counts (values mirror ramTypes[] but inlined to avoid the costly
   // ramTypes[type] array-of-struct resolve in this no-delays function)
-  uint16_t rows = 256;                          // 4416 & 4464 both 256 rows
-  uint16_t cols = (type == T_4416) ? 64 : 256;  // 4416=64, 4464=256
-  uint8_t rowBits = countBits(rows - 1);
-  uint8_t colBits = countBits(cols - 1);
+  // Bit counts are compile-time constants for both 18-pin types (256 rows always;
+  // 4416 = 64 columns, 4464 = 256) — stating them directly drops two countBits() loops.
+  const uint8_t rowBits = 8;                          // 256 rows -> A0..A7
+  const uint8_t colBits = (type == T_4416) ? 6 : 8;   // 64 or 256 columns
 
   const uint8_t is4416 = (type == T_4416);
   const uint8_t cshift = is4416 ? 1 : 0;         // 4416: columns on A1..A6
   const uint8_t safeCol = is4416 ? 0x02 : 0x00;  // fix column used for row-tests
-  const uint16_t testRow = rows >> 1;            // mid row for column-tests
+  const uint16_t testRow = 128;                  // mid row (256 >> 1) for column-tests
 
   // ---------------- Row Address Tests ----------------
   configDataOut_18Pin();
   WE_LOW18;
 
-  // Write test pattern to all row address bits
+  // 5.0.10: base written ONCE up front. The old order (base, peer0, base, peer1, ...)
+  // let the next base write repair a peer that aliased onto it, so every aliasing
+  // fault except the last bit's was masked.
+  // Peer data is 0xA^b, not a uniform 0xA: hoisting the base only stops a later base
+  // write from repairing a peer that aliases ONTO the base. Two peers aliasing onto
+  // EACH OTHER still read back their common value and pass. Unique values close that:
+  // the second write wins and the first peer reads the wrong one. (0xA^b for b<8 is
+  // unique and never 0x5; b=0 keeps the old 0x5/0xA complement.)
+  write18Pin(0, safeCol, 0x5);                        // Base row: all bits = 0
+  NOP;                                                // tiny guard for conservative devices (≈ 125 ns)
   for (uint8_t b = 0; b < rowBits; b++) {
-    write18Pin(0, safeCol, 0x5);          // Base row: all bits = 0
-    NOP;                                  // tiny guard for conservative devices (≈ 125 ns)
-    write18Pin((1U << b), safeCol, 0xA);  // Peer row: only bit 'b' = 1
-    NOP;                                  // tiny guard
+    write18Pin((1U << b), safeCol, (uint8_t)(0xA ^ b));  // Peer row: only bit 'b' = 1
+    NOP;                                                 // tiny guard
   }
 
   // Switch to read mode
@@ -552,11 +566,11 @@ void checkAddressing_18Pin() {
   configDataIn_18Pin();
   OE_LOW18;
 
-  // Verify all row address bits
-  for (uint8_t b = 0; b < rowBits; b++) {
-    if (read18Pin(0, safeCol) != 0x5) error(b, 1);          // Base row
-    if (read18Pin((1U << b), safeCol) != 0xA) error(b, 1);  // Peer row
-  }
+  // Verify: base once (nothing writes between the reads), then every peer.
+  uint8_t v = read18Pin(0, safeCol);                        // Base row
+  if (v != 0x5) error((uint8_t)(0xA ^ v), 1);               // value names the aliasing peer
+  for (uint8_t b = 0; b < rowBits; b++)
+    if (read18Pin((1U << b), safeCol) != (uint8_t)(0xA ^ b)) error(b, 1);  // Peer row
 
   OE_HIGH18;
 
@@ -564,14 +578,15 @@ void checkAddressing_18Pin() {
   configDataOut_18Pin();
   WE_LOW18;
 
-  // Write test pattern to all column address bits
+  // 5.0.10: ONE column access per RAS window (was two). Each col_write carries a full
+  // setAddr18Pin bit-scatter (~25 cycles), so two of them plus both CAS pulses measured
+  // 210-240 cycles = 13-15 us — over the 10 us NMOS tRAS max. write18Pin opens and
+  // closes the row per access; base hoisted out for the same reason as the row test.
+  write18Pin(testRow, 0 << cshift, 0x5);            // Base column: all bits = 0
+  NOP;
   for (uint8_t b = 0; b < colBits; b++) {
-    rasHandling_18Pin(testRow);
-    col_write(0 << cshift, 0x5);          // Base column: all bits = 0
-    NOP;                                  // CAS-high time between two column ops
-    col_write((1U << b) << cshift, 0xA);  // Peer column: only bit 'b' = 1
-    RAS_HIGH18;
-    NOP;  // tiny guard
+    write18Pin(testRow, (1U << b) << cshift, (uint8_t)(0xA ^ b));  // unique, see row test
+    NOP;                                            // tiny guard
   }
 
   // Switch to read mode
@@ -579,20 +594,12 @@ void checkAddressing_18Pin() {
   configDataIn_18Pin();
   OE_LOW18;
 
-  // Verify all column address bits
-  for (uint8_t b = 0; b < colBits; b++) {
-    rasHandling_18Pin(testRow);
-    if (col_read(0 << cshift) != 0x5) {
-      RAS_HIGH18;
-      error(b + 16, 1);
-    }
-    NOP;  // CAS-high time between two column reads
-    if (col_read((1U << b) << cshift) != 0xA) {
-      RAS_HIGH18;
-      error(b + 16, 1);
-    }
-    RAS_HIGH18;
-  }
+  // Verify: one access per RAS window (see write phase); read18Pin closes the row
+  // itself, so the error paths no longer need their own RAS_HIGH18.
+  v = read18Pin(testRow, 0 << cshift);
+  if (v != 0x5) error((uint8_t)(0xA ^ v) + 16, 1);
+  for (uint8_t b = 0; b < colBits; b++)
+    if (read18Pin(testRow, (1U << b) << cshift) != (uint8_t)(0xA ^ b)) error(b + 16, 1);
 
   OE_HIGH18;
 }
@@ -617,15 +624,22 @@ static inline uint8_t sense_write_read_18Pin(uint16_t row, uint8_t addr, uint8_t
   CAS_LOW18;
   NOP;
   CAS_HIGH18;
-  setAddr18Pin(0x00);
+  // 5.0.10: close the row between write and read-back. Both accesses used to share one
+  // RAS window, with the mode switch (setAddr, WE, data direction, OE) inside it —
+  // measured 223-237 cycles = 14.0-14.8 us, over the 10 us NMOS tRAS max. The cell holds
+  // its charge across the precharge, so the read-back is unaffected.
+  RAS_HIGH18;
   WE_HIGH18;
   configDataIn_18Pin();
   OE_LOW18;
+  rasHandling_18Pin(row);  // re-open the row (this re-applies the ROW address)
+  setAddr18Pin(0x00);      // column address AFTER the row latch, not before
   CAS_LOW18;
   NOP;
   NOP;
   uint8_t result = getData18Pin() & 0xF;
   CAS_HIGH18;
+  RAS_HIGH18;
   OE_HIGH18;
   return result;
 }
@@ -869,6 +883,14 @@ void checkRow_18Pin(uint16_t row, uint8_t patNr) {
   // full setAddr18Pin keeps the RAS-low window at ~7.6 us (was 51.6/52.1 us @ 8 cols).
   uint8_t row_b = PORTB, row_d = PORTD;
   cli();
+  // 5.0.10 (HW-measured): cycle RAS after the row-open setup above (snapshot, cli,
+  // and on the write path WE_LOW/configDataOut). That setup used to sit inside the
+  // RAS-low window, making the first window of each row 166-183 cycles vs ~126
+  // steady — past the NMOS tRAS max of 10 us. No port restore needed: only the RAS
+  // bit is touched, the row address is still on the ports.
+  RAS_HIGH18;
+  NOP;
+  RAS_LOW18;
   for (uint16_t col = 0; col < width; col++) {
     if (col_read((uint8_t)(col << init_shift)) != randomTable[mix8(col, row)]) {
       sei();
@@ -907,6 +929,14 @@ void writeRow_18Pin(uint16_t row, uint8_t patNr) {
   // ~7.6 us (was 51.6 us @ 8 cols = 5.2x over spec). 4416 keeps its calibrated path.
   uint8_t row_b = PORTB, row_d = PORTD;
   cli();
+  // 5.0.10 (HW-measured): cycle RAS after the row-open setup above (snapshot, cli,
+  // and on the write path WE_LOW/configDataOut). That setup used to sit inside the
+  // RAS-low window, making the first window of each row 196 cycles vs ~120
+  // steady — past the NMOS tRAS max of 10 us. No port restore needed: only the RAS
+  // bit is touched, the row address is still on the ports.
+  RAS_HIGH18;
+  NOP;
+  RAS_LOW18;
   for (uint16_t col = 0; col < width; col++) {
     col_write((uint8_t)(col << init_shift), randomTable[mix8(col, row)]);
     if (is4416) {
@@ -1012,6 +1042,7 @@ void sense411000_18Pin_Alt() {
  * @param data Data bit to write (0 or 1)
  */
 static inline void write_alt_18Pin(uint16_t row, uint16_t col, uint8_t data) {
+  cli();  // see write16Pin: ISR shield for the address test
   setAddr_18Pin_Alt(row);
   RAS_LOW_18PIN_ALT;
   SET_DIN_18PIN_ALT(data);
@@ -1022,6 +1053,7 @@ static inline void write_alt_18Pin(uint16_t row, uint16_t col, uint8_t data) {
   CAS_HIGH_18PIN_ALT;
   WE_HIGH_18PIN_ALT;
   RAS_HIGH_18PIN_ALT;
+  sei();
 }
 
 /**
@@ -1032,6 +1064,7 @@ static inline void write_alt_18Pin(uint16_t row, uint16_t col, uint8_t data) {
  * @return Data bit read (0 or 1)
  */
 static inline uint8_t read_addr_alt_18Pin(uint16_t row, uint16_t col) {
+  cli();  // see write16Pin: ISR shield for the address test
   setAddr_18Pin_Alt(row);
   RAS_LOW_18PIN_ALT;
   setAddr_18Pin_Alt(col);
@@ -1041,6 +1074,7 @@ static inline uint8_t read_addr_alt_18Pin(uint16_t row, uint16_t col) {
   uint8_t result = GET_DOUT_18PIN_ALT();
   CAS_HIGH_18PIN_ALT;
   RAS_HIGH_18PIN_ALT;
+  sei();
   return result;
 }
 
@@ -1056,10 +1090,10 @@ void checkAddressing_18Pin_Alt() {
   DDRD = (DDRD & 0x18) | 0xE7;
   PORTD = 0x00;
 
-  uint16_t rows = 1024;  // 411000: 1Mx1 = 1024 rows × 1024 cols (mirrors ramTypes[])
-  uint16_t cols = 1024;
-  uint8_t rowBits = countBits(rows - 1);
-  uint8_t colBits = countBits(cols - 1);
+  // 411000: 1Mx1 = 1024 rows x 1024 cols (mirrors ramTypes[]) -> A0..A9 both ways.
+  // Stated directly instead of via countBits() to save the two inlined loops.
+  const uint8_t rowBits = 10;
+  const uint8_t colBits = 10;
 
   // Row address test
   for (uint8_t b = 0; b < rowBits; b++) {
@@ -1310,24 +1344,40 @@ void checkRow_18Pin_Alt(uint16_t row, uint8_t patNr) {
   WE_HIGH_18PIN_ALT;
   rasHandling_18Pin_Alt(row);
   cli();
+  // 5.0.10 burst-hoist: within one RAS_BURST_ALT_RND-column burst only A0 (PC4) and
+  // A1-A3 (PD0-PD2) change — A4-A6 (PD5-PD7) turn over every 16 columns and A7-A9
+  // (PORTB) every 128. setAddr18Alt_inl() rewrote all three ports per cell, including a
+  // 16-bit shift plus an LPM table read for PORTB that never changed inside a burst
+  // (~22 of ~69 cycles per column). PORTB and the PORTD high bits are now set once per
+  // burst; per cell only the PC4 bit and the PORTD low nibble remain. PD3/PD4 are not
+  // address lines, so their bits (pd_keep) survive every recycle and are read once.
+  const uint8_t pd_keep = PORTD & 0b00011000;
   for (uint8_t blk = 0; blk < (uint8_t)(cols >> 8); blk++) {  // 1024 cols = 4 x 256
     uint8_t Kb = Krow ^ blk;
-    uint16_t colBase = (uint16_t)blk << 8;
+    const uint8_t pbL = pgm_read_byte(&lut_18Pin_High[(uint8_t)(blk << 1)]);       // c8 < 128
+    const uint8_t pbH = pgm_read_byte(&lut_18Pin_High[(uint8_t)((blk << 1) | 1)]); // c8 >= 128
     uint8_t c8 = 0;
     do {
-      uint8_t exp = (randomTable[(uint8_t)(Kb ^ c8)] >> 3) & 1;
-      setAddr18Alt_inl(colBase | c8);  // force-inlined (hot per-cell path)
-      CAS_LOW_18PIN_ALT;
-      NOP;
-      CAS_HIGH_18PIN_ALT;
-      if (GET_DOUT_18PIN_ALT() != exp) {
-        sei();
-        RAS_HIGH_18PIN_ALT;
-        error(patNr, 3);
-      }
-      if ((c8 & (RAS_BURST_ALT_RND - 1)) == (RAS_BURST_ALT_RND - 1))
-        rasHandling_18Pin_Alt(row);  // RAS-only recycle (CAS high), re-latch row (~82us @ burst 16)
-    } while (++c8 != 0);
+      PORTB = (PORTB & 0b11101010) | ((c8 & 0x80) ? pbH : pbL);
+      const uint8_t pd_base = pd_keep | (uint8_t)((c8 & 0x70) << 1);
+      uint8_t k = RAS_BURST_ALT_RND;
+      do {
+        uint8_t exp = (randomTable[(uint8_t)(Kb ^ c8)] >> 3) & 1;
+        if (c8 & 1) SBI(PORTC, 4);
+        else CBI(PORTC, 4);
+        PORTD = pd_base | (uint8_t)((c8 & 0x0E) >> 1);
+        CAS_LOW_18PIN_ALT;
+        NOP;
+        CAS_HIGH_18PIN_ALT;
+        if (GET_DOUT_18PIN_ALT() != exp) {
+          sei();
+          RAS_HIGH_18PIN_ALT;
+          error(patNr, 3);
+        }
+        c8++;
+      } while (--k);
+      rasHandling_18Pin_Alt(row);  // RAS-only recycle (CAS high), re-latch row
+    } while (c8 != 0);
   }
   RAS_HIGH_18PIN_ALT;  // close the row BEFORE sei() (pending-ISR stretch)
   sei();
@@ -1347,22 +1397,36 @@ void writeRow_18Pin_Alt(uint16_t row, uint8_t patNr) {
   rasHandling_18Pin_Alt(row);
   WE_LOW_18PIN_ALT;
   cli();
+  // 5.0.10 burst-hoist: within one RAS_BURST_ALT_RND-column burst only A0 (PC4) and
+  // A1-A3 (PD0-PD2) change — A4-A6 (PD5-PD7) turn over every 16 columns and A7-A9
+  // (PORTB) every 128. setAddr18Alt_inl() rewrote all three ports per cell, including a
+  // 16-bit shift plus an LPM table read for PORTB that never changed inside a burst
+  // (~22 of ~69 cycles per column). PORTB and the PORTD high bits are now set once per
+  // burst; per cell only the PC4 bit and the PORTD low nibble remain. PD3/PD4 are not
+  // address lines, so their bits (pd_keep) survive every recycle and are read once.
+  const uint8_t pd_keep = PORTD & 0b00011000;
   for (uint8_t blk = 0; blk < (uint8_t)(cols >> 8); blk++) {  // 1024 cols = 4 x 256
     uint8_t Kb = Krow ^ blk;
-    uint16_t colBase = (uint16_t)blk << 8;
+    const uint8_t pbL = pgm_read_byte(&lut_18Pin_High[(uint8_t)(blk << 1)]);       // c8 < 128
+    const uint8_t pbH = pgm_read_byte(&lut_18Pin_High[(uint8_t)((blk << 1) | 1)]); // c8 >= 128
     uint8_t c8 = 0;
     do {
-      uint8_t din = (randomTable[(uint8_t)(Kb ^ c8)] >> 3) & 1;
-      setAddr18Alt_inl(colBase | c8);  // force-inlined (hot per-cell path)
-      SET_DIN_18PIN_ALT(din);
-      CAS_LOW_18PIN_ALT;
-      NOP;  // Mi-4: deterministic CAS-low width (~187 ns min) — the bool below is not a
-            // reliable spacer (the compiler may schedule it outside the CAS window)
-      bool RAS = (c8 & (RAS_BURST_ALT_RND - 1)) == (RAS_BURST_ALT_RND - 1);
-      CAS_HIGH_18PIN_ALT;
-      if (RAS)
-        rasHandling_18Pin_Alt(row);  // RAS-only recycle (CAS high), re-latch row (~82us @ burst 16)
-    } while (++c8 != 0);
+      PORTB = (PORTB & 0b11101010) | ((c8 & 0x80) ? pbH : pbL);
+      const uint8_t pd_base = pd_keep | (uint8_t)((c8 & 0x70) << 1);
+      uint8_t k = RAS_BURST_ALT_RND;
+      do {
+        uint8_t din = (randomTable[(uint8_t)(Kb ^ c8)] >> 3) & 1;
+        if (c8 & 1) SBI(PORTC, 4);
+        else CBI(PORTC, 4);
+        PORTD = pd_base | (uint8_t)((c8 & 0x0E) >> 1);
+        SET_DIN_18PIN_ALT(din);
+        CAS_LOW_18PIN_ALT;
+        NOP;  // deterministic CAS-low width (~187 ns min)
+        CAS_HIGH_18PIN_ALT;
+        c8++;
+      } while (--k);
+      rasHandling_18Pin_Alt(row);  // RAS-only recycle (CAS high), re-latch row
+    } while (c8 != 0);
   }
   WE_HIGH_18PIN_ALT;
   RAS_HIGH_18PIN_ALT;  // close the row BEFORE sei() (pending-ISR stretch)

@@ -8,7 +8,8 @@
 // - Page mode read/write operations with minimal timing overhead
 //
 // Supported chips:
-// - 4164 (64Kx1, 256 rows x 256 cols, 2ms refresh)
+// - 4164 (64Kx1, 256 rows x 256 cols; early parts 2ms refresh, later ones 4ms — the
+//   tester ages at 4 ms and falls back to T_4164_2MS if that fails)
 // - 41256 (256Kx1, 512 rows x 512 cols, 4ms refresh)
 // - 41257 (256Kx1 Nibble Mode, 512 rows x 512 cols, 4ms refresh)
 // - 4816 (16Kx1, 128 rows x 128 cols, 2ms refresh, no -5V/+12V)
@@ -488,6 +489,18 @@ static void __attribute__((hot)) checkerQuadrant_16Pin(uint8_t passNr) {
       uint8_t row_b = PORTB, row_c = PORTC, row_d = PORTD;
       uint8_t row_b_hi = row_b | 0x02;
       uint8_t pb_base = row_b & 0xEA;  // loop-invariant (recycle restores the snapshot)
+      // 5.0.10 (HW-measured): same tRAS fix as checkRow_16Pin — re-open the row after
+      // the snapshot so it is not inside the first burst's RAS-low window. Measured
+      // before the fix: 169 cycles (10.6 us) once per row read, 512 per run (256 rows
+      // x 2 passes) — past the NMOS tRAS max of 10 us. The write phase above needs no
+      // such fix (measured max 152 cycles / 9.5 us).
+      // No port restore needed here: nothing has written PORTB/C/D since the row
+      // address was placed (rasHandling_16Pin, or the previous burst recycle), so
+      // the ports still hold it — only RAS has to be cycled. The NOP keeps tRP at
+      // ~187 ns (spec min 100-120 ns; the burst recycle measures ~314 ns).
+      RAS_HIGH16;
+      NOP;
+      RAS_LOW16;
       for (uint8_t pc_i = 0; pc_i < num_pc; pc_i++) {
         uint8_t pcr = pc_r[pc_i];
         uint8_t exp = exp_a0[pc_i];
@@ -840,6 +853,13 @@ pat45_done:
 static inline void write16Pin(uint16_t row, uint16_t col, uint8_t data) {
   DDRC |= 0x02;  // Ensure PC1 (Din) is OUTPUT for shared Din/Dout chips
   SET_ADDR_PIN16(row);
+  // 5.0.10: shield the RAS-low window from the millis() timer ISR. Measured on a 4164:
+  // exactly one window per run at 209 instead of 112 cycles (13.06 us, over the NMOS
+  // tRAS max of 10 us) — the ISR fires every 1.024 ms and lands once in the ~1.5 ms
+  // detection + address-test phase, which unlike the main loops ran unprotected.
+  // setAddr16_Random is constant-time, so nothing else could stretch this window.
+  // All five callers run with interrupts enabled, so a plain cli/sei pair is safe.
+  cli();
   RAS_LOW16;
   WE_LOW16;
   setAddrData(col, data ? 0x04 : 0);
@@ -848,6 +868,7 @@ static inline void write16Pin(uint16_t row, uint16_t col, uint8_t data) {
   CAS_HIGH16;
   WE_HIGH16;
   RAS_HIGH16;
+  sei();
 }
 
 /**
@@ -865,6 +886,7 @@ static inline uint8_t read16Pin(uint16_t row, uint16_t col) {
   PORTC &= ~0x02;
   DDRC &= ~0x02;
   SET_ADDR_PIN16(row);
+  cli();  // see write16Pin: keep the millis ISR out of the RAS-low window
   RAS_LOW16;
   setAddrData(col, 0);
   CAS_LOW16;
@@ -873,6 +895,7 @@ static inline uint8_t read16Pin(uint16_t row, uint16_t col) {
   uint8_t result = (PINC & 0x04) >> 2;
   CAS_HIGH16;
   RAS_HIGH16;
+  sei();
 
   return result;
 }
@@ -1304,6 +1327,15 @@ void __attribute__((hot)) writeRow_16Pin(uint16_t row, uint16_t cols, uint8_t pa
       uint16_t vb = (uint16_t)(chunk << 5) ^ row_mix;
       uint8_t K = (uint8_t)(vb ^ (vb >> 8));
 
+      // 5.0.10 (HW-measured, 3732H/41256/4816): same tRAS fix as checkRow_16Pin — the
+      // per-chunk setup above used to sit inside the RAS-low window, making the row-open
+      // window 170 cycles (10.6 us) once per row, past the NMOS tRAS max of 10 us.
+      // No port restore needed: nothing wrote PORTB/C/D since the row address was placed.
+      // WE stays low across this cycle exactly as it does across the burst recycle below.
+      RAS_HIGH16;
+      NOP;
+      RAS_LOW16;
+
       // Burst loop: descending order (31..0), recycle after every 2 cells (skipped
       // after the last cell of the last chunk — the outer CAS/RAS_HIGH16 ends that).
       uint8_t c = 32;
@@ -1385,8 +1417,11 @@ void __attribute__((hot)) writeRow_16Pin(uint16_t row, uint16_t cols, uint8_t pa
     // it back to one ~9 ms window). Refresh inlined (rasHandling + RAS high) to avoid
     // resurrecting the otherwise-dead refreshRow_16Pin. Aging is the implicit check()/
     // write() runtime (delays[5]=0); delayRows effectively 1.
-    // NOTE: assumes the 41257's 256-cycle (A0–A7) refresh covers BOTH A8 nibble halves
-    // of the row — bench-confirm against the datasheet.
+    // CONFIRMED (owner, 5.0.10): the 41257 cycles A8 internally, row- AND column-wise,
+    // so one RAS-only refresh on A0-A7 re-arms both A8 halves of the row. Same reason FPM
+    // is unusable on this part and every path here is nibble-based (256x256 bases, the
+    // 4 CAS toggles cover {rowA8, colA8} -> full 512x512 coverage).
+    // MEASURED: the split holds each half at 4.11 ms = 103% of the 4 ms spec.
     if (row) {
       retCheck_16Pin(row - 1, patNr);            // verify previous row (~tREF since its refresh)
       if (row == last_row) {
@@ -1498,6 +1533,23 @@ void __attribute__((hot)) checkRow_16Pin(uint16_t cols, uint16_t row, uint8_t pa
       // K-hoist (see writeRow_16Pin): mix8(chunkBase|c, row) == K ^ c, bit-identical.
       uint16_t vb = (uint16_t)(chunk << 5) ^ row_mix;
       uint8_t K = (uint8_t)(vb ^ (vb >> 8));
+
+      // 5.0.10 (HW-measured, Saleae/4164): re-open the row AFTER the per-chunk
+      // setup above. That setup (3x LPM + base/K math) used to sit INSIDE the
+      // RAS-low window, stretching it to 150 cycles at a chunk boundary and 169
+      // at the row open = 10.56 us — past the NMOS tRAS max of 10 us (1025 of
+      // 263k windows violated, worst 12.87 us). Closing the row here moves the
+      // setup into the precharge phase, where no tRAS max applies, leaving every
+      // burst window at a uniform 106 cycles (6.6 us = 66% of spec). Semantically
+      // free: the burst recycle already re-opens this row 128x per read. Costs one
+      // RAS cycle per chunk (~0.5% of row time) -> retention calibration unchanged.
+      // No port restore needed here: nothing has written PORTB/C/D since the row
+      // address was placed (rasHandling_16Pin, or the previous burst recycle), so
+      // the ports still hold it — only RAS has to be cycled. The NOP keeps tRP at
+      // ~187 ns (spec min 100-120 ns; the burst recycle measures ~314 ns).
+      RAS_HIGH16;
+      NOP;
+      RAS_LOW16;
 
       // Burst loop (see writeRow_16Pin): 2-cell bursts, snapshot recycle in between.
       uint8_t c = 32;
