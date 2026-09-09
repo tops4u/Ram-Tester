@@ -1,5 +1,14 @@
 # Changelog
 
+### 5.1.1 (2026-09-08)
+* New MARCH-style row/column address test on all sockets — catches decoder aliasing (two rows or columns hitting the same cells) that the old per-line check missed.
+  New displays: "Decoder Alias R"/"C". Replaces five separate address tests.
+* Pins shorted to VCC are now detected before the test starts (previously invisible until the test drove the pin low). Unified short display: "Short Pin <signal>".
+* Fixed 18-pin tRAS violation (4416: 512 out-of-spec RAS windows per run).
+* 4164 half-good parts (4532/3732) now also get their working half verified.
+* Loop mode now reruns the MARCH address test every iteration on all three sockets (16-/20-pin previously ran it only once before the loop).
+* Various smaller timing and test-gap fixes.
+
 ### 5.0.10 (2026-09-02)
 * **CRITICAL:** 20-pin types could sporadically report a false "Addressline A0" error on perfectly good RAM. Fixed.
 * Improved address-line testing on 18- and 20-pin types: some aliased/shorted address lines used to slip through as OK and are now reliably caught.

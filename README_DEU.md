@@ -2,7 +2,7 @@
 **Schneller, quelloffener DIY-Tester für Vintage-DRAM/SRAM** — erkennt den
 Chip-Typ automatisch, führt alle Tests durch und liefert in Sekunden ein klares Gut/Schlecht.
 
-[GPL v3] [Firmware 5.0.10] · C64 · Amiga · Atari · ST · Apple II · Spectrum
+[GPL v3] [Firmware 5.1.1] · C64 · Amiga · Atari · ST · Apple II · Spectrum
 
 ## Worum es geht
 Ein schneller, quelloffener DIY-RAM-Tester für Vintage-RAM-Chips aus C64, Amiga, Atari und anderen Retro-Computern. Aufgebaut um einen 16-MHz-ATmega328P auf einer eigenen Platine, testet er den Speicher in Sekunden gründlich und unterstützt eine breite Palette von Chip-Typen mit optionaler OLED-Anzeige.
@@ -11,6 +11,7 @@ Ein schneller, quelloffener DIY-RAM-Tester für Vintage-RAM-Chips aus C64, Amiga
 
 **Bekannt aus:**
 
+- [***Jan Beta](https://www.youtube.com/watch?v=iQYF2-FwuoI) (Aug 2026): "The best Arduino Tester (to date)"
 - [***Adrians Digital Basement II***](https://youtu.be/9QQ8ZqHPRVQ?&t=2573) (Mai 2026): "This is freaking awesome"
 - [***Hackaday***](https://hackaday.com/2025/12/08/cheap-and-aggressive-dram-chip-tester/) (Dez. 2025): "Cheap and Aggressive DRAM Chip Tester"
 - [***Elektor Magazine***](https://www.elektormagazine.com/news/open-source-diy-ram-tester) (Dez. 2025): "Ram-Tester Is an Open-Source DIY Solution for Retro Computer RAM"
@@ -48,7 +49,7 @@ Ein schneller, quelloffener DIY-RAM-Tester für Vintage-RAM-Chips aus C64, Amiga
 | 64 K × 4 | 4464 | – | – | – | 4 ms | 5.2 s |
 | 256 K × 1 | 41256 | – | – | 41257 | 4 ms | 7.5 s |
 | 256 K × 4 | 44256 | both | 44258 | – | 8 ms | 3.5 s |
-| 1 M × 1 | 411000 | **✗**<sup>3)</sup> | – | – | 8 ms | 23.8 s |
+| 1 M × 1 | 411000 | **✗**<sup>3)</sup> | – | – | 8 ms | 19.4 s |
 | 1 M × 4 | 514400 | both | 514402 | – | 16 ms | 12.0 s |
 
 <sup>1)</sup> Benötigt die [4116-Adapterplatine](Schematic/4116).<br/>
@@ -81,14 +82,15 @@ Ein kurzes YouTube-Video zeigt den Tester in Aktion. <br/>
 
 ---
 
-## Was wird getestet?
-1. GND-Kurzschlüsse — prüft, ob ein Pin gegen Masse kurzgeschlossen ist
-2. Versorgungs-Kurzschlüsse — eine rückstellbare Sicherung schützt die Platine
-3. Adressleitungs- und Dekoder-Fehler
-4. Festsitzende Zellen oder Übersprechen via bidirektionale Checkerboards
-5. Zufallsmuster kombiniert mit Retention-Zeit-Prüfungen
-6. CAS-before-RAS-Refresh-Timer-Funktion
-7. Alle oben genannten nutzen den passenden Zugriffsmodus für den Chip-Typ: Fast Page Mode, Static Column oder Nibble Mode
+## Wie wird getestet?
+1. GND und 5V Kurzschlüsse — prüft, ob ein Pin gegen Masse oder 5V kurzgeschlossen ist
+2. Prüft ob ein RAM Chip detektiert werden kann und welcher Typ es ist.
+3. Versorgungs-Kurzschlüsse — eine rückstellbare Sicherung schützt die Platine
+4. Adressleitungs- und Dekoder-Fehler
+5. Festsitzende Zellen oder Übersprechen via bidirektionale Checkerboards
+6. Zufallsmuster kombiniert mit Retention-Zeit-Prüfungen
+7. CAS-before-RAS-Refresh-Timer-Funktion (für RAMs die diesen Modus unterstützen)
+8. Alle oben genannten nutzen den passenden Zugriffsmodus für den Chip-Typ: Fast Page Mode, Static Column oder Nibble Mode
 
 ### Warum kein MARCH-B?
 Hier der Vergleich dieses Algorithmus mit MARCH-B:

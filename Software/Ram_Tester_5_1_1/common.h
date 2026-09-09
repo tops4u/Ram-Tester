@@ -12,7 +12,7 @@
 #include <avr/pgmspace.h>
 
 // Version String
-#define VERSION_STR "5.0.10"
+#define VERSION_STR "5.1.1"
 
 #ifdef OLED
 #include "src/U8g2/U8g2lib.h"
@@ -168,6 +168,10 @@ typedef enum
 // Identified by typeSuffix (OLED name) + halfGoodBlink (LED code).
 // Blink codes: 1G-5O = 4532, 1G-6O = 3732, 1G-5O+1G-6O = ambiguous.
 #define T_4164_2MS 13 // 4164 variant with 2ms retention time (array index 13)
+// T_2114 must stay the LAST index: ramNames[] and ledPatterns[] are indexed by type and
+// have exactly one entry per T_*, so a gap here reads past their end. A new DRAM type
+// goes in at 14 (with a ramTypes[] row of its own) and moves the 2114 to 15 — three
+// tables plus this define, all in the same order.
 #define T_2114 14
 
 // Random Table for pseudo-random testing (patterns 4-5). Checkerboard passes 0-1
@@ -181,12 +185,16 @@ extern uint8_t randomTable[256];
 // Structure defining characteristics of different RAM types
 struct RAM_Definition
 {
-  const char* name;    // Name for the Display (stored in PROGMEM)
   uint8_t delayRows;   // How many rows are skipped before reading back and checking retention time
   uint16_t rows;       // How many rows does this type have
   uint16_t columns;    // How many columns does this type have
   uint8_t flags;       // Bit 0: staticColumn, Bit 1: nibbleMode, Bit 2: smallType
-  uint8_t delays[6];   // Delay times in 20μs units (multiply by 20 for actual μs)
+  // delays[0] = the early rows (row < delayRows, nothing pending yet, no check).
+  // delays[1] = every following row (steady state). 5.0.11: was delays[6]; indices
+  // delayRows..5 always held the same value and 0..delayRows-1 too, so four bytes per
+  // type were redundant. Both readers now use a FIXED index, which also retires the
+  // old "retentionTail reads [5], writeRow_4116 reads [delayRows]" dual convention.
+  uint8_t delays[2];   // Delay times in 20us units (multiply by 20 for actual us)
   uint8_t writeTime;   // Write time in 20μs units (multiply by 20 for actual μs)
 };
 
@@ -196,6 +204,12 @@ struct RAM_Definition
 #define RAM_FLAG_SMALL_TYPE    (1 << 2)
 
 extern struct RAM_Definition ramTypes[];
+// Chip names live in their OWN table, not in RAM_Definition. Two reasons: the 2114 needs
+// nothing from ramTypes but its name, so it carries no (all-zero) row there at all — and
+// this lookup is a 2-byte stride instead of a mul by sizeof(RAM_Definition). ramNames has
+// one entry per T_* including T_2114; ramTypes has 14 and must never be indexed with it.
+extern const char* const ramNames[];
+#define RAM_NAME() ((const __FlashStringHelper *)pgm_read_word(&ramNames[type]))
 
 //=======================================================================================
 // GLOBAL VARIABLES
@@ -312,15 +326,18 @@ extern const uint8_t CPU_20PORTD[];
 //=======================================================================================
 // FUNCTION PROTOTYPES - Half Good RAM Text Combinations
 //=======================================================================================
-extern const char qs_4532_4[];
-extern const char qs_4532_3[];
-extern const char qs_3732_H[];
-extern const char qs_3732_L[];
 // Ambiguous (single quadrant — could be either type):
 extern const char qs_Q1[];
 extern const char qs_Q2[];
 extern const char qs_Q3[];
 extern const char qs_Q4[];
+// All four definitive names are the TAILS of the ambiguous strings (each half is 6 chars
+// with '/' at index 6), so none of them is stored separately. See the block above
+// qs_Q1 in common.cpp before touching those literals.
+#define qs_4532_4 (qs_Q1 + 7)
+#define qs_3732_L (qs_Q2 + 7)
+#define qs_3732_H (qs_Q3 + 7)
+#define qs_4532_3 (qs_Q4 + 7)
 
 //=======================================================================================
 // FUNCTION PROTOTYPES - RAM Initialization
@@ -368,20 +385,82 @@ static inline __attribute__((always_inline)) uint8_t mix8(uint16_t col, uint16_t
   return (uint8_t)(v ^ (v >> 8));
 }
 
+// mix8 with the row half already folded. The row part is loop-invariant, so GCC hoists it
+// into the loop preheader — which sits INSIDE the RAS-low window whenever the row is
+// opened before the loop. Passing it in lets the caller compute it beforehand instead.
+// (writeRow_16Pin already hoists the same expression by hand.)
+static inline __attribute__((always_inline)) uint8_t mix8r(uint16_t col, uint16_t rowmix)
+{
+  uint16_t v = col ^ rowmix;
+  return (uint8_t)(v ^ (v >> 8));
+}
+
 // Generate random table at startup to save flash memory
 void generateRandomTable(void);
 
 // Shared retention-aging tail for the random patterns 4-5 (called at the end of
 // each writeRow_* — 16Pin, 18Pin std, 18Pin Alt, 20Pin; the 4116/4027 path keeps
-// its own tail: it ages with delays[delayRows] instead of delays[5]).
+// its own tail, which checks first and delays after but reads the same delays[1]).
 // Ages the pending row(s) per ramTypes[type] (delayRows/delays/writeTime), then
 // calls `check` to read them back:
 //   last row:  drain x = delayRows..0 (x < delayRows adds the missing writeTime),
-//              each aged by delays[5] before the check;
-//   normal:    delays[5], then check(row - delayRows);
-//   early row: delays[row] only (no check pending yet).
+//              each aged by delays[1] before the check;
+//   normal:    delays[1], then check(row - delayRows);
+//   early row: delays[0] only (no check pending yet).
 void retentionTail(uint16_t row, uint16_t last_row, uint8_t patNr,
                    void (*check)(uint16_t row, uint8_t patNr));
+
+//=======================================================================================
+// DECODER-ALIAS MARCH (5.1.1)
+//=======================================================================================
+// MATS+ { (w0); ^(r0,w1); v(r1,w0) } run over ONE address dimension at a time.
+//
+// Van de Goor's address-decoder theorem: a march test containing an ASCENDING element
+// that reads a value and writes its complement, plus a DESCENDING element that does the
+// reverse, detects EVERY address decoder fault (AF). The mechanism is the read BEFORE
+// the write: it builds a positional wavefront -- everything already visited holds 1,
+// everything ahead still holds 0 -- so if two addresses reach the same cell, the second
+// one reads the wavefront value of the first and fails on the spot. That is DATA
+// INDEPENDENT, which is what the older schemes are not: write-all/read-all only sees an
+// alias when the two rows happen to carry different payload, and a Gray traversal only
+// sees pairs that land next to each other in the sequence.
+//
+// Both directions are needed. ^ catches "one cell is reachable from two addresses";
+// v catches "one address drives two cells" when the second cell's own address is the
+// lower one and the up-element had already passed it.
+//
+// Because a row-decoder alias aliases the WHOLE row, one representative cell per row is
+// enough -- the march runs at 5 accesses per row, not per cell, which is why it costs
+// milliseconds instead of seconds. The column march is the same with the axes swapped.
+//
+// `MarchOp` is the module's cell accessor in its own (row, col) terms: op 0/1 writes
+// that value, op 2 reads it back as 0/1. marchDecoder does the axis swap itself so the
+// adapters stay free of it -- the coordinate NOT being marched is held in marchFix and
+// marchCol selects the axis (0 = march rows, 1 = march columns). Adapters that sweep
+// more rows than fit in one tREF window (16-pin 512-row types, 411000) refresh per write.
+typedef uint8_t (*MarchOp)(uint16_t row, uint16_t col, uint8_t op);
+// Marches the row axis over `nrows` (column 0 held), then the column axis over `ncols`
+// (row 0 held), and never returns if either finds an alias. A failing address that is a
+// power of two is the classic single-line fault and keeps the familiar "Addressline
+// A<b>" screen; anything else has no single line to blame and reads "Decoder Alias R/C".
+void marchAxes(uint16_t nrows, uint16_t ncols, MarchOp f);
+
+// The same scan WITHOUT reporting — returns the verdict instead of acting on it:
+//   0      = both axes clean
+//   0x8000 = the failing address holds a dead cell  -> error(0, 2)
+//   else   = code + 1, to be reported as            -> error(code, 1)
+// Use this when the verdict depends on something not known yet. test_16Pin does: a 4164
+// that fails the march may still be a half-good 4532/3732, and only the quadrant
+// evaluation at the end of the test can tell those apart.
+uint16_t marchScan(uint16_t nrows, uint16_t ncols, MarchOp f);
+
+// Origin of the region to march. Default (0,0) = the whole array. Set both before calling
+// marchScan/marchAxes to restrict the scan to a sub-rectangle; BOTH are reset to 0 again
+// before the call returns, so the default is always what the next caller gets.
+// The origin doubles as the held coordinate of the opposite axis: marching rows holds
+// column marchOrgC, marching columns holds row marchOrgR. That is exactly what a half-good
+// 4532/3732 needs — the good quadrant pair's origin keeps the probe out of the dead half.
+extern uint16_t marchOrgR, marchOrgC;
 
 // Start the Health Check of the HW
 void selfCheck(void);

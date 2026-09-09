@@ -25,7 +25,6 @@
 #include <avr/pgmspace.h> // for PROGMEM
 
 void writeRow_16Pin(uint16_t row, uint16_t cols, uint8_t patNr);
-void refreshRow_16Pin(uint16_t row);
 void checkRow_16Pin(uint16_t cols, uint16_t row, uint8_t patNr, uint8_t error);
 //=======================================================================================
 // 16-PIN SPECIFIC DEFINES AND MACROS

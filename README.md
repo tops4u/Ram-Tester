@@ -2,7 +2,7 @@
 **Fast, open-source DIY tester for vintage DRAM/SRAM** — auto-detects the
 chip type, runs every test, gives a clear good/bad in seconds.
 
-[GPL v3] [Firmware 5.0.10] · C64 · Amiga · Atari · ST · Apple II · Spectrum
+[GPL v3] [Firmware 5.1.1] · C64 · Amiga · Atari · ST · Apple II · Spectrum
 
 ## What this project is
 A fast, open-source DIY RAM tester for vintage RAM chips used in C64, Amiga, Atari, and other retro computers. Built around a 16MHz ATmega328P on a custom PCB, it tests memory thoroughly in seconds and supports a wide range of chip types with optional OLED feedback.
@@ -11,6 +11,7 @@ A fast, open-source DIY RAM tester for vintage RAM chips used in C64, Amiga, Ata
 
 **As featured on:**
 
+- [***Jan Beta***](https://www.youtube.com/watch?v=iQYF2-FwuoI) (Aug 2026): "The best Arduino Tester (to date)"
 - [***Adrians Digital Basement II***](https://youtu.be/9QQ8ZqHPRVQ?&t=2573) (May 2026): "This is freaking awesome"
 - [***Hackaday***](https://hackaday.com/2025/12/08/cheap-and-aggressive-dram-chip-tester/) (Dec 2025): "Cheap and Aggressive DRAM Chip Tester"
 - [***Elektor Magazine***](https://www.elektormagazine.com/news/open-source-diy-ram-tester) (Dec 2025): "Ram-Tester Is an Open-Source DIY Solution for Retro Computer RAM"
@@ -48,7 +49,7 @@ A fast, open-source DIY RAM tester for vintage RAM chips used in C64, Amiga, Ata
 | 64 K × 4 | 4464 | – | – | – | 4 ms | 5.2 s |
 | 256 K × 1 | 41256 | – | – | 41257 | 4 ms | 7.5 s |
 | 256 K × 4 | 44256 | both | 44258 | – | 8 ms | 3.5 s |
-| 1 M × 1 | 411000 | **✗**<sup>3)</sup> | – | – | 8 ms | 23.8 s |
+| 1 M × 1 | 411000 | **✗**<sup>3)</sup> | – | – | 8 ms | 19.4 s |
 | 1 M × 4 | 514400 | both | 514402 | – | 16 ms | 12.0 s |
 
 <sup>1)</sup> Requires the [4116 adapter board](Schematic/4116).<br/>
@@ -81,14 +82,15 @@ There is a short YouTube video demonstrating the tester in action. <br/>
 
 ---
 
-## What does it test?
-1. GND shorts — checks if any pin is shorted to ground
-2. Power supply shorts — a resettable fuse protects the board
-3. Address-line and decoder faults
-4. Stuck cells or crosstalk via bidirectional Checkerboards
-5. Random patterns combined with retention time checks
-6. CAS-before-RAS refresh timer function
-7. All of the above use the appropriate access mode for the chip type: Fast Page Mode, Static Column, or Nibble Mode
+## How does it test?
+1. GND and VCC shorts — checks if any pin is shorted to ground or 5V
+2. Tries to detect if a RAM Chip is present and what type it is
+3. Power supply shorts — a resettable fuse protects the board
+4. Addressline and -decoder faults
+5. Stuck cells or crosstalk via bidirectional Checkerboards
+6. Random patterns combined with retention time checks
+7. CAS-before-RAS refresh timer function (if supported by the RAM)
+8. All of the above use the appropriate access mode for the chip type: Fast Page Mode, Static Column, or Nibble Mode
 
 ### So why no MARCH-B?
 Here is the analytics of this algorithm vs. March-B
@@ -107,7 +109,7 @@ Here is the analytics of this algorithm vs. March-B
 <sup>1)</sup>unless implemented outside of MARCH-B<br>
 <sup>2)</sup>For RAM that have a Refresh Counter (41256 and newer)
 
-March-B is thorough for coupling and decoder faults but operates in the microsecond range — it cannot catch chips with weak retention that meet spec on paper but fail under real-world refresh timing. This tester trades systematic address ordering for real-time retention stress, which is where most age-related failures actually occur.
+March-B is thorough for coupling and decoder faults but operates in the microsecond range — it cannot catch chips with weak retention that meet spec on paper but fail under real-world refresh timing. This tester trades systematic address ordering for real-time retention stress, which is where most age-related failures actually occur. 
 
 ### A note on CMOS vs TTL voltage levels
 Vintage DRAM chips were designed for TTL signal levels. The ATmega328P drives CMOS levels at 5 V — logic high is close to V<sub>CC</sub>, which is above what the original systems delivered. This means marginal chips that fail at true TTL thresholds may still pass on this tester (and most other microcontroller-based testers).

@@ -29,7 +29,7 @@ Be sure that the verification step completes without any errors. You may repeat 
 
 Example using `avrdude` with a USBasp:
 ```
-avrdude -c usbasp -p m328p -U flash:w:Ram_Tester_5_0_9.hex:i
+avrdude -c usbasp -p m328p -U flash:w:Ram_Tester_5_1.1.hex:i
 ```
 
 ### Option 2: Compile from source using Arduino IDE
@@ -53,6 +53,6 @@ The following images shows the Pinout of the ICSP on the SMD Board:
 
 | Version | Notes |
 |---|---|
-| **5.0.x** | Current active Version with configuration options and adapted Timings / Tests |
+| **5.1.x** | Current active Version with configuration options and adapted Timings / Tests |
 | **4.2.x** | Archived Version. Verified 3732/4532 quadrant logic. Two .hex variants (with/without 32K). |
 | **2.1.x** | Legacy firmware, before display support was added. |
