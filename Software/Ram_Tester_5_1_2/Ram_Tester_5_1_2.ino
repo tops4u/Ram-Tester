@@ -5,7 +5,7 @@ RAM Tester Program for RAM Tester PCB
 
 Author:   Andreas Hoffmann
 Project:  github.com/tops4u/ram-tester
-Version:  5.1.1
+Version:  5.1.2
 Date:     02.09.2026
 
 This software is published under GPL 3.0. Respect the license terms.
@@ -256,7 +256,7 @@ Version History:
                 the half they CAN do verified, which nothing had ever done.
               - Pins shorted to VCC are caught before the test starts. Such a pin was
                 invisible until the test itself drove it low -- and then kept sinking the
-                short current for the whole run. Both short types share one screen now,
+                short current for the whole run. Both short types share one screen,
                 "Short Pin <signal>"; LED 3 red for ground, 5 red for VCC.
               - 18-pin tRAS: the row-invariant half of the random index was computed in
                 the loop preheader, which sits inside the first RAS-low window of every
@@ -276,8 +276,34 @@ Version History:
               all four 514xxx. Every march block hit its predicted edge count, and tRAS
               stayed inside spec everywhere -- 10 us on the NMOS types, ~100 us page mode.
 
+- 5.1.2       Fix for the VCC-short probe of 5.1.1, which could report a false "Short Pin
+              <data pin>" at power-up on ANY socket and ANY type except the 4116/4027
+              adapter (where it does not run). Seen on a TC511000 in the SOJ adapter as
+              "Short Pin 17" = its Q; a 514402 on the same board happened to pass.
+              The probe drove every pin of a port low at once -- RAS, CAS, WE and, where
+              present, OE together -- which is an access cycle, and then let them float
+              for 2 us. The order in which they came back up is set by each line's total
+              capacitance -- socket, adapter trace AND the chip's own pin, which differs
+              between makers, batches and even between pins of one die -- so it depends
+              on the individual part in the individual socket, not on the firmware. If
+              WE rose first while the others were still low, the chip entered a read and
+              drove its own data pin high; the probe read that pin back and called it a
+              short. With OE driven low as well, OE was no protection. The fewer control
+              lines a part has, the likelier it was: the 2114 (CS and WE only) most, the
+              x1 DRAMs (RAS/CAS/WE) next, the x4 parts with OE least -- but none at zero.
+              The chip itself is never harmed; only the message is wrong.
+              Now one pin at a time. A single control line alone never activates a chip:
+              RAS alone is a refresh, CAS without RAS is nothing, OE is gated by CAS, and
+              the 2114's CS alone selects it but only CS itself is read back. Coverage is
+              the full set again -- 13, 15 and 17 pins per socket -- with only the OLED's
+              SDA line left out. +60 bytes; 16 bytes of flash remain.
+              Verified on the failing setup (TC511000, SOJ adapter, logic analyser): WE,
+              CAS, RAS and Q are each pulled low alone, ~4 us apart, never overlapping;
+              a released line is back above VIH 0.65 us after its pull-up returns; and Q
+              stays low for the whole float, so the probe reads it correctly.
+
 =======================================================================================
- OPEN POINTS / KNOWN LIMITATIONS  (as of 5.1.1)
+ OPEN POINTS / KNOWN LIMITATIONS  (as of 5.1.2)
 =======================================================================================
 Not yet verified on hardware
  - TMS4532 (both halves) and MSM3732-L: no part available, only ever exercised through a
@@ -303,7 +329,7 @@ Deliberately not covered
 Build
  - Non-OLED build does not compile: printTestOK, drawQR, printQRandVersion and
    twoLineScreen are defined outside #ifdef OLED.
- - 104 bytes of flash free. The next feature needs room made first; the measured lever is
+ - 16 bytes of flash free. The next feature needs room made first; the measured lever is
    checkAddressing_2114 (154 bytes), redundant because check_2114 is already a full
    March C- over the same address space.
 

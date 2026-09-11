@@ -1,5 +1,8 @@
 # Changelog
 
+### 5.1.2 (2026-09-12)
+* **CRITICAL** During extended Testing it was noticed that mostly when using the SOJ Adapter small differences in line capacitance may trigger a false "SHORT Pin <Dout>" Error. This was due to the fact that the new Vcc Short Test was driving all Control Pins at once, so small delays caused the Output Pin to leave its Open State and go either low or high which was considered a Short. This Error is sporadic but not limited to the SOJ Adapter. Small differences in the RAMs Input capacitance may trigger it as well. 
+
 ### 5.1.1 (2026-09-08)
 * New MARCH-style row/column address test on all sockets — catches decoder aliasing (two rows or columns hitting the same cells) that the old per-line check missed.
   New displays: "Decoder Alias R"/"C". Replaces five separate address tests.

@@ -758,58 +758,49 @@ static void vccFail(uint8_t bits, const uint8_t *map, const uint8_t *lbl) {
 // cannot see it: it only surfaces once something drives the pin LOW, and by then that is
 // the test itself, sinking the short current for its whole multi-second run.
 //
-// Discharge each used pin, RELEASE it, and watch what happens — do not read while
-// driving. The AVR's output driver is ~25 ohm, so against a short with any series
-// resistance at all (a jumper wire, a contact) it wins the divider and the pin reads LOW:
-// only a perfect 0-ohm short would ever be caught that way. After the release the pull-up
-// stays off, so a pin tied to VCC snaps back within nanoseconds while a healthy one is
-// still held down by its own capacitance — leakage needs hundreds of microseconds to lift
-// it. That separates them cleanly, catches resistive shorts up to some kilo-ohms, and
-// sinks current only for the brief discharge.
+// Discharge the pin, RELEASE it, and watch what happens — do not read while driving. The
+// AVR's output driver is ~25 ohm and every socket line has 47 ohm in series, so reading
+// while driving puts a shorted pin at 5V * 25/(25+47) = 1.74 V, under VIH: it would read
+// LOW no matter how hard the short is. After the release the pull-up stays off, so a pin
+// tied to VCC snaps back within nanoseconds while a healthy one is still held down by its
+// own capacitance — leakage needs hundreds of microseconds to lift it.
 //
-// PB4 is EXCLUDED from every mask. It doubles as the OLED's SDA (software I2C on D12/D13)
-// and MEASURED ON HARDWARE it comes back HIGH after the release on all three sockets —
-// something on the display side holds the line up. The old read-while-driving version
-// hid that (the AVR's 25 ohm beat it), the release does not, and a permanent false
-// "Short Pin A4 / 13 / A8" is worse than no coverage. Costs socket pin 11 / 13 / 15;
-// the ground check still covers them, since reading against the INTERNAL pull-up is
-// unaffected by whatever sits on the display side.
+// ONE PIN AT A TIME, never a whole port. Driving RAS, CAS and WE low together is a full
+// access cycle, and while they float during the release a part WITHOUT an output-enable
+// pin can slip into a read and drive its own DOUT high — which the probe then reports as
+// a VCC short. Measured on a TC511000 (no /OE, Q follows CAS) on the SOJ adapter: socket
+// pin 17 = PC3 = its Q. A single control line alone never does that: RAS alone is a
+// RAS-only refresh, CAS without RAS is nothing, OE is gated by CAS, and the 2114's CS
+// alone selects it but the probe only reads CS itself back. Every other line sits at its
+// pull-up meanwhile, so the chip stays quiescent and its outputs stay tri-state — which
+// is also what makes the data pins safe to probe.
 //
-// The 47 ohm series resistors in each socket line are what makes the release necessary in
-// the first place: reading WHILE driving puts the pin at 5V * 25/(25+47) = 1.74 V, under
-// VIH, so a short would read LOW no matter how hard it is. After the release the same
-// resistor is harmless — 47 ohm into ~30 pF is a nanosecond.
-//
-// The masks EXCLUDE the socket's Vcc pin, which the DIP switch feeds: PD2 (16-pin,
-// socket pin 8), PD3 (18-pin, pin 9), PC5 (20-pin, pin 10). Driving one of those low
-// would short the supply rail. They are the same pins the hardware-verified address
-// masks already leave out (0xC3 / 0xE7), which is the cross-check on these values.
-//
-// Safe otherwise: RAS/CAS/OE and the 2114's /CS are all held HIGH by the caller's
-// pull-ups, so every chip has its outputs in Hi-Z — nothing to contend with. An empty
-// socket, and a pin shorted to a neighbour, both read back the LOW we drive.
-// Order matters both ways: PORT low BEFORE DDR out (else the pin drives HIGH for a
-// cycle), and DDR back to input BEFORE the pull-up returns.
+// The masks exclude only the socket's Vcc pin, which the DIP switch feeds — PD2 (16-pin,
+// socket pin 8), PD3 (18-pin, pin 9), PC5 (20-pin, pin 10); driving it low would short
+// the rail — and PB4, the OLED's SDA, which the display side holds up after a release.
+static uint8_t probeBit(volatile uint8_t *port, volatile uint8_t *ddr, volatile uint8_t *pin,
+                        uint8_t bit) {
+  *port &= ~bit;  // pull-up off first
+  *ddr |= bit;    // then drive low: just long enough to discharge the pin
+  NOP;
+  NOP;
+  NOP;
+  NOP;
+  *ddr &= ~bit;   // release — pull-up stays off
+  delayMicroseconds(2);
+  uint8_t high = *pin & bit;
+  *port |= bit;   // pull-up back on
+  return high;
+}
+
 static void vccProbe(uint8_t mb, uint8_t mc, uint8_t md,
                      const uint8_t *pb, const uint8_t *pc, const uint8_t *pd) {
-  PORTB &= ~mb;
-  PORTC &= ~mc;
-  PORTD &= ~md;
-  DDRB |= mb;  // drive low: just long enough to discharge the pin
-  DDRC |= mc;
-  DDRD |= md;
-  NOP;
-  NOP;
-  NOP;
-  NOP;
-  DDRB &= ~mb;  // release again — the pull-ups stay OFF, the PORT bits are still 0
-  DDRC &= ~mc;
-  DDRD &= ~md;
-  delayMicroseconds(2);  // let anything that drives the pin pull it back up
-  uint8_t hb = PINB & mb, hc = PINC & mc, hd = PIND & md;
-  PORTB |= mb;  // pull-ups back on
-  PORTC |= mc;
-  PORTD |= md;
+  uint8_t hb = 0, hc = 0, hd = 0;
+  for (uint8_t bit = 1; bit; bit <<= 1) {
+    if (mb & bit) hb |= probeBit(&PORTB, &DDRB, &PINB, bit);
+    if (mc & bit) hc |= probeBit(&PORTC, &DDRC, &PINC, bit);
+    if (md & bit) hd |= probeBit(&PORTD, &DDRD, &PIND, bit);
+  }
   vccFail(hb, pb, s_lblb);
   vccFail(hc, pc, s_lblc);
   vccFail(hd, pd, s_lbld);
@@ -830,14 +821,14 @@ void checkGNDShort() {
       // probe is looking for, and the adapter's map is not the one above.
     } else {
       checkGNDShort4Port(CPU_20PORTB, CPU_20PORTC, CPU_20PORTD, LBL_20B, LBL_20C, LBL_20D);
-      vccProbe(0x0F, 0x1F, 0xFF, CPU_20PORTB, CPU_20PORTC, CPU_20PORTD);  // PC5 = Vcc
+      vccProbe(0x0F, 0x1F, 0xFF, CPU_20PORTB, CPU_20PORTC, CPU_20PORTD);  // PC5 = Vcc, PB4 = SDA
     }
   } else if (Mode == Mode_18Pin) {
     checkGNDShort4Port(CPU_18PORTB, CPU_18PORTC, CPU_18PORTD, LBL_NONE8, LBL_NONE8, LBL_NONE8);
-    vccProbe(0x0F, 0x1F, 0xE7, CPU_18PORTB, CPU_18PORTC, CPU_18PORTD);  // PD3 = Vcc
+    vccProbe(0x0F, 0x1F, 0xE7, CPU_18PORTB, CPU_18PORTC, CPU_18PORTD);  // PD3 = Vcc, PB4 = SDA
   } else {
     checkGNDShort4Port(CPU_16PORTB, CPU_16PORTC, CPU_16PORTD, LBL_16B, LBL_16C, LBL_16D);
-    vccProbe(0x0F, 0x1F, 0xC3, CPU_16PORTB, CPU_16PORTC, CPU_16PORTD);  // PD2 = Vcc
+    vccProbe(0x0F, 0x1F, 0xC3, CPU_16PORTB, CPU_16PORTC, CPU_16PORTD);  // PD2 = Vcc, PB4 = SDA
   }
 }
 
