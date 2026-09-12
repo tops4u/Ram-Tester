@@ -9,17 +9,10 @@ The through-hole version is designed for easy hand-soldering. It is functionally
 
 ## Board revisions
 
-### v3.0 (experimental — not yet built or tested)
+### v3.0 
 - Fixes two minor errors from v2.0
 - Moves the OLED display to the centre of the board so the ICSP header remains accessible even with the display soldered in place
 - Files: `Gerber_TH_v3.zip`, KiCad source files in this folder
-
-### v2.0 (current stable)
-- Evolution of v1 (which did not have a display connector)
-- Files: `Gerber_TH_v2.zip`
-- Previous revision files are preserved in `Archive/`
-
-> **Important (v2.0):** The display connector sits directly above the ICSP header. Consider using pin-header sockets for the display instead of soldering it directly — otherwise the ICSP will be blocked when you need to flash firmware updates.
 
 ## BOM
 
