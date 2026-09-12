@@ -17,34 +17,6 @@ So yes, there are cheaper solutions out there, but they often come with trade-of
 
 ---
 
-## BOM
-
-| Designation | Qty | Brand | Type | Description | Package |
-|-------------|-----|-------|------|-------------|---------|
-| C1, C2, C3 | 3 | Samsung EM | CL31A475KOHNNNE | 4.7 µF | 1206 |
-| C4, C6 | 2 | Samsung EM | CL31A106KOHNNNE | 10 µF | 1206 |
-| C5, C7 | 2 | Samsung EM | CL10B104KO8NNNC | 100 nF | 0603 |
-| U1 | 1 | Renesas Electronics | ICL7660ACBAZA | Negative voltage converter | 8-SOIC |
-| U3 | 1 | Texas Instruments | TLV61046ADBVR | Boost converter | SOT-23-6 |
-| L1 | 1 | Laird | TYA2520104R7M-10 | 4.7 µH inductor | 1008 |
-| D1 | 1 | Toshiba | CES521,L3F | Schottky diode | SOD-523 |
-| D2, D3 | 2 | Amicc | A-SP192DGHC-C01-4T | LED green | 0603 |
-| D4 | 1 | Nexperia | PDZ13B,115 | Zener diode | SOD-323 |
-| D5 | 1 | Nexperia | PESD5V0S1BAF | TVS diode | SOD-323 |
-| R1, R6 | 2 | Fojan | FRC0603F5600TS | 560 Ω | 0603 |
-| R4 | 1 | Fojan | FRC0603F2003TS | 200 kΩ | 0603 |
-| R7 | 1 | Fojan | FRC0603F4703TS | 470 kΩ | 0603 |
-| R8 | 1 | Fojan | FRC0603F2202TS | 22 kΩ | 0603 |
-| R10 | 1 | Fojan | FRC0603F1003TS | 100 kΩ | 0603 |
-| R11 | 1 | Fojan | FRC0603F1202TS | 12 kΩ | 0603 |
-| R12 | 1 | Fojan | FRC0603F8872TS | 88.7 kΩ | 0603 |
-| Q1 | 1 | Nexperia | BC817,215 | NPN transistor | SOT-23 |
-| Q2 | 1 | Infineon | BSS84PH6327XTSA2 | P-MOSFET | SOT-23 |
-| FB1, FB2, FB3 | 3 | Murata Electronics | BLM18PG101SN1D | Ferrite bead | 0603 |
-| F1 | 1 | Yageo | SMD0603B002TF | Fuse | 0603 |
-
----
-
 ## Important Notice
 
 This circuit uses a **voltage inverter (ICL7660)**. As the name suggests, it inverts the supplied voltage.

@@ -1,0 +1,23 @@
+Id,Designator,Footprint,Quantity,Designation,Manufacturer,Part Number,Type,Notes
+6,"C3,C2",0603,2,15pF,kemet,C0603C150K5GAC,SMD,
+3,C5,1206,1,10uF,kyocera avx,T491A106K006AT7280,SMD,
+9,"C7,C4,C1",0605,3,100nF,kyocera avx,06036C104MAZ2A,SMD,
+7,D1,0805 Duo LED,1,LED_Dual_AAKK,Kingbright,APTB1615SURKCGKC-F01,SMD,
+13,F1,1206,1,0.5A,Eaton electronics,PTS12066V050,SMD,
+1,J1,PinHeader_1x04_P2.54mm_Vertical,0,Conn_01x04_Pin,-,-,THT,Do not mount
+18,J2,PinHeader_2x03_P2.54mm_Vertical,0,ICSP,-,-,THT,Do not mount
+17,J3,USB_C_Receptacle_GCT_USB4125-xx-x-0190_6P_TopMnt_Horizontal,1,USB_C_Receptacle_PowerOnly_6P,shou han,TYPE-C 6P(073),SMD,
+11,"Q1,Q2",SOT-23,2,BSS138,Onsemi,BSS138,SMD,
+2,R1,0603,1,390R,yageo,RT0603FRE13390RL,SMD,
+10,"R10,R9",0603,2,5.1k,yageo,RT0603FRD075K1L,SMD,
+15,R2,0603,1,1k,yageo,RT0603FRE071KL,SMD,
+4,"R4,R5,R3",0603,3,1M,yageo,AC0603FR-131ML,SMD,
+5,R6,0603,1,150R,yageo,RT0603FRE13150RL,SMD,
+21,"R8,R7",0603,2,47R,yageo,RT0603DRD0747RL,SMD,
+22,"RN2,RN3,RN4,RN1",4x0603,4,47R,SEI,RAVF164DJT47R0,SMD,
+12,SW1,DIP-6_W7.62mm,1,SW_DIP_x03,-,-,THT,Do not mount
+14,SW2,TLZWLA_Button,1,SW_Push,-,-,SMD,
+8,U1,TQFP-32,1,ATmega328-P,Microchip Technology,ATMEGA328P-AU,SMD,
+20,U2,DIP-20_W7.62mm_LongPads,0,RAM / ZIF,-,-,THT,Do not mount
+19,U3,ZIP-20,0,ZIP Socket,-,-,THT,Do not mount
+16,Y1,5032,1,16MHZ,CTS Electronics Components,445I32C16M00000,SMD,
