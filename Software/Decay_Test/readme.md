@@ -1,4 +1,4 @@
-** Decay Test - EXPERIMENTAL **
+## Decay Test - EXPERIMENTAL 
 
 This tests the supported RAMs (currently this is 4164 / 4464 and 514256/44256) for retention time of the weakest Cell. This is an important metric in order to assess the capability of a RAM Chip to keep its Content. The Test will start a Ramp Up Phase where the retention time gets longer and longer until the first Cells start to fail. Then it will try to pinpoint the exact time the RAM is able to keep its content. Once this is probed it will just continue to soak the RAM with this timing to see if there is any change over time.
 
@@ -9,4 +9,5 @@ When heating with hot air, keep in mind that you only measure the case temperatu
 This is an alternative Firmware and it is only experimental. Use at your own risk. It is currently only supporting 3 RAM Types. If you want to use this SW you will temporarily lose the normal RAM Tester Firmware.
 
 This is how the Display looks like for a 4464 Test:
+
 <img src="https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/IMG_6160.jpeg" width="400px" align="center"/><br/>
