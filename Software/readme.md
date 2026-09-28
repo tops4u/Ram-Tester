@@ -49,6 +49,9 @@ The following images shows the Pinout of the ICSP on the SMD Board:
 
 ![](https://raw.githubusercontent.com/tops4u/Ram-Tester/refs/heads/main/Media/ICSP.jpg) 
 
+## Retention decay Test - EXPERIMENTAL
+Check the directory Decay Test for an alternative Firmware that only tests the retention aspect of a RAM Chip. For comments, fixes or feature requests please use the Issue system of GitHub.
+
 ## Firmware history
 
 | Version | Notes |
