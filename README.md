@@ -11,7 +11,7 @@ A fast, open-source DIY RAM tester for vintage RAM chips used in C64, Amiga, Ata
 
 **As featured on:**
 
-- [***Jan Beta***](https://www.youtube.com/watch?v=iQYF2-FwuoI) (Aug 2026): "The best Arduino Tester (to date)"
+- [***Jan Beta***](https://www.youtube.com/watch?v=iQYF2-FwuoI) (Aug 2026): "The best Arduino Tester (so far)"
 - [***Adrians Digital Basement II***](https://youtu.be/9QQ8ZqHPRVQ?&t=2573) (May 2026): "This is freaking awesome"
 - [***Hackaday***](https://hackaday.com/2025/12/08/cheap-and-aggressive-dram-chip-tester/) (Dec 2025): "Cheap and Aggressive DRAM Chip Tester"
 - [***Elektor Magazine***](https://www.elektormagazine.com/news/open-source-diy-ram-tester) (Dec 2025): "Ram-Tester Is an Open-Source DIY Solution for Retro Computer RAM"
@@ -21,17 +21,22 @@ A fast, open-source DIY RAM tester for vintage RAM chips used in C64, Amiga, Ata
 ## Why this tester?
 - **No chip knowledge needed** – Set the pin count via DIP switch — the tester auto-detects the chip type and runs all tests automatically. No selecting algorithms, no choosing the right socket, no menus, no datasheet lookups. Grab a chip, plug it in, get a result.
 - **Fast** – Full test in under 8 seconds for a 41256. Test a whole tray of chips in minutes.
-- **Thorough** – While other testers require you to choose between test modes, this one runs them all: memory patterns, crosstalk, address line verification, retention time, CAS-Before-RAS refresh, fast page mode, static column mode, ground short detection.
+- **Thorough** – While other testers require you to choose between test modes, this one runs them all: March-B address decoder test, memory patterns, crosstalk, retention time, CAS-before-RAS refresh, fast page mode, static column mode, short detection (VCC, GND and pin-to-pin).
 - **Practical** – Broken is broken. You get a clear good/bad result because a DRAM chip can't be repaired anyway.
-- **Safe** – Short-circuit protection, current limiting, ground short detection. Self-test mode included.
+- **Safe** – Short-circuit protection, current limiting via resettable fuse, short detection against VCC, GND and between pins. Self-test mode included.
 - **Fully Open Source** – Hardware, firmware, schematics. No black box.
+
 ---
+
 ## Key features
 | Feature | Benefit |
 |---------|---------|
-| 20-pin ZIP socket | Direct test of 20-pin ZIP DRAMs without an adapter |
+| 20-pin ZIP socket on board | Direct test of 256K × 4 and 1M × 4 ZIP DRAMs without an adapter |
+| Optional ZIP/SOJ adapter | Adds 1M × 1 ZIP and 41256 ZIP support, plus SOJ sockets for 18- and 20-pin SOJ RAMs <sup>1)</sup> |
 | Optional OLED display or LED blink codes | Full text feedback or minimal hardware setup |
 | Self-test mode | Verify the hardware for defects like short circuits or broken solder joints |
+
+<sup>1)</sup> The 1M × 1 ZIP pinout differs from the 256K × 4 / 1M × 4 ZIP pinout, so these chips cannot use the on-board ZIP socket. See [Supported DRAM types](#supported-dram-types-speed-with-current-firmware-version).
 
 ---
 
@@ -47,14 +52,14 @@ A fast, open-source DIY RAM tester for vintage RAM chips used in C64, Amiga, Ata
 | 32 K × 1 | 4532 <sup>2)</sup> | – | – | – | 2/4 ms | 1.8 s |
 | 64 K × 1 | 4164 | – | – | – | 2/4 ms | 1.8 s |
 | 64 K × 4 | 4464 | – | – | – | 4 ms | 5.2 s |
-| 256 K × 1 | 41256 | – | – | 41257 | 4 ms | 7.5 s |
-| 256 K × 4 | 44256 | both | 44258 | – | 8 ms | 3.5 s |
-| 1 M × 1 | 411000 | **✗**<sup>3)</sup> | – | – | 8 ms | 19.4 s |
-| 1 M × 4 | 514400 | both | 514402 | – | 16 ms | 12.0 s |
+| 256 K × 1 | 41256 | adapter <sup>3)</sup> | – | 41257 | 4 ms | 7.5 s |
+| 256 K × 4 | 44256 | on board | 44258 | – | 8 ms | 3.5 s |
+| 1 M × 1 | 411000 / 511000 | adapter <sup>3)</sup> | – | – | 8 ms | 19.4 s |
+| 1 M × 4 | 514400 | on board | 514402 | – | 16 ms | 12.0 s |
 
 <sup>1)</sup> Requires the [4116 adapter board](Schematic/4116).<br/>
 <sup>2)</sup> Half-good 4164 chips sold as 32K × 1 (OKI MSM3732 / TI TMS4532). Enabled by default since firmware 4.2.3. See [32K documentation](Docs/32K-Option) for details.<br/>
-<sup>3)</sup> The ZIP pinout is different than the 20-pin DIP — for the ZIP version you need an adapter!
+<sup>3)</sup> The 1M × 1 ZIP pinout differs from the 256K × 4 / 1M × 4 ZIP pinout, so 411000 / 511000 ZIP chips cannot be tested in the on-board ZIP socket. The separate ZIP/SOJ adapter provides the matching ZIP socket for 1M × 1 and 41256, plus two SOJ sockets for 20-pin and 18-pin SOJ RAMs.
 
 **Static Column** means the RAM allows column changes while CAS is held low — faster than standard page mode. **Nibble Mode** delivers four consecutive bits from one column address.
 
@@ -64,13 +69,13 @@ A fast, open-source DIY RAM tester for vintage RAM chips used in C64, Amiga, Ata
 |----------|-----|-----------|
 | 1 K × 4 | 2114 <sup>1)</sup> | 0.4 s |
 
- <sup>1)</sup> **WARNING:**  2114 SRAM needs to be inserted 180° rotated, with Pin 10 of the SRAM on the ZIF Pin 1 marking. 
+<sup>1)</sup> **WARNING:** 2114 SRAM needs to be inserted 180° rotated, with Pin 10 of the SRAM on the ZIF Pin 1 marking.
 
 ---
 
 ## Test procedure
 
-1. Insert the device (16, 18 or 20 pins, DIP or ZIP).
+1. Insert the device (16, 18 or 20 pins, DIP or ZIP). 1M × 1 ZIP, 41256 ZIP and SOJ chips go into the ZIP/SOJ adapter.
 2. Set the DIP switch to match the pin count of your RAM. See the [operation manual](Docs) for the switch settings.
 3. Connect USB power supply (or press RESET if already powered).
 4. Read the result
@@ -83,42 +88,54 @@ There is a short YouTube video demonstrating the tester in action. <br/>
 ---
 
 ## How does it test?
-1. GND and VCC shorts — checks if any pin is shorted to ground or 5V
-2. Tries to detect if a RAM Chip is present and what type it is
-3. Power supply shorts — a resettable fuse protects the board
-4. Addressline and -decoder faults
-5. Stuck cells or crosstalk via bidirectional Checkerboards
-6. Random patterns combined with retention time checks
-7. CAS-before-RAS refresh timer function (if supported by the RAM)
-8. All of the above use the appropriate access mode for the chip type: Fast Page Mode, Static Column, or Nibble Mode
+1. Shorts — checks whether any pin is shorted to GND, to VCC (5 V) or to another pin
+2. Chip detection — detects whether a chip is present and identifies its type
+3. Address line and decoder faults — March-B sequence applied to the address lines
+4. Stuck cells and crosstalk — bidirectional checkerboards
+5. Random patterns combined with retention time checks
+6. CAS-before-RAS refresh counter function (if supported by the RAM)
+7. All of the above use the appropriate access mode for the chip type: Fast Page Mode, Static Column, or Nibble Mode
 
-### So why no MARCH-B?
-Here is the analytics of this algorithm vs. March-B
+### Test algorithm and March-B
+The tester combines a March-B sequence with chip-specific stress tests.
 
-| Aspect | This Tester | MARCH-B |
+**March-B for address decoding.** Address line and decoder faults are detected with a March-B sequence (R0W1, R1W0, ascending and descending) applied to a reduced address set that exercises every row and column address line individually. This catches shorted, open or stuck address lines and decoder aliasing systematically, without running a full cell-level march.
+
+**Why not a full cell-level March-B?** For the fault classes that matter in practice, the combination above offers comparable coverage, and it adds what a full March-B leaves out:
+
+- **Access modes:** A classic March-B accesses every cell individually (direct single-cell read/write). It does not exercise the full feature set of a RAM chip, such as Fast Page Mode, Static Column, Nibble Mode or CAS-before-RAS refresh. This tester tests every feature the chip supports.
+- **Retention:** March-B runs in the microsecond range per access, so it cannot catch chips with weak retention that pass on paper yet fail under real refresh timing, which is where most age-related failures occur. Cell-level coverage here comes from bidirectional checkerboards and random patterns combined with real retention delays.
+- **Test time:** A full cell-level March-B on large chips such as 1M × 1 or 1M × 4 is not feasible on an ATmega328P within a practical test time. The goal is a reliable result in seconds, not minutes.
+
+| Aspect | This Tester | Full cell-level March-B |
 | --- | --- | --- |
-| Pattern Coverage     | ✅ Checkerboard | ✅                   |
-| 0→1 / 1→0 Transition | ✅ Via pattern sequence  | ✅ Via R0W1, R1W0   |
-| Address Sequence     | ✅ Asc + Descending         | ✅ Asc + Descending   |
-| Coupling Detection   | ✅ Via retention delay     | ✅ Systematic    |
-| Real Retention       | ✅ 2–16 ms per chip spec  | ❌ Not covered <sup>1)</sup>   |
-| GND Short Detection  | ✅ Before test        | ⚠️ Implicit only <sup>1)</sup>      |
-| Address Line Faults  | ✅ Bit-independence check  | ⚠️ Implicit only <sup>1)</sup>    |
-| CBR Refresh          | ✅ CAS-before-RAS test<sup>2)</sup>    | ❌ Not covered <sup>1)</sup>      |
+| Address line / decoder faults | ✅ March-B on address lines | ✅ |
+| Stuck cells, 0→1 / 1→0 transitions | ✅ Checkerboard + random patterns | ✅ |
+| Address sequence | ✅ Ascending + descending | ✅ Ascending + descending |
+| Crosstalk / coupling | ✅ Bidirectional checkerboards | ✅ Systematic |
+| VCC/GND short detection | ✅ Explicit, before test | ⚠️ Implicit only <sup>1)</sup> |
+| Pin-to-pin short detection | ✅ Explicit, before test | ⚠️ Implicit only <sup>1)</sup> |
+| Access modes | ✅ FPM, Static Column, Nibble Mode | ❌ Direct single-cell access only |
+| CBR refresh | ✅ CAS-before-RAS test <sup>2)</sup> | ❌ Not covered <sup>3)</sup> |
+| Real retention | ✅ 2–16 ms per chip spec | ❌ Not covered <sup>3)</sup> |
+| Test time on ATmega328P | ✅ Seconds | ❌ Not practical for large chips |
 
-<sup>1)</sup>unless implemented outside of MARCH-B<br>
-<sup>2)</sup>For RAM that have a Refresh Counter (41256 and newer)
-
-March-B is thorough for coupling and decoder faults but operates in the microsecond range — it cannot catch chips with weak retention that meet spec on paper but fail under real-world refresh timing. This tester trades systematic address ordering for real-time retention stress, which is where most age-related failures actually occur. 
+<sup>1)</sup> a short makes the chip fail the march, but the fault is not identified as a short<br>
+<sup>2)</sup> for RAMs with a refresh counter (41256 and newer)<br>
+<sup>3)</sup> unless implemented outside of March-B
 
 ### A note on CMOS vs TTL voltage levels
 Vintage DRAM chips were designed for TTL signal levels. The ATmega328P drives CMOS levels at 5 V — logic high is close to V<sub>CC</sub>, which is above what the original systems delivered. This means marginal chips that fail at true TTL thresholds may still pass on this tester (and most other microcontroller-based testers).
 Some designs use 3.3 V controllers with 5 V-tolerant I/O to get closer to TTL levels, but the ATmega328P does not support this operating mode. In practice, virtually no consumer DRAM tester on the market operates at true TTL levels — this is a fundamental limitation of the approach, not specific to this project. For definitive TTL-level testing, dedicated vintage test equipment (e.g. Advantest, Agilent) operating at calibrated thresholds would be needed.
 
+### Experimental: Retention Time Measurement firmware
+An alternative, experimental firmware measures how long the chip actually keeps its data without refresh, determined by its weakest cell, instead of giving a pass/fail result. It is currently available for 4164, 4464 and 44256/514256. Flashing it temporarily replaces the regular tester firmware. See [Software](Software) for details.
+
 ---
+
 ## Build or buy — the choice is yours
 
-**Buy ready-made:** [Amibay](https://www.amibay.com/threads/memory-tester.2450230/) · [Lectronz](https://lectronz.com/products/ram-tester) · [eBay](https://www.ebay.ch/itm/136743995188) · [Tindie](https://www.tindie.com/products/reusecircuit/ram-tester-for-2114-4116-4164-41256-441000-514256/) 
+**Buy ready-made:** [Amibay](https://www.amibay.com/threads/memory-tester.2450230/) · [Lectronz](https://lectronz.com/products/ram-tester) · [eBay](https://www.ebay.ch/itm/136743995188) · [Tindie](https://www.tindie.com/products/reusecircuit/ram-tester-for-2114-4116-4164-41256-441000-514256/)
 
 **Build it yourself (DIY):** Available as a beginner-friendly through-hole (THT) version or a compact SMD version. Order PCBs at [PCBWay (TH)](https://www.pcbway.com/project/shareproject/Ram_Tester_ThruHole_Version_93863356.html) or use the provided Gerber files from the [Schematic](Schematic) folder.
 
