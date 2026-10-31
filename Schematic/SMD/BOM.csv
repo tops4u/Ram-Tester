@@ -18,7 +18,7 @@ R6,0603,1,150R,yageo,RT0603FRE13150RL,SMD,
 DIP-6_W7.62mm,1,SW_DIP_x03,-,-,THT,Do not mount
 SW2,TLZWLA_Button,1,SW_Push,-,-,SMD,
 U1,TQFP-32,1,ATmega328-P,Microchip Technology,ATMEGA328P-AU,SMD,
-U2,DIP-20_W7.62mm_LongPads,0,RAM / ZIF,-,-,THT,Do not mount
+U2,DIP-20_W7.62mm_LongPads,0,RAM / ZIF,-,-,THT,Do not mount,
 U3,ZIP-20,0,ZIP Socket,-,-,THT,Do not mount
 Y1,5032,1,16MHZ,CTS Electronics Components,445I32C16M00000,SMD,
 FB1, 0603, 1, Ferrite Bead, Murata Electronics, BLM18PG221SN1D, SMD,
