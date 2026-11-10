@@ -13,7 +13,7 @@ C3        12pF                  C_0603_1608Metric                             10
 C5        10uF                  C_1206_3216Metric                             123.2408   -83.9996  -90.0000  top
 D1        APTB1615SURKCGKC-F01  LED_SMD_RG_AKAK                               141.1125   -66.5000  180.0000  top
 D2        CESDBLC5V0D5          D_SOD-923                                     125.0950   -74.3092  -90.0000  top
-F1        0.25A                 Fuse_1206_3216Metric                          123.2154   -78.9432  -90.0000  top
+F1        0.5A                  Fuse_1206_3216Metric                          123.2154   -78.9432  -90.0000  top
 FB1       CESDBLC5V0D5          L_0603_1608Metric                             123.4948   -74.2951  -90.0000  top
 Q1        BSS138                SOT-23                                        131.4375   -66.5500    0.0000  top
 Q2        BSS138                SOT-23                                        131.4375   -70.0000    0.0000  top
